@@ -1,5 +1,4 @@
 
-
                      O2EM v1.18 (Jan/2007)
 
                   an Odyssey 2 & Videopac+ emulator
@@ -67,8 +66,8 @@ Remember ,Everything not working well, It's a debug release , so expect to more 
 
 	+	-	*	/	=	yes 	no	clear	enter	VKBD PG2
 
-	q	w	e	r	t	y	u	i	o	p			 
-
+	q	w	e	r	t	y	u	i	o	p
+	
 	a	s	d	f	g	h	j	k	l	SOUND OFF/ON
 
 	z	x	c	v	b	n	m	.	?	SPACE
@@ -80,8 +79,8 @@ Remember ,Everything not working well, It's a debug release , so expect to more 
 
 	Quit	Pause	Reset	SShot	Save	Load 	Score	KBDCol	VKBD	VKBD PG1
 
-	q	w	e	r	t	y	u	i	o	p			 
-
+	q	w	e	r	t	y	u	i	o	p
+	
 	a	s	d	f	g	h	j	k	l	SOUND OFF/ON
 
 	z	x	c	v	b	n	m	.	?	SPACE
@@ -99,6 +98,6 @@ Developed by Daniel Boris, Andre de la Rocha and Arlindo Oliveira
 You can download the O2EM source code here : http://o2em.sourceforge.net 
 
 
-RetroArch/Libretro team : http://www.libretro.org
+RetroArch/Libretro team : http://www.libretro.com
 
 

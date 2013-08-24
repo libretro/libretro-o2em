@@ -1,0 +1,35 @@
+# Project: Project1
+# Makefile created by Dev-C++ 4.9.9.1
+
+CPP  = g++.exe
+CC   = gcc.exe
+WINDRES = windres.exe
+RES  = ../OBJ/file_private.res
+OBJ  = ../OBJ/get_file.o ../OBJ/crc32.o $(RES)
+LINKOBJ  = ../OBJ/get_file.o ../OBJ/crc32.o $(RES)
+LIBS =  -L"C:/Dev-Cpp/lib" -L"C:/Dev-Cpp/lib"  
+INCS =  -I"C:/Dev-Cpp/include"  -I"C:/Dev-Cpp/include" 
+CXXINCS =  -I"C:/Dev-Cpp/include/c++/3.3.1"  -I"C:/Dev-Cpp/include/c++/3.3.1/mingw32"  -I"C:/Dev-Cpp/include/c++/3.3.1/backward"  -I"C:/Dev-Cpp/lib/gcc-lib/mingw32/3.3.1/include"  -I"C:/Dev-Cpp/include"  -I"C:/Dev-Cpp/include" 
+BIN  = file.exe
+CXXFLAGS = $(CXXINCS)  
+CFLAGS = $(INCS)  
+
+.PHONY: all all-before all-after clean clean-custom
+
+all: all-before file.exe all-after
+
+
+clean: clean-custom
+	rm -f $(OBJ) $(BIN)
+
+$(BIN): $(OBJ)
+	$(CPP) $(LINKOBJ) -o "file.exe" $(LIBS)
+
+../OBJ/get_file.o: get_file.cpp
+	$(CPP) -c get_file.cpp -o ../OBJ/get_file.o $(CXXFLAGS)
+
+../OBJ/crc32.o: crc32.c
+	$(CPP) -c crc32.c -o ../OBJ/crc32.o $(CXXFLAGS)
+
+../OBJ/file_private.res: file_private.rc 
+	$(WINDRES) -i file_private.rc --input-format=rc -o ../OBJ/file_private.res -O coff  --include-dir C:/Dev-Cpp/Projetos/o2em-win

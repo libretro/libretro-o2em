@@ -521,6 +521,7 @@ void retro_reset(void)
 
 void retro_run(void)
 {
+   int i;
    update_input();
 
    cpu_exec();
@@ -530,7 +531,7 @@ void retro_run(void)
    
    int length = evblclk == EVBLCLK_NTSC ? 44100/60 : 44100/50;
    // Convert 8u to 16s
-   for(int i = 0; i != length; i ++)
+   for(i = 0; i != length; i ++)
    {
       int16_t sample16 = (soundBuffer[i] << 8) - 32768;
       int16_t frame[2] = {sample16, sample16};

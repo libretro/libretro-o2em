@@ -23,7 +23,7 @@
 #include "types.h"
 #include "score.h"
 
-#ifdef RETRO
+#ifdef __LIBRETRO__
 #include <errno.h>
 #endif 
 

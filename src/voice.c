@@ -20,7 +20,7 @@
 #include "cpu.h"
 #include "voice.h"
 
-#ifndef RETRO
+#ifndef __LIBRETRO__
 #include "allegro.h"
 #else
 #define SAMPLE signed short
@@ -36,7 +36,7 @@ static unsigned long clk_voice_start=0;
 
 
 void load_voice_samples(char *path){
-#ifndef RETRO
+#ifndef __LIBRETRO__
 	int bank, sam, i, ld=0;
 	char name[MAXC];
 	SAMPLE *sp=NULL;
@@ -86,7 +86,7 @@ void load_voice_samples(char *path){
 
 
 void update_voice(void){
-#ifndef RETRO
+#ifndef __LIBRETRO__
 	if (!voice_ok) return;
 	if (voice_st==2) {
 		if (voice_get_position(voice_num) < 0){
@@ -112,7 +112,7 @@ void update_voice(void){
 
 
 void trigger_voice(int addr){
-#ifndef RETRO
+#ifndef __LIBRETRO__
 	if (voice_ok){
 		if (voice_st) update_voice();
 		if ((voice_st==0) && (voice_bank>=0) && (voice_bank<9) && (addr>=0x80) && (addr<=0xff)){
@@ -126,7 +126,7 @@ void trigger_voice(int addr){
 
 
 void set_voice_bank(int bank){
-#ifndef RETRO
+#ifndef __LIBRETRO__
 	if (!voice_ok) return;
 	if ((bank>=0) && (bank<=8)) voice_bank = bank;
 #endif
@@ -134,7 +134,7 @@ void set_voice_bank(int bank){
 
 
 int get_voice_status(void){
-#ifndef RETRO
+#ifndef __LIBRETRO__
 	if (voice_ok){
 		update_voice();
 		if (voice_st) return 1;
@@ -145,7 +145,7 @@ int get_voice_status(void){
 
 
 void reset_voice(void){
-#ifndef RETRO
+#ifndef __LIBRETRO__
 	if (voice_ok) {
 		voice_stop(voice_num);
 		voice_bank=0;
@@ -157,7 +157,7 @@ void reset_voice(void){
 
 
 void mute_voice(void){
-#ifndef RETRO
+#ifndef __LIBRETRO__
 	if (voice_ok) {
 		voice_stop(voice_num);
 	}
@@ -166,7 +166,7 @@ void mute_voice(void){
 	
 
 void close_voice(void){
-#ifndef RETRO
+#ifndef __LIBRETRO__
 	reset_voice();
 #endif
 	voice_ok=0;

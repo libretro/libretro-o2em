@@ -26,7 +26,7 @@
 #include "keyboard.h"
 #include "voice.h"
 
-#ifndef RETRO
+#ifndef __LIBRETRO__
 #include "allegro.h"
 #else
 #include "wrapalleg.h"
@@ -177,17 +177,17 @@ int omain(int argc, char *argv[]){
 		exit(EXIT_FAILURE);
 	}
 
-#ifdef RETRO
+#ifdef __LIBRETRO__
 sprintf(statefile,"%s.state\0",file);
 #endif
 	printf("Starting emulation ...\n");
-#ifndef RETRO
+#ifndef __LIBRETRO__
 	allegro_init();
 	install_timer();
 #endif
 	init_audio();
 
-#ifndef RETRO
+#ifndef __LIBRETRO__
 	printf("Using Allegro %s\n",allegro_id);
 #endif 
 
@@ -205,7 +205,7 @@ sprintf(statefile,"%s.state\0",file);
 
                         strcpy(xrom,"roms/");
                         strcpy(romdir,file);
-#ifndef RETRO
+#ifndef __LIBRETRO__
                         strcpy(file,xrom);
                         strcat(file,romdir);
 #endif
@@ -235,7 +235,7 @@ sprintf(statefile,"%s.state\0",file);
                         strcpy (xrom,romdir);
                         }
 
-#ifdef RETRO
+#ifdef __LIBRETRO__
 #ifdef AND
 	sprintf(xrom,"%s\0","/mnt/sdcard/O2EM/roms/");
 	strcpy(romdir,xrom);
@@ -273,7 +273,7 @@ if (!launcher_flag_b){
                         strcpy (xbios,"bios/");
                         strcpy (biosdir,xbios);
                         }
-#ifdef RETRO
+#ifdef __LIBRETRO__
 #ifdef AND
 	sprintf(xbios,"%s\0","/mnt/sdcard/O2EM/bios/");
 	strcpy (biosdir,xbios);
@@ -405,7 +405,7 @@ if (!launcher_flag_b){
 	#endif
 	#endif
 
-#ifdef RETRO
+#ifdef __LIBRETRO__
 return 1;
 #endif
 	run();
@@ -869,7 +869,7 @@ static void load_cart(char *file){
 }
 /*************************** Helpus*/
 void helpus(void){
-#ifndef RETRO
+#ifndef __LIBRETRO__
 allegro_init();
 install_timer();
 #endif
@@ -894,7 +894,7 @@ int file_name(char *pathx)
     if (dir_p == NULL) { fprintf(stderr,"dir '%s' not found !\n", pathx); exit(-1); }
 while(0 != (dir_entry_p = readdir(dir_p)))
     {
-#ifndef RETRO
+#ifndef __LIBRETRO__
         strcpy(arkivo[contax], dir_entry_p->d_name); 
 #else
 	sprintf(arkivo[contax],"%s\0",dir_entry_p->d_name);

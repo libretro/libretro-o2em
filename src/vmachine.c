@@ -30,7 +30,7 @@
 #include "voice.h"
 #include "vmachine.h"
 
-#ifndef RETRO
+#ifndef __LIBRETRO__
 #include "allegro.h"
 #else
 #include "wrapalleg.h"
@@ -123,7 +123,7 @@ void handle_vbl(void){
 
 	if (!app_data.debug) {
 
-#ifndef RETRO
+#ifndef __LIBRETRO__
 		handle_key();
 #else
 		update_joy();
@@ -131,7 +131,7 @@ void handle_vbl(void){
 
 		update_audio();
 
-#ifndef RETRO		
+#ifndef __LIBRETRO__		
 		update_voice();
 #else
 		//TODO
@@ -280,7 +280,7 @@ void init_system(void){
 				snapedlines[i][j][k]=0;
 
 	if (app_data.stick[0] == 2 || app_data.stick[1] == 2) {
-#ifndef RETRO
+#ifndef __LIBRETRO__
 		i = install_joystick(JOY_TYPE_AUTODETECT);
 		if (i || (num_joysticks<1)) {
 			fprintf(stderr,"Error: no joystick detected\n");
@@ -347,7 +347,7 @@ Byte read_P2(void){
 		if (si<6) {
 			for (i=0; i<8; i++) {
 				km = key_map[si][i];
-#ifndef RETRO
+#ifndef __LIBRETRO__
 				if ((key[km] && ((!joykeystab[km]) || (key_shifts & KB_CAPSLOCK_FLAG))) || (key2[km])) {
 					so = i ^ 0x07;
 				}
@@ -476,7 +476,7 @@ Byte in_bus(void){
 				break;
 			case 2: 
 
-#ifndef RETRO
+#ifndef __LIBRETRO__
 				poll_joystick();
 				if (joy[sticknum].stick[0].axis[1].d1) d &= 0xFE;			// joy_up
 				if (joy[sticknum].stick[0].axis[0].d2) d &= 0xFD;			// joy_right
@@ -726,7 +726,7 @@ static void setvideomode(int t){
 }
 
 
-#ifdef RETRO
+#ifdef __LIBRETRO__
 #include <errno.h>
 #endif 
 

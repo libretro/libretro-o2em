@@ -24,11 +24,11 @@
 #include "vmachine.h"
 #include "audio.h"
 
-#ifndef RETRO
+#ifndef __LIBRETRO__
 #include "allegro.h"
 #else
 extern int SND;
-extern short signed int SNDBUF[1024*2];
+extern uint8_t soundBuffer[1056];
 #endif
 
 #define SAMPLE_RATE 44100
@@ -44,7 +44,7 @@ extern short signed int SNDBUF[1024*2];
 
 
 int sound_IRQ;
-#ifndef RETRO
+#ifndef __LIBRETRO__
 static AUDIOSTREAM *stream=NULL;
 #endif
 FILE *sndlog=NULL;
@@ -98,7 +98,7 @@ void audio_process(unsigned char *buffer){
 
 
 void update_audio(void) {
-#ifndef RETRO
+#ifndef __LIBRETRO__
 	unsigned char *p;
 	if (app_data.sound_en) {
 		p = (unsigned char *)get_audio_stream_buffer(stream);
@@ -109,13 +109,12 @@ void update_audio(void) {
 		}
    	}
 #else
-	unsigned char *p;
-	p = (unsigned char *)SNDBUF;
-	if (p) {
-		audio_process(p);
-		dumpaudio(evblclk==EVBLCLK_NTSC?44100/60:44100/50);
-
-	}
+	//unsigned char *p;
+	//p = (unsigned char *)SNDBUF;
+	//if (p) {
+	//	audio_process(p);
+        audio_process(soundBuffer);
+	//}
 #endif
 }
 
@@ -126,7 +125,7 @@ void init_audio(void) {
 	sound_IRQ=0;		
 	if ((app_data.sound_en) || (app_data.voice)) {
 		printf("Initializing sound system...\n");
-#ifndef RETRO
+#ifndef __LIBRETRO__
 		i = install_sound(DIGI_AUTODETECT, MIDI_NONE, NULL);
 		if (i != 0) {
 		   printf("  ERROR: could not initialize sound card\n   %s\n",allegro_error);
@@ -148,7 +147,6 @@ void init_audio(void) {
 			}
 		}
 #else
-//TODO SOUND
 	init_sound_stream();
 #endif
 	}
@@ -164,7 +162,7 @@ void init_sound_stream(void){
 			vol = (255*app_data.svolume)/100;
 		else
 			vol = (255*app_data.svolume)/200;
-#ifndef RETRO
+#ifndef __LIBRETRO__
 		stream = play_audio_stream(SOUND_BUFFER_LEN,8,0,SAMPLE_RATE,vol,128);
 		if (!stream) {
 			printf("Error creating audio stream!\n");
@@ -178,7 +176,7 @@ void init_sound_stream(void){
 
 
 void mute_audio(void){
-#ifndef RETRO
+#ifndef __LIBRETRO__
 	if (app_data.sound_en && stream){
 		stop_audio_stream(stream);
 		stream=NULL;
@@ -190,7 +188,7 @@ void mute_audio(void){
 
 
 void close_audio(void) {
-#ifndef RETRO
+#ifndef __LIBRETRO__
 	if (app_data.sound_en && stream) {
 		stop_audio_stream(stream);
 	}

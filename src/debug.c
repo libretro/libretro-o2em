@@ -24,7 +24,7 @@
 #include "table.h"
 #include "debug.h"
 
-#ifndef RETRO
+#ifndef __LIBRETRO__
 #include "allegro.h"
 #else
 #include "wrapalleg.h"
@@ -71,7 +71,7 @@ void debug(void) {
 
 	done=go=0;
 
-#ifndef RETRO
+#ifndef __LIBRETRO__
 	set_display_switch_mode(SWITCH_BACKGROUND);
 #endif
 	if (sndlog) fclose(sndlog);
@@ -173,7 +173,7 @@ void debug(void) {
 				rest(1);
 			} while((key_done==0) && (!keypressed()));
 			set_textmode();
-#ifndef RETRO
+#ifndef __LIBRETRO__
 			set_display_switch_mode(SWITCH_BACKGROUND);
 #endif
 		} else if (!strcmp(tok,"viewsprite")) {

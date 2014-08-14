@@ -24,7 +24,7 @@
 #include "vpp_cset.h"
 #include "vpp.h"
 
-#ifndef RETRO
+#ifndef __LIBRETRO__
 #include "allegro.h"
 #else
 #include "wrapalleg.h"
@@ -282,7 +282,7 @@ void vpp_finish_bmp(Byte *vmem, int offx, int offy, int w, int h, int totw, int 
 
 	for (y=0; y<h; y++){
 		pnt = vmem+(offy+y)*totw + offx;
-#ifndef RETRO
+#ifndef __LIBRETRO__
 		pnt2 = (Byte *)vppbmp->line[y];
 #else
 		pnt2 = (Byte *)&vppbmp->line[y*vppbmp->w];
@@ -358,7 +358,7 @@ static void vpp_draw_char(int x, int y, Byte ch, Byte c0, Byte c1, Byte ext, Byt
 		m = (dw==2) ? 0x08 : 0x80;
 
 		for (xx=0; xx<8; xx++) {
-#ifndef RETRO
+#ifndef __LIBRETRO__
 			vppbmp->line[y*10+yy][x*8+xx] = (k & m) ? c1 : c0;
 #else 
 			vppbmp->line[(y*10+yy)*vppbmp->w+(x*8+xx)] = (k & m) ? c1 : c0;
@@ -374,7 +374,7 @@ static void vpp_draw_char(int x, int y, Byte ch, Byte c0, Byte c1, Byte ext, Byt
 static void vpp_update_screen(void){
 	int i,x,y,l,chr,attr,ext,c0,c1,dw,dh,hpar,vpar,lvd,lhd,ser_chr,ser_atr,ul,conc,box,swapcol;
 	int tlum[8], m[8] = {0x01, 0x10, 0x04, 0x40, 0x02, 0x20, 0x08, 0x80};
-#ifndef RETRO
+#ifndef __LIBRETRO__
 	clear(vppbmp);
 #endif
 	for (i=0; i<8; i++) tlum[i] = (LumReg & m[i]) ? 0 : 8;
@@ -463,7 +463,7 @@ static void vpp_update_screen(void){
 	if (vpp_r & 0x20) {
 		for (y = vppbmp->h-1; y >= 10; y--)
 			for (x = 0; x < vppbmp->w; x++) 
-#ifndef RETRO
+#ifndef __LIBRETRO__
 				vppbmp->line[y][x] = vppbmp->line[(y-10)/2+10][x];
 #else
 				vppbmp->line[y*vppbmp->w +x] = vppbmp->line[((y-10)/2+10)*vppbmp->w +x];				;
@@ -492,7 +492,7 @@ void init_vpp(void){
 		fprintf(stderr,"Could not allocate memory for Videopac+ screen buffer.\n");
 		exit(EXIT_FAILURE);
 	}
-#ifndef RETRO
+#ifndef __LIBRETRO__
 	clear(vppbmp);
 #endif
 	memset(colplus,0,BMPW*BMPH);

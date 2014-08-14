@@ -28,7 +28,7 @@
 #include "vpp.h"
 #include "vdc.h"
 
-#ifndef RETRO
+#ifndef __LIBRETRO__
 #include "allegro.h"
 #else 
 #include "libretro.h"
@@ -154,7 +154,7 @@ static void create_cmap(void){
 
 void grmode(void){
 
-#ifndef RETRO	
+#ifndef __LIBRETRO__	
 	set_color_depth(8);
 	wsize = app_data.wsize;
 
@@ -223,7 +223,7 @@ clearscr();
 
 
 void set_textmode(void){
-#ifndef RETRO
+#ifndef __LIBRETRO__
 	set_palette(oldcol);
 	set_gfx_mode(GFX_TEXT, 0, 0, 0, 0);
 #endif
@@ -232,7 +232,7 @@ void set_textmode(void){
 
 
 void clearscr(void){
-#ifndef RETRO
+#ifndef __LIBRETRO__
 	acquire_screen();
 	clear(screen);
 	release_screen();
@@ -337,9 +337,8 @@ static void draw_grid(void){
 
 }
 
-#ifdef RETRO
+#ifdef __LIBRETRO__
 
-#include "libretro-o2em.h"
 extern unsigned short int mbmp[TEX_WIDTH  * TEX_HEIGHT];
 
 void retro_blit(){
@@ -381,7 +380,7 @@ void finish_display(void){
 			last=t;
 		}
 		if (curr) {
-#ifndef RETRO
+#ifndef __LIBRETRO__
 			text_mode(0);
 			textprintf(bmp, font, 20 , 4, 7, "FPS: %3d",(int)((200.0*TICKSPERSEC)/curr+0.5));
 #endif
@@ -398,7 +397,7 @@ void finish_display(void){
 	for (y=0; y<10; y++) cached_lines[(y+cache_counter) % bmp->h] = 0;
 	cache_counter = (cache_counter+10) % bmp->h;
 
-#ifndef RETRO
+#ifndef __LIBRETRO__
 	acquire_screen();
 #endif
 
@@ -406,7 +405,7 @@ void finish_display(void){
 
 	for (y=0; y<WNDH; y++){
 		if (!cached_lines[y+2])
-#ifndef RETRO
+#ifndef __LIBRETRO__
 			stretch_blit(bmp,screen,7,2+y,WNDW,1,0,y*wsize,WNDW*wsize,wsize-sn);
 #else 
 			;
@@ -418,7 +417,7 @@ void finish_display(void){
 			if (!cached_lines[y+2]) {
 
 				for (x=0; x<bmp->w; x++) bmp->line[(y+2)*bmp->w +x] += 16;
-#ifndef RETRO
+#ifndef __LIBRETRO__
 				stretch_blit(bmp,screen,7,2+y,WNDW,1,0,(y+1)*wsize-1,WNDW*wsize,1);
 #else 
 //TODO
@@ -430,7 +429,7 @@ void finish_display(void){
 	}
 
 
-#ifndef RETRO
+#ifndef __LIBRETRO__
 	release_screen();
 #else
 	retro_blit();
@@ -629,7 +628,7 @@ void draw_quad(Byte ypos, Byte xpos, Byte cp0l, Byte cp0h, Byte cp1l, Byte cp1h,
 }
 
 void close_display(void) {
-#ifndef RETRO
+#ifndef __LIBRETRO__
 	free(vscreen);
 #endif
 	free(col);
@@ -641,7 +640,7 @@ void window_close_hook(void){
 	key_done=1;
 }
 static void txtmsg(int x, int y, int c, const char *s){
-#ifndef RETRO
+#ifndef __LIBRETRO__
 	text_mode(-1);
 	textout_centre(bmp, font, s, x+1 , y+1, 32);
 	textout_centre(bmp, font, s, x , y, c);
@@ -712,7 +711,7 @@ void display_msg(char *msg, int waits)
 	init_sound_stream();
 }
 void init_display(void) {
-#ifndef RETRO
+#ifndef __LIBRETRO__
 	get_palette(oldcol);
 #endif
 	create_cmap();
@@ -723,13 +722,13 @@ void init_display(void) {
 		fprintf(stderr,"Could not allocate memory for screen buffer.\n");
 		exit(EXIT_FAILURE);
 	}
-#ifndef RETRO
+#ifndef __LIBRETRO__
 	vscreen = (Byte *) bmp->dat;
 #else
 	vscreen = (Byte *) &bmp->line[0];
 #endif
 
-#ifndef RETRO
+#ifndef __LIBRETRO__
 	clear(bmp);
 	clear(bmpcache);
 #endif
@@ -745,7 +744,7 @@ void init_display(void) {
 		init_keyboard();
 	}
 
-#ifndef RETRO
+#ifndef __LIBRETRO__
     set_window_close_button(TRUE);
 	set_window_close_hook(window_close_hook);
 #endif
@@ -815,7 +814,7 @@ static char hl[96][70]=
 	 "-savefile=file",
      " Load/Save State "," from/to file"
      };
-#ifndef RETRO
+#ifndef __LIBRETRO__
 text_mode(-1);
 
 textout(bmp, font, "O2EM v" O2EM_VERSION " Help", 26 , 16, 2);
@@ -825,7 +824,7 @@ rect(bmp,20,12,315,228,6);
 line(bmp,20,35,315,35,6);
 for (cntt=0; cntt<16; cntt++)
     {
-#ifndef RETRO
+#ifndef __LIBRETRO__
     textout(bmp, font, hl[cnt+cntt], 26, cnttt, 4);
 #endif
     cnttt += 12;
@@ -843,7 +842,7 @@ for (cntt=0; cntt<16; cntt++)
                                  rectfill(bmp,25,36,306,227,0);
                                  for (cntt=0; cntt<16; cntt++)
                                      {
-#ifndef RETRO
+#ifndef __LIBRETRO__
                                      textout(bmp, font, hl[cnt+cntt], 26, cnttt, 4);
 #endif
 
@@ -859,7 +858,7 @@ for (cntt=0; cntt<16; cntt++)
                                  rectfill(bmp,25,36,306,227,0);
                                  for (cntt=0; cntt<16; cntt++)
                                      {
-#ifndef RETRO
+#ifndef __LIBRETRO__
                                      textout(bmp, font, hl[cnt+cntt], 26, cnttt, 4);
 #endif
                                      cnttt += 12;

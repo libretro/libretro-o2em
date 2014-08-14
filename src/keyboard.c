@@ -28,7 +28,7 @@
 #include "vpp.h"
 #include "keyboard.h"
 
-#ifndef RETRO
+#ifndef __LIBRETRO__
 #include "allegro.h"
 #else
 #include "libretro.h"
@@ -45,7 +45,7 @@ Byte new_int=0;	/* Is new interrupt installed */
 
 Byte key_done=0;
 Byte key_debug=0;
-#ifndef RETRO
+#ifndef __LIBRETRO__
 
 struct keyb keybtab[] = {
 	{KEY_A,"A"},
@@ -331,7 +331,7 @@ void set_systemkeys(int k_quit,int k_pause,int k_debug,int k_reset,int k_screenc
 	syskeys[7] = k_inject;
 }
 
-#ifdef RETRO
+#ifdef __LIBRETRO__
 unsigned char key[256*2];
 
 void rloadstate(){
@@ -361,20 +361,9 @@ void rsavestate(){
 		}
 }
 
-void rreset(){
-		init_cpu();
-		init_roms();
-		init_vpp();
-		clearscr();
-}
-
 void rscore(){
 
 	set_score(app_data.scoretype, app_data.scoreaddress, app_data.default_highscore);
-}
-
-void rscrshot(){
-	//TODO
 }
 
 #endif
@@ -497,7 +486,7 @@ void handle_key(void){
 
  
 	if (key[syskeys[4]]) {
-#ifndef RETRO
+#ifndef __LIBRETRO__
 		BITMAP *bmp;
 		PALETTE pal;
 		char *p;
@@ -546,7 +535,7 @@ Byte keyjoy(int jn){
 	Byte d;
 	d=0xFF;
 	if ((jn>=0) && (jn<=1)){
-#ifdef RETRO
+#ifdef __LIBRETRO__
 		if (jbt[0]) d &= 0xFE;
 		if (jbt[1]) d &= 0xFB;
 		if (jbt[2]) d &= 0xF7;
@@ -571,13 +560,13 @@ void init_keyboard(void){
 	key_done=0;
 	key_debug=0;  
 
-#ifndef RETRO 
+#ifndef __LIBRETRO__ 
 	install_keyboard();	
 #else
 	memset(key,0,512);
 #endif
 	new_int=1;
-#ifndef RETRO 
+#ifndef __LIBRETRO__ 
 	NeedsPoll = keyboard_needs_poll();
 #else
 	NeedsPoll = 1;
@@ -586,7 +575,7 @@ void init_keyboard(void){
 
 
 void Set_Old_Int9(void){
-#ifndef RETRO 
+#ifndef __LIBRETRO__ 
    remove_keyboard();
 #endif
    new_int=0;

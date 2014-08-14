@@ -83,7 +83,7 @@ void make_psw_debug(void){
 	make_psw();
 }
 
-#ifdef RETRO
+#ifdef __LIBRETRO__
 extern int RLOOP;
 #endif                        
 
@@ -93,7 +93,7 @@ void cpu_exec(void) {
 	Byte dat;
 	int temp;
 
-	#ifndef RETRO
+	#ifndef __LIBRETRO__
 	for (;;)
 	#else
 	while(RLOOP==1)
@@ -1568,14 +1568,14 @@ void cpu_exec(void) {
 		}	
 		if ((mstate==1) && (master_clk > evblclk)) {
 			handle_evbl();
-#ifdef RETRO
+#ifdef __LIBRETRO__
 			RLOOP=0;
 #endif
 			if (app_data.crc == 0xA7344D1F) handle_evbll(); /* Atlantis */
 		        break;
 		}
 
-#ifndef RETRO
+#ifndef __LIBRETRO__
 		if (app_data.debug) break;
 		
 		if (pc==app_data.breakpoint) break;

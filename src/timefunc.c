@@ -17,7 +17,7 @@
 
 #include <time.h>
 
-#ifndef RETRO
+#ifndef __LIBRETRO__
 #include "allegro.h"
 #endif
 
@@ -29,7 +29,7 @@
 #endif
 #include "timefunc.h"
 
-#ifndef RETRO
+#ifndef __LIBRETRO__
 
 #ifdef ALLEGRO_WINDOWS
 

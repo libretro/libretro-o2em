@@ -48,7 +48,7 @@ unsigned short int mbmp[TEX_WIDTH * TEX_HEIGHT];
 uint8_t soundBuffer[1056];
 int SND;
 int RLOOP=0;
-int jbt[5]={0,0,0,0,0};
+int joystick_data[2][5]={{0,0,0,0,0},{0,0,0,0,0}};
 
 int contax, o2flag, g74flag, c52flag, jopflag, helpflag;
 
@@ -269,11 +269,18 @@ static void update_input()
    input_poll_cb();
 
    // Joystick
-   jbt[0]= input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP);
-   jbt[1]= input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_DOWN);
-   jbt[2]= input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_LEFT);
-   jbt[3]= input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_RIGHT);
-   jbt[4]= input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_A); // "Action" button on the joystick
+   // Player 1
+   joystick_data[0][0]= input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP);
+   joystick_data[0][1]= input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_DOWN);
+   joystick_data[0][2]= input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_LEFT);
+   joystick_data[0][3]= input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_RIGHT);
+   joystick_data[0][4]= input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_A); // "Action" button on the joystick
+   // Player 2
+   joystick_data[1][0]= input_state_cb(1, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP);
+   joystick_data[1][1]= input_state_cb(1, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_DOWN);
+   joystick_data[1][2]= input_state_cb(1, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_LEFT);
+   joystick_data[1][3]= input_state_cb(1, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_RIGHT);
+   joystick_data[1][4]= input_state_cb(1, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_A); // "Action" button on the joystick
 
    // Numeric and Alpha
    key[RETROK_l]=input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_B); // L

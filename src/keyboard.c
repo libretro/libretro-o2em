@@ -529,18 +529,18 @@ void handle_key(void){
 
 }
 
-extern int jbt[5];//up dw lf rg fi
+extern int joystick_data[2][5]; //Up, Down, Left, Right, "Action"
 
 Byte keyjoy(int jn){
 	Byte d;
 	d=0xFF;
 	if ((jn>=0) && (jn<=1)){
 #ifdef __LIBRETRO__
-		if (jbt[0]) d &= 0xFE;
-		if (jbt[1]) d &= 0xFB;
-		if (jbt[2]) d &= 0xF7;
-		if (jbt[3]) d &= 0xFD;
-		if (jbt[4]) d &= 0xEF;
+		if (joystick_data[jn][0]) d &= 0xFE;
+		if (joystick_data[jn][1]) d &= 0xFB;
+		if (joystick_data[jn][2]) d &= 0xF7;
+		if (joystick_data[jn][3]) d &= 0xFD;
+		if (joystick_data[jn][4]) d &= 0xEF;
 #else
 		if (NeedsPoll) 
 			poll_keyboard();			

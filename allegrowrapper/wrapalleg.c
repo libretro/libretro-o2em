@@ -13,7 +13,7 @@ int miabs(int a)
    return a;
 }
 
-void upcase(char *p)
+void alleg_upcase(char *p)
 {
 	while(*p != '\0')
 	{
@@ -23,7 +23,7 @@ void upcase(char *p)
 	}
 }
 
-void downcase(char *p)
+void alleg_downcase(char *p)
 {
 	while(*p != '\0')
 	{

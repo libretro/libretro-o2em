@@ -5,8 +5,10 @@
 #include <unistd.h>
 #define INLINE static inline
 #define rest(a) usleep(a)
-#define strupr upcase
-#define strlwr downcase
+#ifndef __QNX__
+#define strupr alleg_upcase
+#define strlwr alleg_downcase
+#endif
 #define keypressed() 0
 #define poll_keyboard()
 #define yield_timeslice()
@@ -34,8 +36,8 @@ int destroy_bitmap(BITMAP *buff);
 void line(BITMAP  *buff,int x1,int y1,int x2,int y2,unsigned  char  color);
 void rect(BITMAP  *buff,int x,int y,int x2,int y2,unsigned  char color);
 void rectfill(BITMAP  *buff,int x,int y,int x2,int y2,unsigned  char color);
-void upcase(char *p);
-void downcase(char *p);
+void alleg_upcase(char *p);
+void alleg_downcase(char *p);
 
 extern unsigned char key[256*2];
 

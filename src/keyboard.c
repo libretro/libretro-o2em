@@ -286,10 +286,10 @@ int syskeys[8] = {0,0,0,0,0,0,0,0};
 
 
 void set_defjoykeys(int jn, int sc){
-	if (sc)
-		set_joykeys(jn,RETROK_w,RETROK_s,RETROK_a,RETROK_d,RETROK_SPACE);
-	else
-		set_joykeys(jn,RETROK_UP,RETROK_DOWN,RETROK_LEFT,RETROK_RIGHT,RETROK_l);
+	//if (sc)
+	//	set_joykeys(jn,RETROK_w,RETROK_s,RETROK_a,RETROK_d,RETROK_SPACE);
+	//else
+	//	set_joykeys(jn,RETROK_UP,RETROK_DOWN,RETROK_LEFT,RETROK_RIGHT,RETROK_l);
 }
 
 	

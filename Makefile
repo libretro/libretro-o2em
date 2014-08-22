@@ -16,18 +16,18 @@ endif
 endif
 
 # system platform
-system_platform = unix
+platform = unix
 ifeq ($(shell uname -a),)
 EXE_EXT = .exe
-   system_platform = win
+   platform = win
 else ifneq ($(findstring Darwin,$(shell uname -a)),)
-   system_platform = osx
+   platform = osx
 	arch = intel
 ifeq ($(shell uname -p),powerpc)
 	arch = ppc
 endif
 else ifneq ($(findstring MINGW,$(shell uname -a)),)
-   system_platform = win
+   platform = win
 endif
 
 TARGET_NAME := o2em

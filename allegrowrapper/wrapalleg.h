@@ -1,6 +1,5 @@
-
 #ifndef WRAP_H
-#define WRAP_H 1
+#define WRAP_H
 
 #include <unistd.h>
 #define INLINE static inline
@@ -31,19 +30,17 @@ typedef struct
 }APALETTE;
 
 
-BITMAP *create_bitmap(int w,int h);
-int destroy_bitmap(BITMAP *buff);
-void line(BITMAP  *buff,int x1,int y1,int x2,int y2,unsigned  char  color);
-void rect(BITMAP  *buff,int x,int y,int x2,int y2,unsigned  char color);
-void rectfill(BITMAP  *buff,int x,int y,int x2,int y2,unsigned  char color);
-void alleg_upcase(char *p);
-void alleg_downcase(char *p);
+extern BITMAP *create_bitmap(int w,int h);
+extern int destroy_bitmap(BITMAP *buff);
+extern void line(BITMAP  *buff,int x1,int y1,int x2,int y2,unsigned  char  color);
+extern void rect(BITMAP  *buff,int x,int y,int x2,int y2,unsigned  char color);
+extern void rectfill(BITMAP  *buff,int x,int y,int x2,int y2,unsigned  char color);
+extern void alleg_upcase(char *p);
+extern void alleg_downcase(char *p);
 
 extern unsigned char key[256*2];
 
 extern void update_joy(void);
-
-#define INLINE static inline
 
 #define EMUWIDTH 340
 #define EMUHEIGHT 250
@@ -53,6 +50,4 @@ extern void update_joy(void);
 
 #define RGB565(r, g, b)  (((r) << (5+6)) | ((g) << 6) | (b))
 
-
 #endif
-

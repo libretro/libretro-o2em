@@ -4,14 +4,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#define abs(a) miabs(a)
-
-int miabs(int a)
-{
-   if ((a)<0)
-      a =- a;
-   return a;
-}
 
 void alleg_upcase(char *p)
 {
@@ -31,11 +23,6 @@ void alleg_downcase(char *p)
 			*p += 32;
 		++p;
 	}
-}
-
-void clear(BITMAP *buff)
-{
-	memset(&buff->line,0,buff->w*buff->h);
 }
 
 BITMAP *create_bitmap(int w,int h)

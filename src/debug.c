@@ -107,7 +107,7 @@ void debug(void) {
 		printf("> ");
 		fgets(inp,76,stdin);
 		if ((strlen(inp)>0) && (inp[strlen(inp)-1]=='\n')) inp[strlen(inp)-1]=0;
-		strlwr(inp);
+		alleg_downcase(inp);
 		strcat(inp," \n");
 		tok=strtok(inp," ");
 		if (!tok) tok="";

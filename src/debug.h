@@ -4,11 +4,3 @@
 void debug(void);
 
 #endif  /* DEBUG_H */
-
-
-
-
-
-
-
-

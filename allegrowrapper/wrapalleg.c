@@ -5,16 +5,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-void alleg_upcase(char *p)
-{
-	while(*p != '\0')
-	{
-		if(*p >= 97 && *p <= 122)
-			*p -= 32;
-		++p;
-	}
-}
-
 void alleg_downcase(char *p)
 {
 	while(*p != '\0')

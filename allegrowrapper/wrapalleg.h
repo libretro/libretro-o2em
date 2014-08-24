@@ -4,10 +4,6 @@
 #include <unistd.h>
 #define INLINE static inline
 #define rest(a) usleep(a)
-#ifndef __QNX__
-#define strupr alleg_upcase
-#define strlwr alleg_downcase
-#endif
 #define keypressed() 0
 #define poll_keyboard()
 #define yield_timeslice()
@@ -41,6 +37,10 @@ extern void alleg_downcase(char *p);
 extern unsigned char key[256*2];
 
 extern void update_joy(void);
+
+#ifndef __QNX__
+#define strlwr alleg_downcase
+#endif
 
 #define EMUWIDTH 340
 #define EMUHEIGHT 250

@@ -130,7 +130,7 @@ else
 FLAGS += -O2 -DNDEBUG
 endif
 
-LDFLAGS += $(fpic) -lz $(SHARED)
+LDFLAGS += $(fpic) $(SHARED)
 FLAGS += $(fpic) 
 FLAGS += -I. -Isrc -Iallegrowrapper
 

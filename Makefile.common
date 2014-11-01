@@ -1,0 +1,18 @@
+INCFLAGS += -I$(CORE_DIR) -I$(CORE_DIR)/src -I$(CORE_DIR)/allegrowrapper
+
+SOURCES_C := $(CORE_DIR)/src/audio.c \
+    $(CORE_DIR)/src/cpu.c \
+    $(CORE_DIR)/src/crc32.c \
+    $(CORE_DIR)/src/cset.c \
+    $(CORE_DIR)/src/debug.c \
+    $(CORE_DIR)/src/keyboard.c \
+    $(CORE_DIR)/src/score.c \
+    $(CORE_DIR)/src/table.c \
+    $(CORE_DIR)/src/timefunc.c \
+    $(CORE_DIR)/src/vdc.c \
+    $(CORE_DIR)/src/vmachine.c \
+    $(CORE_DIR)/src/voice.c \
+    $(CORE_DIR)/src/vpp.c \
+    $(CORE_DIR)/src/vpp_cset.c \
+	 $(CORE_DIR)/libretro.c \
+	 $(CORE_DIR)/allegrowrapper/wrapalleg.c

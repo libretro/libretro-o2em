@@ -104,29 +104,12 @@ else
    SHARED := -shared -Wl,--no-undefined -Wl,--version-script=link.T
    LDFLAGS += -static-libgcc -static-libstdc++ -lwinmm
 endif
-O2EM_DIR := src
 
-O2EM_SOURCES := $(O2EM_DIR)/audio.c \
-    $(O2EM_DIR)/cpu.c \
-    $(O2EM_DIR)/crc32.c \
-    $(O2EM_DIR)/cset.c \
-    $(O2EM_DIR)/debug.c \
-    $(O2EM_DIR)/keyboard.c \
-    $(O2EM_DIR)/score.c \
-    $(O2EM_DIR)/table.c \
-    $(O2EM_DIR)/timefunc.c \
-    $(O2EM_DIR)/vdc.c \
-    $(O2EM_DIR)/vmachine.c \
-    $(O2EM_DIR)/voice.c \
-    $(O2EM_DIR)/vpp.c \
-    $(O2EM_DIR)/vpp_cset.c
+CORE_DIR := .
 
-LIBRETRO_SOURCES := libretro.c
+include Makefile.common
 
-SOURCES_C := allegrowrapper/wrapalleg.c \
-
-SOURCES := $(LIBRETRO_SOURCES) $(O2EM_SOURCES)
-OBJECTS := $(SOURCES:.c=.o) $(SOURCES_C:.c=.o)
+OBJECTS := $(SOURCES_C:.c=.o)
 
 all: $(TARGET)
 
@@ -138,7 +121,7 @@ endif
 
 LDFLAGS += $(fpic) $(SHARED)
 FLAGS += $(fpic) 
-FLAGS += -I. -Isrc -Iallegrowrapper
+FLAGS += $(INCFLAGS)
 
 ifeq ($(OLD_GCC), 1)
 WARNINGS := -Wall

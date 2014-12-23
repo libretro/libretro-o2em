@@ -1,0 +1,10 @@
+Package: com.libretro.o2em
+Name: O2EM
+Depends: 
+Version: 0.0.1
+Architecture: iphoneos-arm
+Description: Libretro iOS core of O2EM
+Maintainer: libretro
+Author: libretro
+Section: System
+Tag: role::developer

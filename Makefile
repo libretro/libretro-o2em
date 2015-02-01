@@ -55,6 +55,11 @@ else ifeq ($(platform), ios)
    fpic := -fPIC
    SHARED := -dynamiclib
 
+ifndef ($(NOUNIVERSAL))
+   CFLAGS += $(ARCHFLAGS)
+   LDFLAGS += $(ARCHFLAGS)
+endif
+
 ifeq ($(IOSSDK),)
    IOSSDK := $(shell xcrun -sdk iphoneos -show-sdk-path)
 endif
@@ -161,11 +166,8 @@ $(TARGET): $(OBJECTS)
 ifeq ($(STATIC_LINKING), 1)
 	$(AR) rcs $@ $(OBJECTS)
 else
-	$(CXX) -o $@ $^ $(LDFLAGS)
+	$(CC) -o $@ $^ $(LDFLAGS)
 endif
-
-%.o: %.cpp
-	$(CXX) -c -o $@ $< $(CXXFLAGS)
 
 %.o: %.c
 	$(CC) -c -o $@ $< $(CFLAGS)

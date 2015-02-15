@@ -76,7 +76,8 @@ static long filesize(FILE *stream)
    return length;
 }
 
-static void load_bios(const char *biosname){
+static void load_bios(const char *biosname)
+{
    FILE *fn;
    static char s[MAXC+10];
    unsigned long crc;
@@ -109,7 +110,7 @@ static void load_bios(const char *biosname){
 
    strcpy(s,biosname);
    fn = fopen(biosname,"rb");
-   
+
    if (!fn) {
       fprintf(stderr,"Error loading bios ROM (%s)\n",s);
       exit(EXIT_FAILURE);
@@ -118,9 +119,9 @@ static void load_bios(const char *biosname){
       fprintf(stderr,"Error loading bios ROM %s\n",odyssey2);
       exit(EXIT_FAILURE);
    }
-   
+
    fclose(fn);
-   
+
    for (i=1; i<8; i++)
       memcpy(rom_table[i],rom_table[0],1024);
 

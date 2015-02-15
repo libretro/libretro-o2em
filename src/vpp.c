@@ -24,11 +24,7 @@
 #include "vpp_cset.h"
 #include "vpp.h"
 
-#ifndef __LIBRETRO__
-#include "allegro.h"
-#else
 #include "wrapalleg.h"
-#endif
 
 static void vpp_draw_char(int x, int y, Byte ch, Byte c0, Byte c1, Byte ext, Byte dw, Byte dh, Byte ul);
 static void vpp_update_screen(void);

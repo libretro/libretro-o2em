@@ -2,6 +2,7 @@
 #define WRAP_H
 
 #include <unistd.h>
+
 #define INLINE static inline
 #define rest(a) usleep(a)
 #define keypressed() 0
@@ -15,7 +16,6 @@ typedef struct
    int h;
    int pitch;
    int depth;   
-    
 }BITMAP;
 
 typedef struct

@@ -66,7 +66,8 @@ static int does_file_exist(const char *filename)
    return result == 0;
 }
 
-static long filesize(FILE *stream){
+static long filesize(FILE *stream)
+{
    long curpos, length;
    curpos = ftell(stream);
    fseek(stream, 0L, SEEK_END);
@@ -148,17 +149,22 @@ static void load_bios(const char *biosname){
    }
 }
 
-static void load_cart(const char *file){
+static void load_cart(const char *file)
+{
    FILE *fn;
    long l;
    int i, nb;
 
    app_data.crc = crc32_file(file);
-   if (app_data.crc == 0xAFB23F89) app_data.exrom = 1;  /* Musician */
-   if (app_data.crc == 0x3BFEF56B) app_data.exrom = 1;  /* Four in 1 Row! */
-   if (app_data.crc == 0x9B5E9356) app_data.exrom = 1;  /* Four in 1 Row! (french) */
+   if (app_data.crc == 0xAFB23F89)
+      app_data.exrom = 1;  /* Musician */
+   if (app_data.crc == 0x3BFEF56B)
+      app_data.exrom = 1;  /* Four in 1 Row! */
+   if (app_data.crc == 0x9B5E9356)
+      app_data.exrom = 1;  /* Four in 1 Row! (french) */
 
-   if (((app_data.crc == 0x975AB8DA) || (app_data.crc == 0xE246A812)) && (!app_data.debug)) {
+   if (((app_data.crc == 0x975AB8DA) || (app_data.crc == 0xE246A812)) && (!app_data.debug))
+   {
       fprintf(stderr,"Error: file %s is an incomplete ROM dump\n",file_v);
       exit(EXIT_FAILURE);
    }
@@ -177,36 +183,48 @@ static void load_cart(const char *file){
    }
 
    /* special MegaCART design by Soeren Gust */
-   if ((l == 32768) || (l == 65536) || (l == 131072) || (l == 262144) || (l == 524288) || (l == 1048576)) {
+   if ((l == 32768) || (l == 65536) || (l == 131072) || (l == 262144) || (l == 524288) || (l == 1048576))
+   {
       app_data.megaxrom = 1;
       app_data.bank = 1;
       megarom = malloc(1048576);
-      if (megarom == NULL) {
+
+      if (megarom == NULL)
+      {
          fprintf(stderr, "Out of memory loading %s\n", file);
          exit(EXIT_FAILURE);
       }
-      if (fread(megarom, l, 1, fn) != 1) {
+      if (fread(megarom, l, 1, fn) != 1)
+      {
          fprintf(stderr,"Error loading %s\n",file);
          exit(EXIT_FAILURE);
       }
 
       /* mirror shorter files into full megabyte */
-      if (l < 65536) memcpy(megarom+32768,megarom,32768);
-      if (l < 131072) memcpy(megarom+65536,megarom,65536);
-      if (l < 262144) memcpy(megarom+131072,megarom,131072);
-      if (l < 524288) memcpy(megarom+262144,megarom,262144);
-      if (l < 1048576) memcpy(megarom+524288,megarom,524288);
+      if (l < 65536)
+         memcpy(megarom+32768,megarom,32768);
+      if (l < 131072)
+         memcpy(megarom+65536,megarom,65536);
+      if (l < 262144)
+         memcpy(megarom+131072,megarom,131072);
+      if (l < 524288)
+         memcpy(megarom+262144,megarom,262144);
+      if (l < 1048576)
+         memcpy(megarom+524288,megarom,524288);
       /* start in bank 0xff */
       memcpy(&rom_table[0][1024], megarom + 4096*255 + 1024, 3072);
       printf("MegaCart %ldK", l / 1024);
       nb = 1;
-   } else if (((l % 3072) == 0))
+   }
+   else if (((l % 3072) == 0))
    {
       app_data.three_k = 1;
       nb = l/3072;
 
-      for (i=nb-1; i>=0; i--) {
-         if (fread(&rom_table[i][1024],3072,1,fn) != 1) {
+      for (i=nb-1; i>=0; i--)
+      {
+         if (fread(&rom_table[i][1024],3072,1,fn) != 1)
+         {
             fprintf(stderr,"Error loading %s\n",file);
             exit(EXIT_FAILURE);
          }
@@ -217,21 +235,28 @@ static void load_cart(const char *file){
 
       nb = l/2048;
 
-      if ((nb == 2) && (app_data.exrom)) {
- 
-         if (fread(&extROM[0], 1024,1,fn) != 1) {
+      if ((nb == 2) && (app_data.exrom))
+      {
+
+         if (fread(&extROM[0], 1024,1,fn) != 1)
+         {
             fprintf(stderr,"Error loading %s\n",file);
             exit(EXIT_FAILURE);
          }
-         if (fread(&rom_table[0][1024],3072,1,fn) != 1) {
+         if (fread(&rom_table[0][1024],3072,1,fn) != 1)
+         {
             fprintf(stderr,"Error loading %s\n",file);
             exit(EXIT_FAILURE);
          }
          printf("3K EXROM");
 
-      } else {
-         for (i=nb-1; i>=0; i--) {
-            if (fread(&rom_table[i][1024],2048,1,fn) != 1) {
+      }
+      else
+      {
+         for (i=nb-1; i>=0; i--)
+         {
+            if (fread(&rom_table[i][1024],2048,1,fn) != 1)
+            {
                fprintf(stderr,"Error loading %s\n",file);
                exit(EXIT_FAILURE);
             }
@@ -261,7 +286,7 @@ void update_joy(void)
 {
 }
 
-static void update_input()
+static void update_input(void)
 {
    if (!input_poll_cb)
       return;
@@ -349,7 +374,8 @@ void retro_get_system_info(struct retro_system_info *info)
 void retro_get_system_av_info(struct retro_system_av_info *info)
 {
    memset(info, 0, sizeof(*info));
-   info->timing.fps            = evblclk == EVBLCLK_NTSC ? 60 : 50;
+
+   info->timing.fps            = (evblclk == EVBLCLK_NTSC) ? 60 : 50;
    info->timing.sample_rate    = 44100;
    info->geometry.base_width   = EMUWIDTH;
    info->geometry.base_height  = EMUHEIGHT;
@@ -595,9 +621,10 @@ void retro_run(void)
 
    video_cb(mbmp, EMUWIDTH, EMUHEIGHT, TEX_WIDTH << 1);
    
-   int length = evblclk == EVBLCLK_NTSC ? 44100/60 : 44100/50;
-   // Convert 8u to 16s
-   for(i = 0; i != length; i ++)
+   int length = (evblclk == EVBLCLK_NTSC) ? 44100 / 60 : 44100 / 50;
+
+   /* Convert 8u to 16s */
+   for(i = 0; i < length; i++)
    {
       int16_t sample16 = (soundBuffer[i] << 8) - 32768;
       int16_t frame[2] = {sample16, sample16};

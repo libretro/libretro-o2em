@@ -25,9 +25,6 @@
 #include "vmachine.h"
 #include "audio.h"
 
-extern int SND;
-extern uint8_t soundBuffer[1056];
-
 #define SAMPLE_RATE 44100
 #define PERIOD1 11
 #define PERIOD2 44
@@ -39,6 +36,8 @@ extern uint8_t soundBuffer[1056];
 #define AUD_D1	  0xA8
 #define AUD_D2	  0xA9
 
+extern int SND;
+extern uint8_t soundBuffer[SOUND_BUFFER_LEN];
 
 int sound_IRQ;
 
@@ -46,8 +45,26 @@ static double flt_a=0.0, flt_b=0.0;
 static unsigned char flt_prv = 0;
 
 
-static void filter(unsigned char *buf, unsigned long len);
+static void filter(unsigned char *buffer, unsigned long len)
+{
+	static unsigned char buf[SOUND_BUFFER_LEN];
+	int t;
+	unsigned long i;
+	if (len>SOUND_BUFFER_LEN)
+      return;
+	memcpy(buf,buffer,len);	
 
+	for (i=0; i<len; i++)
+   {
+		t = (i==0)?(buf[0]-flt_prv):(buf[i]-buf[i-1]);
+		if (t) flt_b = (double)t;
+		flt_a += flt_b/4.0 - flt_a/80.0;
+		flt_b -= flt_b/4.0;
+		if ((flt_a>255.0)||(flt_a<-255.0)) flt_a=0.0;
+		buffer[i] = (unsigned char)((flt_a+255.0)/2.0);
+	}
+	flt_prv = buf[len-1];
+}
 
 void audio_process(unsigned char *buffer)
 {
@@ -64,7 +81,8 @@ void audio_process(unsigned char *buffer)
    enabled = VDCwrite[AUD_CTRL] & 0x80;
    rndbit = (enabled && noise) ? (rand()%2) : 0;
 
-   while (pnt < SOUND_BUFFER_LEN) {
+   while (pnt < SOUND_BUFFER_LEN)
+   {
       pos = (tweakedaudio) ? (pnt/3) : (MAXLINES-1);
       volume = AudioVector[pos] & 0x0F;
       enabled = AudioVector[pos] & 0x80;
@@ -74,19 +92,22 @@ void audio_process(unsigned char *buffer)
       buffer[pnt++] = (enabled) ? ((aud_data & 0x01)^rndbit) * (0x10 * volume) : 0;
       cnt++;
 
-      if (cnt >= period) {
+      if (cnt >= period)
+      {
          cnt=0;
          aud_data = (re_circ) ? ((aud_data >> 1) | ((aud_data & 1) << 23)) : (aud_data >> 1);
          rndbit = (enabled && noise) ? (rand()%2) : 0;
 
-         if (enabled && intena && (!sound_IRQ)) {
+         if (enabled && intena && (!sound_IRQ))
+         {
             sound_IRQ = 1;
             ext_IRQ();
          }		
       }
    }
 
-   if (app_data.filter) filter(buffer, SOUND_BUFFER_LEN);	
+   if (app_data.filter)
+      filter(buffer, SOUND_BUFFER_LEN);	
 }
 
 
@@ -110,16 +131,18 @@ void init_audio(void)
 }
 
 
-void init_sound_stream(void){
-	int vol;
-	if (app_data.sound_en){
-		if (app_data.filter)
-			vol = (255*app_data.svolume)/100;
-		else
-			vol = (255*app_data.svolume)/200;
-		flt_a = flt_b = 0.0;
-		flt_prv = 0;
-	}
+void init_sound_stream(void)
+{
+   int vol;
+   if (app_data.sound_en)
+   {
+      if (app_data.filter)
+         vol = (255*app_data.svolume)/100;
+      else
+         vol = (255*app_data.svolume)/200;
+      flt_a = flt_b = 0.0;
+      flt_prv = 0;
+   }
 }
 
 
@@ -131,24 +154,6 @@ void mute_audio(void)
 void close_audio(void)
 {
 	app_data.sound_en=0;
-}
-
-
-static void filter(unsigned char *buffer, unsigned long len){
-	static unsigned char buf[SOUND_BUFFER_LEN];
-	int t;
-	unsigned long i;
-	if (len>SOUND_BUFFER_LEN) return;
-	memcpy(buf,buffer,len);	
-	for (i=0; i<len; i++){
-		t = (i==0)?(buf[0]-flt_prv):(buf[i]-buf[i-1]);
-		if (t) flt_b = (double)t;
-		flt_a += flt_b/4.0 - flt_a/80.0;
-		flt_b -= flt_b/4.0;
-		if ((flt_a>255.0)||(flt_a<-255.0)) flt_a=0.0;
-		buffer[i] = (unsigned char)((flt_a+255.0)/2.0);
-	}
-	flt_prv = buf[len-1];
 }
 
 

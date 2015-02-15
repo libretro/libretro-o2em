@@ -1575,7 +1575,6 @@ void cpu_exec(void)
       if ((mstate==1) && (master_clk > evblclk))
       {
          handle_evbl();
-         RLOOP=0;
          if (app_data.crc == 0xA7344D1F) handle_evbll(); /* Atlantis */
          break;
       }

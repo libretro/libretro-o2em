@@ -114,91 +114,63 @@ void run(void){
 }
 
 
-void handle_vbl(void){
-
-	if (!app_data.debug) {
-
-#ifndef __LIBRETRO__
-		handle_key();
-#else
+void handle_vbl(void)
+{
+	if (!app_data.debug)
+   {
 		update_joy();
-#endif
-
 		update_audio();
-
-#ifndef __LIBRETRO__		
 		update_voice();
-#else
-		//TODO
-#endif
-
 	}
 	draw_region();
 	ext_IRQ();
 	mstate = 1;
 }
 
+extern int RLOOP;
 
-void handle_evbl(void){
-	static long last=0;
-	static int rest_cnt=0;
-	int i;
+void handle_evbl(void)
+{
+   static int rest_cnt=0;
+   int i;
+
+   i = (15*app_data.speed/100);
+   rest_cnt = (rest_cnt+1)%(i<5?5:i);
+#ifdef ALLEGRO_WINDOWS
+   if (rest_cnt==0) rest(1);
+#endif
+   last_line=0;
+   master_clk -= evblclk;
+   frame++;
+   if (!app_data.debug) {
+      finish_display();
+   }
+
+   if (app_data.crc == 0xA7344D1F)
+   {for (i=0; i<140; i++)
+      {
+         ColorVector[i] = (VDCwrite[0xA3] & 0x7f) | (p1 & 0x80);
+         AudioVector[i] = VDCwrite[0xAA];
+      }      
+   }/*Atlantis*/
+   else
+      for (i=0; i<MAXLINES; i++)  {
+         ColorVector[i] = (VDCwrite[0xA3] & 0x7f) | (p1 & 0x80);
+         AudioVector[i] = VDCwrite[0xAA];
+      }
 
 
-	#ifndef ALLEGRO_DOS
-	yield_timeslice();
-	#endif
-	i = (15*app_data.speed/100);
-	rest_cnt = (rest_cnt+1)%(i<5?5:i);
-	#ifdef ALLEGRO_WINDOWS
-	if (rest_cnt==0) rest(1);
-	#endif
-	last_line=0;
-	master_clk -= evblclk;
-	frame++;
-	if (!app_data.debug) {
-		finish_display();
-	}
+   if (key2vcnt++ > 10) {
+      key2vcnt=0;
+      for (i=0; i<128; i++) key2[i] = 0;
+      dbstick1 = dbstick2 = 0;
+   }
+   if (app_data.limit)
+   {
+      RLOOP=0;
+   }
+   mstate=0;
 
-    if (app_data.crc == 0xA7344D1F)
-                      {for (i=0; i<140; i++)
-                           {
-		                   ColorVector[i] = (VDCwrite[0xA3] & 0x7f) | (p1 & 0x80);
-		                   AudioVector[i] = VDCwrite[0xAA];
-                           }      
-                      }/*Atlantis*/
-                      else
-                      for (i=0; i<MAXLINES; i++)  {
-                      ColorVector[i] = (VDCwrite[0xA3] & 0x7f) | (p1 & 0x80);
-	                  AudioVector[i] = VDCwrite[0xAA];
-                      }
-
-                      
-    if (key2vcnt++ > 10) {
-		key2vcnt=0;
-		for (i=0; i<128; i++) key2[i] = 0;
-		dbstick1 = dbstick2 = 0;
-	}
-	if (app_data.limit) {
-		long d,f;
-		d = (TICKSPERSEC*100)/(app_data.speed*fps);
-		f = ((d-gettimeticks()+last)*1000)/TICKSPERSEC;
-		if (f>0) {
-			#ifdef ALLEGRO_WINDOWS
-				f = f-(f%10);					
-				if (f>5) rest(f-5);
-			#else
-				#ifndef ALLEGRO_DOS
-					yield_timeslice();
-
-				#endif
-			#endif
-		}
-		while (gettimeticks() - last < d);
-		last = gettimeticks();
-	}
-	mstate=0;
-    
 }
 
 void handle_evbll(void){
@@ -206,9 +178,6 @@ void handle_evbll(void){
 	static int rest_cnt=0;
 	int i;
 
-	#ifndef ALLEGRO_DOS
-		yield_timeslice();
-	#endif
 	i = (15*app_data.speed/100);
 	rest_cnt = (rest_cnt+1)%(i<5?5:i);
 	#ifdef ALLEGRO_WINDOWS
@@ -227,23 +196,10 @@ void handle_evbll(void){
 		for (i=0; i<128; i++) key2[i] = 0;
 		dbstick1 = dbstick2 = 0;
 	}
-	if (app_data.limit) {
-		long d,f;
-		d = (TICKSPERSEC*100)/(app_data.speed*fps);
-		f = ((d-gettimeticks()+last)*1000)/TICKSPERSEC;
-		if (f>0) {
-			#ifdef ALLEGRO_WINDOWS
-				f = f-(f%10);					
-				if (f>5) rest(f-5);
-			#else
-				#ifndef ALLEGRO_DOS
-					yield_timeslice();
-				#endif
-			#endif
-		}
-		while (gettimeticks() - last < d);
-		last = gettimeticks();
-	}
+	if (app_data.limit)
+   {
+      RLOOP=0;
+   }
 	mstate=0;	
 }
 

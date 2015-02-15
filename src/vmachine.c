@@ -30,14 +30,9 @@
 #include "voice.h"
 #include "vmachine.h"
 
-#ifndef __LIBRETRO__
-#include "allegro.h"
-#else
 #include "wrapalleg.h"
 #include "libretro.h"
 extern unsigned char key[512];
-#endif
-
 
 static Byte x_latch,y_latch;
 static int romlatch=0;

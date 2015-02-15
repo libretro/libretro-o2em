@@ -452,7 +452,8 @@ Byte ext_read(ADDRESS adr){
 }
 
 
-Byte in_bus(void){
+Byte in_bus(void)
+{
 	Byte si=0,d=0,mode=0,jn=0,sticknum=0;
 
 	if ((p1 & 0x08) && (p1 & 0x10)) {

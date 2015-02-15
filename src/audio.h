@@ -9,7 +9,6 @@ void mute_audio(void);
 
 
 extern int sound_IRQ;
-extern FILE *sndlog;
 
 
 #endif

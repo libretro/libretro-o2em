@@ -74,7 +74,6 @@ void debug(void) {
 #ifndef __LIBRETRO__
 	set_display_switch_mode(SWITCH_BACKGROUND);
 #endif
-	if (sndlog) fclose(sndlog);
 
 	#ifdef ALLEGRO_WINDOWS
 	FreeConsole();
@@ -156,7 +155,6 @@ void debug(void) {
 			printf("md # - display memory #\n");
 			printf("c # - change memory from location #\n");
 			
-			printf("sndlog [file] - log raw sound to file\n");
 			printf("ss [file] - save state [to file]\n");
 			printf("ls [file] - load state [from file]\n");
 			
@@ -783,24 +781,7 @@ void debug(void) {
 				nMemDump = ad+10*16;
 				printf("\n\n");
 			}
-		} else if (!strcmp(tok,"sndlog")) {
-			if (app_data.sound_en) {
-				tok=strtok(NULL," ");
-				if (tok){
-					char file[80]="";
-					sscanf(tok,"%79s",file);
-					if (strlen(file)>0){
-						sndlog = fopen(file,"wb");
-						if (sndlog)
-							printf("Sound log file created\n");
-						else
-							printf("Sound log file creation failed\n");
-					}
-				}
-				printf("\n");
-			} else printf("Sound emulation disabled\n\n");
-
-		} else if (!strcmp(tok,"ss")) {
+		}else if (!strcmp(tok,"ss")) {
 			tok=strtok(NULL," ");
 			if (tok){
 				char file[80]="";

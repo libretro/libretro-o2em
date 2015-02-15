@@ -26,17 +26,12 @@
 #include "keyboard.h"
 #include "voice.h"
 
-#ifndef __LIBRETRO__
-#include "allegro.h"
-#else
 #include "wrapalleg.h"
 
 #ifdef AND
 #warning android log
 #include <android/log.h>
 #define printf(...) __android_log_print(ANDROID_LOG_DEBUG, "TAG", __VA_ARGS__)
-#endif
-
 #endif
 
 #include "score.h"
@@ -177,20 +172,8 @@ int omain(int argc, char *argv[]){
 		exit(EXIT_FAILURE);
 	}
 
-#ifdef __LIBRETRO__
-sprintf(statefile,"%s.state\0",file);
-#endif
 	printf("Starting emulation ...\n");
-#ifndef __LIBRETRO__
-	allegro_init();
-	install_timer();
-#endif
 	init_audio();
-
-#ifndef __LIBRETRO__
-	printf("Using Allegro %s\n",allegro_id);
-#endif 
-
 
 /********************** ROMs if Launcher running... */
     k = strchr(romdir, '/'); 

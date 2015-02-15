@@ -20,11 +20,7 @@
 #include "cpu.h"
 #include "voice.h"
 
-#ifndef __LIBRETRO__
-#include "allegro.h"
-#else
 #define SAMPLE signed short
-#endif
 
 static SAMPLE *voices[9][128];
 static int voice_bank=0;

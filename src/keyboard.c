@@ -164,7 +164,8 @@ int joykeystab[128];
 int syskeys[8] = {0,0,0,0,0,0,0,0};
 
 
-void set_defjoykeys(int jn, int sc){
+void set_defjoykeys(int jn, int sc)
+{
 	//if (sc)
 	//	set_joykeys(jn,RETROK_w,RETROK_s,RETROK_a,RETROK_d,RETROK_SPACE);
 	//else
@@ -172,8 +173,9 @@ void set_defjoykeys(int jn, int sc){
 }
 
 	
-void set_defsystemkeys(void){
-		set_systemkeys(RETROK_F12,RETROK_F1,RETROK_F4,RETROK_F5,RETROK_F8,RETROK_F2,RETROK_F3,RETROK_F6);
+void set_defsystemkeys(void)
+{
+   set_systemkeys(RETROK_F12,RETROK_F1,RETROK_F4,RETROK_F5,RETROK_F8,RETROK_F2,RETROK_F3,RETROK_F6);
 }
 
 
@@ -213,56 +215,56 @@ void set_systemkeys(int k_quit,int k_pause,int k_debug,int k_reset,int k_screenc
 #ifdef __LIBRETRO__
 unsigned char key[256*2];
 
-void rloadstate(){
-
-		int stateError;
-		if ((stateError=loadstate(app_data.statefile))==0)
-		{
-			printf("Savefile loaded.\n");
-		}
-		else if (stateError>=199)
-		{
-			if (stateError==199) printf("Wrong ROM-File for Savefile.\n");
-			else if (stateError==200+ROM_O2) printf("Wrong BIOS for Savefile: O2ROM needed.\n");
-			else if (stateError==200+ROM_G7400) printf("Wrong BIOS for Savefile: G7400 ROM needed.\n");
-			else if (stateError==200+ROM_C52) printf("Wrong BIOS for Savefile: C52 ROM needed.\n");
-			else if (stateError==200+ROM_JOPAC) printf("Wrong BIOS for Savefile: JOPAC ROM needed.\n");
-			else printf("Wrong BIOS for Savefile: UNKNOWN ROM needed.\n");
-		}
+void rloadstate()
+{
+   int stateError;
+   if ((stateError=loadstate(app_data.statefile))==0)
+   {
+      printf("Savefile loaded.\n");
+   }
+   else if (stateError>=199)
+   {
+      if (stateError==199) printf("Wrong ROM-File for Savefile.\n");
+      else if (stateError==200+ROM_O2) printf("Wrong BIOS for Savefile: O2ROM needed.\n");
+      else if (stateError==200+ROM_G7400) printf("Wrong BIOS for Savefile: G7400 ROM needed.\n");
+      else if (stateError==200+ROM_C52) printf("Wrong BIOS for Savefile: C52 ROM needed.\n");
+      else if (stateError==200+ROM_JOPAC) printf("Wrong BIOS for Savefile: JOPAC ROM needed.\n");
+      else printf("Wrong BIOS for Savefile: UNKNOWN ROM needed.\n");
+   }
 
 }
 
-void rsavestate(){
-
-		if (savestate(app_data.statefile)==0)
-		{
-			printf("Savefile saved.\n");
-		}
+void rsavestate()
+{
+   if (savestate(app_data.statefile)==0)
+      printf("Savefile saved.\n");
 }
 
-void rscore(){
-
+void rscore()
+{
 	set_score(app_data.scoretype, app_data.scoreaddress, app_data.default_highscore);
 }
 
 #endif
 
-void handle_key(void){
-
+void handle_key(void)
+{
 	if (NeedsPoll)
 		 poll_keyboard();
 
-	if (key[syskeys[0]] || key[RETROK_ESCAPE]) {
-		do {
-			rest(5);
-			if (NeedsPoll)
-				poll_keyboard();
+	if (key[syskeys[0]] || key[RETROK_ESCAPE])
+   {
+      do {
+         rest(5);
+         if (NeedsPoll)
+            poll_keyboard();
 
-		} while (key[syskeys[0]] || key[RETROK_ESCAPE]);
-		key_done=1;
-	}
+      } while (key[syskeys[0]] || key[RETROK_ESCAPE]);
+      key_done=1;
+   }
 
-	if (key[syskeys[1]]) {
+	if (key[syskeys[1]])
+   {
 		do {
 			rest(5);
 			if (NeedsPoll)
@@ -279,17 +281,18 @@ void handle_key(void){
 			if (NeedsPoll)
 				poll_keyboard();
 
-			if (key[RETROK_LALT] && key[RETROK_RETURN]) {
-				app_data.fullscreen = app_data.fullscreen ? 0 : 1;
-				grmode();
-				abaut();
-				do {
-					rest(5);
-					if (NeedsPoll)
-						poll_keyboard();
+			if (key[RETROK_LALT] && key[RETROK_RETURN])
+         {
+            app_data.fullscreen = app_data.fullscreen ? 0 : 1;
+            grmode();
+            abaut();
+            do {
+               rest(5);
+               if (NeedsPoll)
+                  poll_keyboard();
 
-				} while (key[RETROK_RETURN]);
-			}		
+            } while (key[RETROK_RETURN]);
+         }		
 
 		} while ((!key[syskeys[1]]) && (!key[RETROK_ESCAPE]) && (!key[syskeys[0]]));
 		do {
@@ -301,46 +304,6 @@ void handle_key(void){
 		
 		init_sound_stream();
 	}		
-
-	if (key[syskeys[5]])
-	{
-		if (savestate(app_data.statefile)==0)
-		{
-			display_msg("Savefile saved.",5);
-		}
-		do {
-			rest(5);
-			if (NeedsPoll)
-				poll_keyboard();
-
-		} while (key[syskeys[5]]);
-
-	}
-
-	/* LOAD STATE */
-	if (key[syskeys[6]])
-	{
-		int stateError;
-		if ((stateError=loadstate(app_data.statefile))==0)
-		{
-			display_msg("Savefile loaded.",5);
-		}
-		else if (stateError>=199)
-		{
-			if (stateError==199) display_msg("Wrong ROM-File for Savefile.",5);
-			else if (stateError==200+ROM_O2) display_msg("Wrong BIOS for Savefile: O2ROM needed.",5);
-			else if (stateError==200+ROM_G7400) display_msg("Wrong BIOS for Savefile: G7400 ROM needed.",5);
-			else if (stateError==200+ROM_C52) display_msg("Wrong BIOS for Savefile: C52 ROM needed.",5);
-			else if (stateError==200+ROM_JOPAC) display_msg("Wrong BIOS for Savefile: JOPAC ROM needed.",5);
-			else display_msg("Wrong BIOS for Savefile: UNKNOWN ROM needed.",5);
-		}
-		do {
-			rest(5);
-			if (NeedsPoll)
-				poll_keyboard();
-
-		} while (key[syskeys[6]]);
-	}
 
 	if (key[syskeys[2]]) key_debug=1;
 
@@ -359,29 +322,17 @@ void handle_key(void){
 
     /* SET HIGHSCORE */
 	if (key[syskeys[7]])
-	{
 		set_score(app_data.scoretype, app_data.scoreaddress, app_data.default_highscore);
-	}
-
-	if (key[RETROK_LALT] && key[RETROK_RETURN]) {
-		app_data.fullscreen = app_data.fullscreen ? 0 : 1;
-		grmode();
-		do {
-			rest(5);
-			if (NeedsPoll)
-				poll_keyboard();
-
-		} while (key[RETROK_RETURN]);
-	}		
-
 }
 
 extern int joystick_data[2][5]; //Up, Down, Left, Right, "Action"
 
-uint8_t keyjoy(int jn){
+uint8_t keyjoy(int jn)
+{
 	uint8_t d;
 	d=0xFF;
-	if ((jn>=0) && (jn<=1)){
+	if ((jn>=0) && (jn<=1))
+   {
 #ifdef __LIBRETRO__
 		if (joystick_data[jn][0]) d &= 0xFE;
 		if (joystick_data[jn][1]) d &= 0xFB;
@@ -403,7 +354,8 @@ uint8_t keyjoy(int jn){
 }
 
 
-void init_keyboard(void){
+void init_keyboard(void)
+{
 	key_done=0;
 	key_debug=0;  
 

@@ -265,8 +265,7 @@ uint8_t read_t1(void){
      /*17*/
 	if ((h_clk > 16) || (master_clk > VBLCLK))
 		return 1;
-	else
-		return 0;
+   return 0;
 }
 
 
@@ -303,10 +302,8 @@ uint8_t read_P2(void){
 				}
 #else 
 //FIXME
-				if ( key[km] && (!joykeystab[km]) ) {
-
+				if ( key[km] && (!joykeystab[km]) )
 					so = i ^ 0x07;
-				}
 #endif
 			}
 		}
@@ -653,10 +650,13 @@ static void do_kluges(void){
 }
 
 
-int snapline(int pos, uint8_t reg, int t){
+int snapline(int pos, uint8_t reg, int t)
+{
 	int i;
-	if (pos<MAXLINES+MAXSNAP+MAXSNAP) {
-		for (i=0; i<mxsnap; i++){
+	if (pos<MAXLINES+MAXSNAP+MAXSNAP)
+   {
+		for (i=0; i<mxsnap; i++)
+      {
 			if (snapedlines[pos+MAXSNAP-i][reg][t]) return pos-i;
 			if (snapedlines[pos+MAXSNAP+i][reg][t]) return pos+i;
 		}

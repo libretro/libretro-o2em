@@ -802,11 +802,8 @@ void debug(void) {
 				}
 			}
 			printf("\n");
-
-		} else if (!strcmp(tok,"showfps")) {
-			show_fps=1;
-
-		} else if (!strcmp(tok,"c"))
+		}
+else if (!strcmp(tok,"c"))
 		{
 			int t;
 			tok=strtok(NULL," ");

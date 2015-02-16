@@ -20,7 +20,6 @@
 extern uint8_t coltab[];
 extern long clip_low;
 extern long clip_high;
-extern int show_fps;
 
 void init_display(void);
 void draw_display(void);

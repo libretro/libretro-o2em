@@ -79,8 +79,6 @@ uint8_t coltab[256];
 long clip_low;
 long clip_high;
 
-int show_fps=0;
-
 int wsize;
 
 static void create_cmap(void);

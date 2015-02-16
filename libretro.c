@@ -368,7 +368,7 @@ void retro_get_system_info(struct retro_system_info *info)
    memset(info, 0, sizeof(*info));
 	info->library_name = "O2EM";
 	info->library_version = "1.18";
-	info->need_fullpath = false;
+	info->need_fullpath = true;
 	info->valid_extensions = "bin";
 }
 

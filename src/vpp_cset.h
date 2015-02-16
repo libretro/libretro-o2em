@@ -1,6 +1,8 @@
 #ifndef __VPP_CSET_H
 #define __VPP_CSET_H
 
-extern Byte vpp_cset[2][1280];
+#include <stdint.h>
+
+extern uint8_t vpp_cset[2][1280];
 
 #endif

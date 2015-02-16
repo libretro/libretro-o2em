@@ -16,9 +16,9 @@
 
 
 #include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include "types.h"
 #include "cpu.h"
 #include "config.h"
 #include "vmachine.h"
@@ -35,12 +35,12 @@
 
 int NeedsPoll = 0;
 
-Byte keycode;
-Byte last_key;
-Byte new_int=0;	/* Is new interrupt installed */
+uint8_t keycode;
+uint8_t last_key;
+uint8_t new_int=0;	/* Is new interrupt installed */
 
-Byte key_done=0;
-Byte key_debug=0;
+uint8_t key_done=0;
+uint8_t key_debug=0;
 
 #define RETROK_TILDE 178
 
@@ -378,8 +378,8 @@ void handle_key(void){
 
 extern int joystick_data[2][5]; //Up, Down, Left, Right, "Action"
 
-Byte keyjoy(int jn){
-	Byte d;
+uint8_t keyjoy(int jn){
+	uint8_t d;
 	d=0xFF;
 	if ((jn>=0) && (jn<=1)){
 #ifdef __LIBRETRO__

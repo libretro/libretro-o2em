@@ -10,5 +10,7 @@
 #define ROM_JOPAC	4
 #define ROM_UNKNOWN	99
 
+#define MAXC 4096
+
 #endif
 

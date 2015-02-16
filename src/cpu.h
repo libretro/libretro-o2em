@@ -1,27 +1,27 @@
 #ifndef CPU_H
 #define CPU_H
 
-#include "types.h"
+#include <stdint.h>
 
-extern Byte acc;		/* Accumulator */
-extern ADDRESS pc;		/* Program counter */
+extern uint8_t acc;		/* Accumulator */
+extern uint16_t pc;		/* Program counter */
 extern long clk;		/* clock */
 
-extern Byte itimer;		/* Internal timer */
-extern Byte reg_pnt;	/* pointer to register bank */
-extern Byte timer_on;  /* 0=timer off/1=timer on */
-extern Byte count_on;  /* 0=count off/1=count on */
+extern uint8_t itimer;		/* Internal timer */
+extern uint8_t reg_pnt;	/* pointer to register bank */
+extern uint8_t timer_on;  /* 0=timer off/1=timer on */
+extern uint8_t count_on;  /* 0=count off/1=count on */
 
-extern Byte t_flag;		/* Timer flag */
+extern uint8_t t_flag;		/* Timer flag */
 
-extern Byte psw;		/* Processor status word */
-extern Byte sp;		/* Stack pointer (part of psw) */
+extern uint8_t psw;		/* Processor status word */
+extern uint8_t sp;		/* Stack pointer (part of psw) */
 
-extern Byte p1;		/* I/O port 1 */
-extern Byte p2;		/* I/O port 2 */
+extern uint8_t p1;		/* I/O port 1 */
+extern uint8_t p2;		/* I/O port 2 */
 
-extern Byte xirq_pend;
-extern Byte tirq_pend;
+extern uint8_t xirq_pend;
+extern uint8_t tirq_pend;
 
 void init_cpu(void);
 void cpu_exec(void);
@@ -29,34 +29,34 @@ void ext_IRQ(void);
 void tim_IRQ(void);
 void make_psw_debug(void);
 
-Byte acc;		/* Accumulator */
-ADDRESS pc;		/* Program counter */
+uint8_t acc;		/* Accumulator */
+uint16_t pc;		/* Program counter */
 long clk;		/* clock */
 
-Byte itimer;	/* Internal timer */
-Byte reg_pnt;	/* pointer to register bank */
-Byte timer_on;  /* 0=timer off/1=timer on */
-Byte count_on;  /* 0=count off/1=count on */
-Byte psw;		/* Processor status word */
-Byte sp;		/* Stack pointer (part of psw) */
+uint8_t itimer;	/* Internal timer */
+uint8_t reg_pnt;	/* pointer to register bank */
+uint8_t timer_on;  /* 0=timer off/1=timer on */
+uint8_t count_on;  /* 0=count off/1=count on */
+uint8_t psw;		/* Processor status word */
+uint8_t sp;		/* Stack pointer (part of psw) */
 
-Byte p1;		/* I/O port 1 */
-Byte p2; 		/* I/O port 2 */
-Byte xirq_pend; /* external IRQ pending */
-Byte tirq_pend; /* timer IRQ pending */
-Byte t_flag;	/* Timer flag */
+uint8_t p1;		/* I/O port 1 */
+uint8_t p2; 		/* I/O port 2 */
+uint8_t xirq_pend; /* external IRQ pending */
+uint8_t tirq_pend; /* timer IRQ pending */
+uint8_t t_flag;	/* Timer flag */
 
-ADDRESS lastpc;
-ADDRESS A11;		/* PC bit 11 */
-ADDRESS A11ff;
-Byte bs; 		/* Register Bank (part of psw) */
-Byte f0;			/* Flag Bit (part of psw) */
-Byte f1;			/* Flag Bit 1 */
-Byte ac;			/* Aux Carry (part of psw) */
-Byte cy;			/* Carry flag (part of psw) */
-Byte xirq_en;	/* external IRQ's enabled */
-Byte tirq_en;	/* Timer IRQ enabled */
-Byte irq_ex;		/* IRQ executing */
+uint16_t lastpc;
+uint16_t A11;		/* PC bit 11 */
+uint16_t A11ff;
+uint8_t bs; 		/* Register Bank (part of psw) */
+uint8_t f0;			/* Flag Bit (part of psw) */
+uint8_t f1;			/* Flag Bit 1 */
+uint8_t ac;			/* Aux Carry (part of psw) */
+uint8_t cy;			/* Carry flag (part of psw) */
+uint8_t xirq_en;	/* external IRQ's enabled */
+uint8_t tirq_en;	/* Timer IRQ enabled */
+uint8_t irq_ex;		/* IRQ executing */
 
 int master_count;
 

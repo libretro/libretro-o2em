@@ -15,10 +15,10 @@
  */
 
 
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include "types.h"
 #include "vmachine.h"
 #include "config.h"
 #include "keyboard.h"
@@ -65,17 +65,17 @@ static long colortable[2][16]={
 
 
 /* Collision buffer */
-static Byte *col = NULL;
+static uint8_t *col = NULL;
 
 static PALETTE colors,oldcol;
 
 /* The pointer to the graphics buffer */
-static Byte *vscreen = NULL;
+static uint8_t *vscreen = NULL;
 
 static BITMAP *bmp, *bmpcache;
 static int cached_lines[MAXLINES];
 
-Byte coltab[256];
+uint8_t coltab[256];
 
 long clip_low;
 long clip_high;
@@ -85,10 +85,10 @@ int show_fps=0;
 int wsize;
 
 static void create_cmap(void);
-static void draw_char(Byte ypos,Byte xpos,Byte chr,Byte col);
-static void draw_quad(Byte ypos, Byte xpos, Byte cp0l, Byte cp0h, Byte cp1l, Byte cp1h, Byte cp2l, Byte cp2h, Byte cp3l, Byte cp3h);
+static void draw_char(uint8_t ypos,uint8_t xpos,uint8_t chr,uint8_t col);
+static void draw_quad(uint8_t ypos, uint8_t xpos, uint8_t cp0l, uint8_t cp0h, uint8_t cp1l, uint8_t cp1h, uint8_t cp2l, uint8_t cp2h, uint8_t cp3l, uint8_t cp3h);
 static void draw_grid(void);
-INLINE void mputvid(unsigned int ad, unsigned int len, Byte d, Byte c);
+INLINE void mputvid(unsigned int ad, unsigned int len, uint8_t d, uint8_t c);
 
 
 void draw_region(void){
@@ -241,7 +241,7 @@ void clearscr(void){
 }
 
 
-INLINE void mputvid(unsigned int ad, unsigned int len, Byte d, Byte c){
+INLINE void mputvid(unsigned int ad, unsigned int len, uint8_t d, uint8_t c){
 	if ((ad > (unsigned long)clip_low) && (ad < (unsigned long)clip_high)) {
 	    unsigned int i;
 		if (((len & 3)==0) && (sizeof(unsigned long) == 4)) {
@@ -267,9 +267,9 @@ INLINE void mputvid(unsigned int ad, unsigned int len, Byte d, Byte c){
 
 static void draw_grid(void){
 	unsigned int pnt, pn1;
-	Byte mask,d;
+	uint8_t mask,d;
 	int j,i,x,w;
-	Byte color;
+	uint8_t color;
 
 	if (VDCwrite[0xA0] & 0x40) {
 		for(j=0; j<9; j++) {
@@ -448,7 +448,7 @@ void clear_collision(void){
 
 void draw_display(void){
 	int i,j,x,sm,t;
-	Byte y,b,d1,cl,c;
+	uint8_t y,b,d1,cl,c;
 
     unsigned int pnt,pnt2;
 
@@ -524,10 +524,10 @@ void draw_display(void){
 }
 
 
-void draw_char(Byte ypos,Byte xpos,Byte chr,Byte col){
+void draw_char(uint8_t ypos,uint8_t xpos,uint8_t chr,uint8_t col){
 
 	int j,c;
-	Byte cl,d1;
+	uint8_t cl,d1;
 	int y,b,n;
 	unsigned int pnt;
 
@@ -571,12 +571,12 @@ void draw_char(Byte ypos,Byte xpos,Byte chr,Byte col){
  * This code is quite slow and needs a rewrite by somebody with more experience
  * than I (sgust) have */
 
-void draw_quad(Byte ypos, Byte xpos, Byte cp0l, Byte cp0h, Byte cp1l, Byte cp1h, Byte cp2l, Byte cp2h, Byte cp3l, Byte cp3h)
+void draw_quad(uint8_t ypos, uint8_t xpos, uint8_t cp0l, uint8_t cp0h, uint8_t cp1l, uint8_t cp1h, uint8_t cp2l, uint8_t cp2h, uint8_t cp3l, uint8_t cp3h)
 {
 	/* char set pointers */
 	int chp[4];
 	/* colors */
-	Byte col[4];
+	uint8_t col[4];
 	/* pointer into screen bitmap */
 	unsigned int pnt;
 	/* offset into current line */
@@ -723,16 +723,16 @@ void init_display(void) {
 		exit(EXIT_FAILURE);
 	}
 #ifndef __LIBRETRO__
-	vscreen = (Byte *) bmp->dat;
+	vscreen = (uint8_t *) bmp->dat;
 #else
-	vscreen = (Byte *) &bmp->line[0];
+	vscreen = (uint8_t *) &bmp->line[0];
 #endif
 
 #ifndef __LIBRETRO__
 	clear(bmp);
 	clear(bmpcache);
 #endif
-	col = (Byte *)malloc(BMPW*BMPH);
+	col = (uint8_t *)malloc(BMPW*BMPH);
 	if (!col) {
 		fprintf(stderr,"Could not allocate memory for collision buffer.\n");
 		free(vscreen);

@@ -15,11 +15,10 @@
  */
 
 
-#include "types.h"
+#include <stdint.h>
 #include "vpp_cset.h"
 
-
-Byte vpp_cset[2][1280] = {
+uint8_t vpp_cset[2][1280] = {
 	{
 	/* Alphanumeric */
 	0x00,0x38,0x44,0x40,0x20,0x10,0x00,0x10,0x00,0x00,

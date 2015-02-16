@@ -15,11 +15,11 @@
  */
 
 
+#include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
 #include "audio.h"
-#include "types.h"
 #include "cpu.h"
 #include "keyboard.h"
 #include "config.h"
@@ -34,18 +34,18 @@
 #include "libretro.h"
 extern unsigned char key[512];
 
-static Byte x_latch,y_latch;
+static uint8_t x_latch,y_latch;
 static int romlatch=0;
-static Byte line_count;
+static uint8_t line_count;
 static int fps=FPS_NTSC;
 
-static Byte snapedlines[MAXLINES+2*MAXSNAP][256][2];
+static uint8_t snapedlines[MAXLINES+2*MAXSNAP][256][2];
 
 int evblclk=EVBLCLK_NTSC;
 
 struct resource app_data;
 int frame=0;
-Byte dbstick1,dbstick2;
+uint8_t dbstick1,dbstick2;
 
 int int_clk; 	/* counter for length of /INT pulses */
 int master_clk;	/* Master clock */
@@ -63,16 +63,16 @@ int mxsnap=2;
 int sproff=0;
 int tweakedaudio=0;
 
-Byte rom_table[8][4096];
+uint8_t rom_table[8][4096];
 
-Byte intRAM[64];
-Byte extRAM[256];
-Byte extROM[1024];
-Byte VDCwrite[256];
-Byte ColorVector[MAXLINES];
-Byte AudioVector[MAXLINES];
-Byte *rom;
-Byte *megarom;
+uint8_t intRAM[64];
+uint8_t extRAM[256];
+uint8_t extROM[1024];
+uint8_t VDCwrite[256];
+uint8_t ColorVector[MAXLINES];
+uint8_t AudioVector[MAXLINES];
+uint8_t *rom;
+uint8_t *megarom;
 
 int key2[128];
 
@@ -262,7 +262,7 @@ void init_roms(void){
 }
 
 
-Byte read_t1(void){
+uint8_t read_t1(void){
      /*17*/
 	if ((h_clk > 16) || (master_clk > VBLCLK))
 		return 1;
@@ -271,7 +271,7 @@ Byte read_t1(void){
 }
 
 
-void write_p1(Byte d){
+void write_p1(uint8_t d){
 	if ((d & 0x80) != (p1 & 0x80)) {
 		int i,l;
 		l = snapline((int)((float)master_clk/22.0+0.1), VDCwrite[0xA3], 1);
@@ -287,7 +287,7 @@ void write_p1(Byte d){
 	}
 }
 
-Byte read_P2(void){
+uint8_t read_P2(void){
 	int i,si,so,km;
 
 	if (NeedsPoll) poll_keyboard();
@@ -325,10 +325,10 @@ Byte read_P2(void){
 }
 
 
-Byte ext_read(ADDRESS adr){
-	Byte d;
-	Byte si;
-	Byte m;
+uint8_t ext_read(uint16_t adr){
+	uint8_t d;
+	uint8_t si;
+	uint8_t m;
 	int i;
 
 	if (!(p1 & 0x08) && !(p1 & 0x40)) {
@@ -403,9 +403,9 @@ Byte ext_read(ADDRESS adr){
 }
 
 
-Byte in_bus(void)
+uint8_t in_bus(void)
 {
-	Byte si=0,d=0,mode=0,jn=0,sticknum=0;
+	uint8_t si=0,d=0,mode=0,jn=0,sticknum=0;
 
 	if ((p1 & 0x08) && (p1 & 0x10)) {
 		/* Handle joystick read */
@@ -452,7 +452,7 @@ Byte in_bus(void)
 }
 
 
-void ext_write(Byte dat, ADDRESS adr){
+void ext_write(uint8_t dat, uint16_t adr){
 	int i;
 
 	if (!(p1 & 0x08)) {
@@ -654,7 +654,7 @@ static void do_kluges(void){
 }
 
 
-int snapline(int pos, Byte reg, int t){
+int snapline(int pos, uint8_t reg, int t){
 	int i;
 	if (pos<MAXLINES+MAXSNAP+MAXSNAP) {
 		for (i=0; i<mxsnap; i++){

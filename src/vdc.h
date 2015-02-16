@@ -1,6 +1,8 @@
 #ifndef __VDC_H
 #define __VDC_H
 
+#include <stdint.h>
+
 #define BMPW 340
 #define BMPH 250
 #define WNDW 320
@@ -15,7 +17,7 @@
 #define BOX_B     ((SCREEN_H + BOX_H) / 2)
 
 /*********/
-extern Byte coltab[];
+extern uint8_t coltab[];
 extern long clip_low;
 extern long clip_high;
 extern int show_fps;

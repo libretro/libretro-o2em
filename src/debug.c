@@ -46,8 +46,8 @@
 #endif
 
 static int assemble(char *opcode, int p);
-static int disasm(ADDRESS p);
-static int spriteprint(ADDRESS p);
+static int disasm(uint16_t p);
+static int spriteprint(uint16_t p);
 static void show_reg(void);
 int 	nMemDump;
 int 	nDisAsm;
@@ -59,9 +59,9 @@ void debug(void) {
 	int done,i,go,j;
 	char inp[80];
 	char *tok;
-	ADDRESS ad,run_to;
+	uint16_t ad,run_to;
 	char cr[2],ff[2];
-	Byte d,a;
+	uint8_t d,a;
 
 	dbstick1=dbstick2=0;
 	cr[0]=13;
@@ -143,11 +143,11 @@ void debug(void) {
 			printf("reset - reset the machine\n");
 			
 			printf("load file a - load file to memory to address\n");
-			printf("save file a n - save memory to file from address n Bytes\n");
-			printf("savedatah file a n - save memory to file from address a n Bytes format hex\n");
-			printf("savedatab file a n - save memory to file from address a n Bytes format binary\n");
-			printf("savevdc file a n - save VDC to file from address a n Bytes format hex\n");
-			printf("saveext file a n - save ExtRam to file from address a n Bytes format hex\n");
+			printf("save file a n - save memory to file from address n uint8_ts\n");
+			printf("savedatah file a n - save memory to file from address a n uint8_ts format hex\n");
+			printf("savedatab file a n - save memory to file from address a n uint8_ts format binary\n");
+			printf("savevdc file a n - save VDC to file from address a n uint8_ts format hex\n");
+			printf("saveext file a n - save ExtRam to file from address a n uint8_ts format hex\n");
 			printf("savevpp file - save the VPP to file\n");
 			
 			printf("as # - assemble memory #\n");
@@ -288,11 +288,11 @@ void debug(void) {
 			tok=strtok(NULL," ");
 			if (tok){
 				sscanf(tok,"%x",&t);
-				a = (Byte)t;
+				a = (uint8_t)t;
 				tok=strtok(NULL," ");
 				if (tok){
 					sscanf(tok,"%x",&t);
-					d = (Byte)t;
+					d = (uint8_t)t;
 					VDCwrite[a] = d;
 				}
 			else
@@ -528,9 +528,9 @@ void debug(void) {
 				}
 			}
 		} else if (!strcmp(tok,"savevpp")) {
-			extern Byte vpp_mem[40][32][4];
-			extern Byte dchars[2][960];
-			Byte mchars[2][960]; /* bit-mirrored dchars */
+			extern uint8_t vpp_mem[40][32][4];
+			extern uint8_t dchars[2][960];
+			uint8_t mchars[2][960]; /* bit-mirrored dchars */
 			FILE *fn;
 			char file[80]="";
 			int i, j;
@@ -637,11 +637,11 @@ void debug(void) {
 			tok=strtok(NULL," ");
 			if (tok){
 				sscanf(tok,"%x",&t);
-				a = (Byte)t;
+				a = (uint8_t)t;
 				tok=strtok(NULL," ");
 				if (tok){
 					sscanf(tok,"%x",&t);
-					d = (Byte)t;
+					d = (uint8_t)t;
 					extRAM[a] = d;
             }
         else 
@@ -667,12 +667,12 @@ void debug(void) {
 			tok=strtok(NULL," ");
 			if (tok){
 				sscanf(tok,"%x",&t);
-				a = (Byte)t;
+				a = (uint8_t)t;
 				tok=strtok(NULL," ");
 				if (tok)
 				{
 					sscanf(tok,"%x",&t);
-					d = (Byte)t;
+					d = (uint8_t)t;
 					intRAM[a] = d;
 				}
 			else
@@ -826,7 +826,7 @@ void debug(void) {
 						sscanf(inp,"%x",&t);
 						if (t<256)
 						{
-							d = (Byte) t;
+							d = (uint8_t) t;
 							rom[ad]=d;
 							ad=(ad==32768)?0:ad+1;
 						}
@@ -899,9 +899,9 @@ static void show_reg(void) {
 }
 
 
-static int disasm(ADDRESS p) {
-	Byte op,d;
-	ADDRESS adr;
+static int disasm(uint16_t p) {
+	uint8_t op,d;
+	uint16_t adr;
 
 	op=rom[p++];
 	printf("%04x  %02x",p-1,op);
@@ -963,7 +963,7 @@ static int assemble(char *opcode, int p)
 				printf("Error: #xx expected (value #00-#FF)\n");
 				return(0);
 			}
-			else value = (Byte) t;
+			else value = (uint8_t) t;
 			rom[p]=op;
 			rom[p+1]=value;
 			break;
@@ -980,7 +980,7 @@ static int assemble(char *opcode, int p)
 				printf("Error: $xxx expected (value below $800)\n");
 				return(0);
 			}
-			else value = (Byte) t;
+			else value = (uint8_t) t;
 			rom[p]=op | ((t&1792)>>3);
 			rom[p+1]=value;
 			break;
@@ -998,7 +998,7 @@ static int assemble(char *opcode, int p)
 				printf("Error: $xx expected (value $00-$FF)\n");
 				return(0);
 			}
-			else value = (Byte) t;
+			else value = (uint8_t) t;
 			rom[p]=op;
 			rom[p+1]=value;
 			break;
@@ -1018,7 +1018,7 @@ void decimal2binary(int decimal_value, char binary_value[32], short digits)
 	binary_value[digits]=0;
 }
 
-static int spriteprint(ADDRESS p)
+static int spriteprint(uint16_t p)
 {
 	char binary_value[32];
 	int i;

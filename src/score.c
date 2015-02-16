@@ -15,12 +15,12 @@
 
 #include <dirent.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 #include <time.h>
 #include "vmachine.h"
-#include "types.h"
 #include "score.h"
 
 #ifdef __LIBRETRO__
@@ -43,7 +43,7 @@ int get_score(int scoretype, int scoreaddress)
 	{
 		int position;
 		int i;
-		Byte *RAM;
+		uint8_t *RAM;
 
 		int count = scoretype%10;
 		int direction = ((scoretype/10)%10)==1?1:-1;
@@ -78,7 +78,7 @@ void set_score(int scoretype, int scoreaddress, int score)
 	{
 		int position;
 		int i;
-		Byte *RAM;
+		uint8_t *RAM;
 		int digit;
 
 		int count = scoretype%10;

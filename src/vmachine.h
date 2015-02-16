@@ -1,7 +1,7 @@
 #ifndef VMACHINE_H
 #define VMACHINE_H
 
-#include "types.h"
+#include <stdint.h>
 
 #define LINECNT 21
 #define MAXLINES 500
@@ -14,7 +14,7 @@
 #define FPS_NTSC 60
 #define FPS_PAL 50
 
-extern Byte dbstick1, dbstick2;
+extern uint8_t dbstick1, dbstick2;
 extern int last_line;
 
 extern int evblclk;
@@ -22,18 +22,18 @@ extern int evblclk;
 extern int master_clk;		/* Master clock */
 extern int int_clk;		/* counter for length of /INT pulses for JNI */
 extern int h_clk;   /* horizontal clock */
-extern Byte coltab[256];
+extern uint8_t coltab[256];
 extern int mstate;
 
-extern Byte rom_table[8][4096];
-extern Byte intRAM[];
-extern Byte extRAM[];
-extern Byte extROM[];
-extern Byte VDCwrite[256];
-extern Byte ColorVector[MAXLINES];
-extern Byte AudioVector[MAXLINES];
-extern Byte *rom;
-extern Byte *megarom;
+extern uint8_t rom_table[8][4096];
+extern uint8_t intRAM[];
+extern uint8_t extRAM[];
+extern uint8_t extROM[];
+extern uint8_t VDCwrite[256];
+extern uint8_t ColorVector[MAXLINES];
+extern uint8_t AudioVector[MAXLINES];
+extern uint8_t *rom;
+extern uint8_t *megarom;
 
 extern int frame;
 extern int key2[128];
@@ -47,16 +47,16 @@ extern long regionoff;
 extern int sproff;
 extern int tweakedaudio;
 
-Byte read_P2(void);
-int snapline(int pos, Byte reg, int t);
-void ext_write(Byte dat, ADDRESS adr);
-Byte ext_read(ADDRESS adr);
+uint8_t read_P2(void);
+int snapline(int pos, uint8_t reg, int t);
+void ext_write(uint8_t dat, uint16_t adr);
+uint8_t ext_read(uint16_t adr);
 void handle_vbl(void);
 void handle_evbl(void);
 void handle_evbll(void);
-Byte in_bus(void);
-void write_p1(Byte d);
-Byte read_t1(void);
+uint8_t in_bus(void);
+void write_p1(uint8_t d);
+uint8_t read_t1(void);
 void init_system(void);
 void init_roms(void);
 void run(void);

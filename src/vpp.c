@@ -14,11 +14,10 @@
  *   Videopac+ G7400 emulation
  */
 
-
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include "types.h"
 #include "vmachine.h"
 #include "vdc.h"
 #include "vpp_cset.h"
@@ -26,30 +25,30 @@
 
 #include "wrapalleg.h"
 
-static void vpp_draw_char(int x, int y, Byte ch, Byte c0, Byte c1, Byte ext, Byte dw, Byte dh, Byte ul);
+static void vpp_draw_char(int x, int y, uint8_t ch, uint8_t c0, uint8_t c1, uint8_t ext, uint8_t dw, uint8_t dh, uint8_t ul);
 static void vpp_update_screen(void);
 
 
-static Byte LumReg = 0xff, TraReg = 0xff;
+static uint8_t LumReg = 0xff, TraReg = 0xff;
 static BITMAP *vppbmp = NULL;
-static Byte *colplus = NULL;
+static uint8_t *colplus = NULL;
 static int vppon = 1;
 static int vpp_cx = 0;
 static int vpp_cy = 0;
-static Byte vpp_data = 0;
+static uint8_t vpp_data = 0;
 static int inc_curs=1;
 static int slice=0;
 static int vpp_y0=0;
-static Byte vpp_r=0;
-Byte dchars[2][960];
-Byte vpp_mem[40][32][4];
+static uint8_t vpp_r=0;
+uint8_t dchars[2][960];
+uint8_t vpp_mem[40][32][4];
 static int frame_cnt=0;
 static int blink_st=0;
 static int slicemode=0;
 static int need_update=0;
 
 
-Byte read_PB(Byte p){
+uint8_t read_PB(uint8_t p){
 	p &= 0x3;
 	switch (p) {
 		case 0:
@@ -69,7 +68,7 @@ Byte read_PB(Byte p){
 }
 
 
-void write_PB(Byte p, Byte val){
+void write_PB(uint8_t p, uint8_t val){
 	p &= 0x3;
 	val &= 0xf;
 
@@ -91,10 +90,10 @@ void write_PB(Byte p, Byte val){
 }
 
 
-Byte vpp_read(ADDRESS adr){
-	Byte t;
-	static Byte ta=0;
-	static Byte tb=0;
+uint8_t vpp_read(uint16_t adr){
+	uint8_t t;
+	static uint8_t ta=0;
+	static uint8_t tb=0;
 
 	switch (adr){
 		case 4:
@@ -105,7 +104,7 @@ Byte vpp_read(ADDRESS adr){
 			/* the real VPP starts a read cycle, 
 			 * the data gets returned at next read */
 			if (slicemode) {
-				Byte ext, chr;
+				uint8_t ext, chr;
 				chr = vpp_mem[vpp_cx][vpp_cy][0];
 				ext = (vpp_mem[vpp_cx][vpp_cy][1] & 0x80) ? 1 : 0;
 				if (chr < 0xA0) {
@@ -138,8 +137,8 @@ fprintf(stderr, "unsupported: CHARROM read %d %d %d\n", chr, ext, slice);
 }
 
 
-void vpp_write(Byte dat, ADDRESS adr){
-	static Byte ta;
+void vpp_write(uint8_t dat, uint16_t adr){
+	static uint8_t ta;
 
 	switch (adr) {
 		case 0:
@@ -148,7 +147,7 @@ void vpp_write(Byte dat, ADDRESS adr){
 			break;
 		case 1:
 			if (slicemode) {
-				Byte ext, chr;
+				uint8_t ext, chr;
 				chr = vpp_mem[vpp_cx][vpp_cy][0];
 				ext = (vpp_mem[vpp_cx][vpp_cy][1] & 0x80) ? 1 : 0;
 				if (chr >= 0xA0) dchars[ext][(chr-0xA0)*10+slice] = ((ta&0x80)>>7) | ((ta&0x40)>>5) | ((ta&0x20)>>3) | ((ta&0x10)>>1) | ((ta&0x08)<<1) | ((ta&0x04)<<3) | ((ta&0x02)<<5) | ((ta&0x01)<<7);
@@ -239,10 +238,10 @@ if (vpp_data & 0x20) fprintf(stderr, "unsupported: global double height");
 }
 
 
-void vpp_finish_bmp(Byte *vmem, int offx, int offy, int w, int h, int totw, int toth){
+void vpp_finish_bmp(uint8_t *vmem, int offx, int offy, int w, int h, int totw, int toth){
 	int i, x, y, t, c, nc, clrx, clry;
 	int tcol[16], m[8] = {0x01, 0x10, 0x04, 0x40, 0x02, 0x20, 0x08, 0x80};
-	Byte *pnt, *pnt2, *pnt3;
+	uint8_t *pnt, *pnt2, *pnt3;
 
 	if (vppon) {
 		memset(colplus,0,BMPW*BMPH);
@@ -279,9 +278,9 @@ void vpp_finish_bmp(Byte *vmem, int offx, int offy, int w, int h, int totw, int 
 	for (y=0; y<h; y++){
 		pnt = vmem+(offy+y)*totw + offx;
 #ifndef __LIBRETRO__
-		pnt2 = (Byte *)vppbmp->line[y];
+		pnt2 = (uint8_t *)vppbmp->line[y];
 #else
-		pnt2 = (Byte *)&vppbmp->line[y*vppbmp->w];
+		pnt2 = (uint8_t *)&vppbmp->line[y*vppbmp->w];
 #endif
 
 
@@ -334,7 +333,7 @@ void vpp_finish_bmp(Byte *vmem, int offx, int offy, int w, int h, int totw, int 
 
 }
 
-static void vpp_draw_char(int x, int y, Byte ch, Byte c0, Byte c1, Byte ext, Byte dw, Byte dh, Byte ul){
+static void vpp_draw_char(int x, int y, uint8_t ch, uint8_t c0, uint8_t c1, uint8_t ext, uint8_t dw, uint8_t dh, uint8_t ul){
 	int xx, yy, d, m, k;
 
 	if ((x>39) || (y>24) || (ext>1)) return;
@@ -470,7 +469,7 @@ static void vpp_update_screen(void){
 }
 
 
-void load_colplus(Byte *col){
+void load_colplus(uint8_t *col){
 	if (vppon)
 		memcpy(col,colplus,BMPW*BMPH);
 	else
@@ -482,7 +481,7 @@ void init_vpp(void){
 	int i,j,k;
 	
 	if (!vppbmp) vppbmp = create_bitmap(320,250);
-	if (!colplus) colplus = (Byte *)malloc(BMPW*BMPH);
+	if (!colplus) colplus = (uint8_t *)malloc(BMPW*BMPH);
 
 	if ((!vppbmp) || (!colplus)) {
 		fprintf(stderr,"Could not allocate memory for Videopac+ screen buffer.\n");

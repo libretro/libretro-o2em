@@ -20,7 +20,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include "cpu.h"
-#include "types.h"
 #include "config.h"
 #include "vmachine.h"
 #include "audio.h"

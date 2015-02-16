@@ -16,7 +16,7 @@
 
 
 #include <stdio.h>
-#include "types.h"
+#include <stdint.h>
 #include "vmachine.h"
 #include "keyboard.h"
 #include "voice.h"
@@ -87,9 +87,9 @@ extern int RLOOP;
 
 void cpu_exec(void)
 {
-	Byte op;
-	ADDRESS adr;
-	Byte dat;
+	uint8_t op;
+	uint16_t adr;
+	uint8_t dat;
 	int temp;
 
 	while(RLOOP == 1)

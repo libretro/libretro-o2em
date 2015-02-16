@@ -1,6 +1,8 @@
 #ifndef __CSET_H
 #define __CSET_H
 
-extern Byte cset[512];
+#include <stdint.h>
+
+extern uint8_t cset[512];
 
 #endif

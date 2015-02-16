@@ -26,7 +26,6 @@
 #include "debug.h" 
 #include "vdc.h" 
 #include "vpp.h"
-#include "timefunc.h"
 #include "voice.h"
 #include "vmachine.h"
 

@@ -23,7 +23,6 @@
 #include "config.h"
 #include "keyboard.h"
 #include "cset.h"
-#include "timefunc.h"
 #include "cpu.h"
 #include "vpp.h"
 #include "vdc.h"
@@ -370,28 +369,11 @@ void finish_display(void){
 
 	vpp_finish_bmp(vscreen, 9, 5, BMPW-9, BMPH-5, bmp->w, bmp->h);
 
-	if (show_fps) {
-		static long last=-1, index=0, curr=0, t=0;
-		if (last<0) last=gettimeticks();
-		index = (index+1)%200;
-		if (!index) {
-			t=gettimeticks();
-			curr=t-last;
-			last=t;
-		}
-		if (curr) {
-#ifndef __LIBRETRO__
-			text_mode(0);
-			textprintf(bmp, font, 20 , 4, 7, "FPS: %3d",(int)((200.0*TICKSPERSEC)/curr+0.5));
-#endif
-        	}
-       
-	}
-
-	for (y=0; y<bmp->h; y++){
+	for (y=0; y<bmp->h; y++)
+   {
 		cached_lines[y] = !memcmp(&bmpcache->line[y*bmpcache->w], &bmp->line[y*bmp->w], bmp->w);
-
-		if (!cached_lines[y]) memcpy(&bmpcache->line[y*bmpcache->w], &bmp->line[y*bmp->w], bmp->w);
+		if (!cached_lines[y])
+         memcpy(&bmpcache->line[y*bmpcache->w], &bmp->line[y*bmp->w], bmp->w);
 	}
 
 	for (y=0; y<10; y++) cached_lines[(y+cache_counter) % bmp->h] = 0;

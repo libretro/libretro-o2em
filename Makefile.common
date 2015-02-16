@@ -8,7 +8,6 @@ SOURCES_C := $(CORE_DIR)/src/audio.c \
     $(CORE_DIR)/src/keyboard.c \
     $(CORE_DIR)/src/score.c \
     $(CORE_DIR)/src/table.c \
-    $(CORE_DIR)/src/timefunc.c \
     $(CORE_DIR)/src/vdc.c \
     $(CORE_DIR)/src/vmachine.c \
     $(CORE_DIR)/src/voice.c \

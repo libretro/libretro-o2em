@@ -128,7 +128,8 @@ void draw_region(void){
 
 }
 
-static void create_cmap(void){
+static void create_cmap(void)
+{
 	int i;
 
 	/* Initialise parts of the colors array */
@@ -219,7 +220,8 @@ clearscr();
 }
 
 
-void set_textmode(void){
+void set_textmode(void)
+{
 #ifndef __LIBRETRO__
 	set_palette(oldcol);
 	set_gfx_mode(GFX_TEXT, 0, 0, 0, 0);
@@ -228,7 +230,8 @@ void set_textmode(void){
 }
 
 
-void clearscr(void){
+void clearscr(void)
+{
 #ifndef __LIBRETRO__
 	acquire_screen();
 	clear(screen);
@@ -338,14 +341,16 @@ static void draw_grid(void){
 
 extern unsigned short int mbmp[TEX_WIDTH  * TEX_HEIGHT];
 
-void retro_blit(){
-
+void retro_blit(void)
+{
 	int i,j;
 	unsigned  char ind;
 	unsigned short *outp=&mbmp[0];
 	unsigned char *inp=&bmp->line[0];
-	for(i=0;i<250;i++){
-		for(j=0;j<340;j++){			
+	for(i=0;i<250;i++)
+   {
+		for(j=0;j<340;j++)
+      {
 			ind=inp[i*340 + j];
 			(*outp++)= RGB565( colors[ ind].r>>1 , colors[ind].g>>1 , colors[ind].b>>1 );
 		}
@@ -353,8 +358,8 @@ void retro_blit(){
 	}
 }
 
-void retro_destroybmp(){
-
+void retro_destroybmp(void)
+{
 	destroy_bitmap(bmp);
 	destroy_bitmap(bmpcache);
 }

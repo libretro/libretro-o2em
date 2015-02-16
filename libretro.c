@@ -44,6 +44,8 @@ void retro_set_audio_sample_batch(retro_audio_sample_batch_t cb) { audio_batch_c
 void retro_set_input_poll(retro_input_poll_t cb) { input_poll_cb = cb; }
 void retro_set_input_state(retro_input_state_t cb) { input_state_cb = cb; }
 
+void retro_destroybmp(void);
+
 unsigned short int mbmp[TEX_WIDTH * TEX_HEIGHT];
 uint8_t soundBuffer[1056];
 int SND;

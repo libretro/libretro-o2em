@@ -119,8 +119,6 @@ void update_audio(void)
 
 void init_audio(void)
 {
-   int i;
-
    sound_IRQ=0;		
    if ((app_data.sound_en) || (app_data.voice))
    {

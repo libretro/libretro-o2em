@@ -50,20 +50,17 @@ static int need_update=0;
 
 uint8_t read_PB(uint8_t p){
 	p &= 0x3;
-	switch (p) {
-		case 0:
-			return LumReg >> 4;
-			break;
-		case 1:
-			return LumReg & 0xf;
-			break;
-		case 2:
-			return TraReg >> 4;
-			break;
-		case 3:
-			return TraReg & 0xf;
-			break;
-	}
+	switch (p)
+   {
+      case 0:
+         return LumReg >> 4;
+      case 1:
+         return LumReg & 0xf;
+      case 2:
+         return TraReg >> 4;
+      case 3:
+         return TraReg & 0xf;
+   }
 	return 0;
 }
 
@@ -132,8 +129,9 @@ fprintf(stderr, "unsupported: CHARROM read %d %d %d\n", chr, ext, slice);
 		case 6:
 			return 0;
 		default:
-			return 0;
+         break;
 	}
+   return 0;
 }
 
 

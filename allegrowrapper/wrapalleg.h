@@ -1,10 +1,13 @@
 #ifndef WRAP_H
 #define WRAP_H
 
+#ifdef _MSVC
+#define INLINE _inline
+#else
 #include <unistd.h>
+#define INLINE inline
+#endif
 
-#define INLINE static inline
-#define rest(a) usleep(a)
 #define keypressed() 0
 #define poll_keyboard()
 #define yield_timeslice()

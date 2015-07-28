@@ -168,7 +168,6 @@ void debug(void) {
 			finish_display();
 			init_keyboard();
 			do {
-				rest(1);
 			} while((key_done==0) && (!keypressed()));
 			set_textmode();
 #ifndef __LIBRETRO__

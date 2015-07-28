@@ -135,9 +135,6 @@ void handle_evbl(void)
 
    i = (15*app_data.speed/100);
    rest_cnt = (rest_cnt+1)%(i<5?5:i);
-#ifdef ALLEGRO_WINDOWS
-   if (rest_cnt==0) rest(1);
-#endif
    last_line=0;
    master_clk -= evblclk;
    frame++;
@@ -179,9 +176,6 @@ void handle_evbll(void){
 
 	i = (15*app_data.speed/100);
 	rest_cnt = (rest_cnt+1)%(i<5?5:i);
-	#ifdef ALLEGRO_WINDOWS
-	if (rest_cnt==0) rest(1);
-	#endif
 
 /******************* 150 */
 

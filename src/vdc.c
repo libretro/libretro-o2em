@@ -85,7 +85,6 @@ static void create_cmap(void);
 static void draw_char(uint8_t ypos,uint8_t xpos,uint8_t chr,uint8_t col);
 static void draw_quad(uint8_t ypos, uint8_t xpos, uint8_t cp0l, uint8_t cp0h, uint8_t cp1l, uint8_t cp1h, uint8_t cp2l, uint8_t cp2h, uint8_t cp3l, uint8_t cp3h);
 static void draw_grid(void);
-INLINE void mputvid(unsigned int ad, unsigned int len, uint8_t d, uint8_t c);
 
 
 void draw_region(void){
@@ -241,27 +240,31 @@ void clearscr(void)
 }
 
 
-INLINE void mputvid(unsigned int ad, unsigned int len, uint8_t d, uint8_t c){
-	if ((ad > (unsigned long)clip_low) && (ad < (unsigned long)clip_high)) {
-	    unsigned int i;
-		if (((len & 3)==0) && (sizeof(unsigned long) == 4)) {
-            unsigned long dddd = (((unsigned long)d) & 0xff) | ((((unsigned long)d) & 0xff) << 8) | ((((unsigned long)d) & 0xff) << 16) | ((((unsigned long)d) & 0xff) << 24);
-			unsigned long cccc = (((unsigned long)c) & 0xff) | ((((unsigned long)c) & 0xff) << 8) | ((((unsigned long)c) & 0xff) << 16) | ((((unsigned long)c) & 0xff) << 24);
-			for (i=0; i<len>>2; i++) {
-				*((unsigned long*)(vscreen+ad)) = dddd;
-				cccc |= *((unsigned long*)(col+ad));
-				*((unsigned long*)(col+ad)) = cccc;
-				coltab[c] |= ((cccc | (cccc >> 8) | (cccc >> 16) | (cccc >> 24)) & 0xff);
-				ad += 4;
-			}
-		} else {
- 	        for (i=0; i<len; i++) {
-				vscreen[ad]=d;
-				col[ad] |= c;
-				coltab[c] |= col[ad++];
-			}
-		}
-	}
+static INLINE void mputvid(unsigned int ad, unsigned int len, uint8_t d, uint8_t c)
+{
+   if ((ad > (unsigned long)clip_low) && (ad < (unsigned long)clip_high))
+   {
+      unsigned int i;
+      if (((len & 3)==0) && (sizeof(unsigned long) == 4))
+      {
+         unsigned long dddd = (((unsigned long)d) & 0xff) | ((((unsigned long)d) & 0xff) << 8) | ((((unsigned long)d) & 0xff) << 16) | ((((unsigned long)d) & 0xff) << 24);
+         unsigned long cccc = (((unsigned long)c) & 0xff) | ((((unsigned long)c) & 0xff) << 8) | ((((unsigned long)c) & 0xff) << 16) | ((((unsigned long)c) & 0xff) << 24);
+         for (i=0; i<len>>2; i++)
+         {
+            *((unsigned long*)(vscreen+ad)) = dddd;
+            cccc |= *((unsigned long*)(col+ad));
+            *((unsigned long*)(col+ad)) = cccc;
+            coltab[c] |= ((cccc | (cccc >> 8) | (cccc >> 16) | (cccc >> 24)) & 0xff);
+            ad += 4;
+         }
+      } else {
+         for (i=0; i<len; i++) {
+            vscreen[ad]=d;
+            col[ad] |= c;
+            coltab[c] |= col[ad++];
+         }
+      }
+   }
 }
 
 
@@ -641,60 +644,6 @@ void display_bg(void){
 	line(bmp,311,172,311,72,1+32);
 }
 
-void abaut(void)
-{   
-    char *ver;
-    char exitstr[80];
-
-	int i = 0;
-	while (syskeys[1]!=keybtab[i].keybcode) i++;
-
-	strcpy (exitstr,"Press ");
-	strcat (exitstr,keybtab[i].keybname);
-	strcat (exitstr," to continue");
-
-    	
-    #if defined(ALLEGRO_WINDOWS)
-	ver = "Windows version";
-	#elif defined(ALLEGRO_DOS)
-	ver = "DOS version";
-	#elif defined(ALLEGRO_LINUX)
-	ver = "Linux version";
-	#elif defined(ALLEGRO_BEOS)
-	ver = "BEOS version";
-	#elif defined(ALLEGRO_QNX)
-	ver = "QNX version";
-	#elif defined(ALLEGRO_UNIX)
-	ver = "UNIX version";
-	#elif defined(ALLEGRO_MPW)
-	ver = "MacOS version";
-	#else
-	ver = "Unknown platform";
-	#endif
-    display_bg();
-    txtmsg(166,76,15+32,"O2EM v" O2EM_VERSION "  " RELEASE_DATE);
-	txtmsg(166,90,15+32,"Free Odyssey2 / VP+ Emulator");
-	txtmsg(166,104,15+32,ver);
-	txtmsg(166,118,15+32,"Developed by Andre de la Rocha");
-	txtmsg(168,132,15+32,"and Arlindo M. de Oliveira");
-	txtmsg(166,148,15+32,"Copyright 1996/1998 by Daniel Boris");
-	txtmsg(166,162,15+32,exitstr);
-	finish_display(); 
-}
-void display_msg(char *msg, int waits)
-{
-	mute_audio();
-	mute_voice();
-	rectfill(bmp,60,72,271,90,9+32);
-	line(bmp,60,72,271,72,15+32);
-	line(bmp,60,72,60,90,15+32);
-	line(bmp,61,90,271,90,1+32);
-	line(bmp,271,90,271,72,1+32);
-	txtmsg(166,76,15+32,msg);
-	finish_display();
-	rest(waits*100);
-	init_sound_stream();
-}
 void init_display(void) {
 #ifndef __LIBRETRO__
 	get_palette(oldcol);
@@ -734,133 +683,3 @@ void init_display(void) {
 	set_window_close_hook(window_close_hook);
 #endif
 }
-/*************************** Help*/
-void help(void){
-int cnt, cntt, cnttt, way;
-cnttt = 40;
-cntt = 0;
-cnt = 0;
-way = 0;
-static char hl[96][70]=
-	{"-wsize=n",
-     " Window size (1-4)","",
-     "-fullscreen",
-     " Full screen mode","",
-     "-Help",
-     " This instructions","",
-     "-scanlines",
-     " Enable scanlines","",
-	 "-nosound",
-     " Turn off sound emulation","",
-	 "-novoice",
-     " Turn off voice emulation","",
-	 "-svolume=n",
-     " Set sound volume (0-100)","",
-	 "-vvolume=n",
-     " Set voice volume (0-100)","",
-	 "-filter",
-     " Enable low-pass audio filter","",
-	 "-debug",
-     " Start the emulator in "," debug mode","",
-	 "-speed=n",
-     " Relative speed"," (100 = original)","",
-	 "-nolimit",
-     " Turn off speed limiter","",
-	 "-bios=file",
-     " Set the O2 bios file name/dir","",
-     "-biosdir=path",
-     " Set the O2 bios path "," (default= bios/ )","",
-	 "-romdir=path",
-     " Set the O2 roms Path "," (default= roms/ )","",
-     "-scshot=file",
-     " Set the screenshot file "," name/template","",
-	 "-euro",
-     " Use European timing /"," 50Hz mode","",
-	 "-exrom",
-     " Use special 3K program/"," 1K data ROM mode","",
-	 "-3k",
-     " Use 3K rom mapping mode","",
-	 "-s<n>=mode/keys",
-     " Define stick n mode/keys (n=1-2)","",
-	 "-c52",
-     " Start the emulator with "," french Odyssey 2 BIOS","",
-	 "-g7400",
-     " Start the emulator "," with VP+ BIOS","",        
-	 "-jopac",
-     " Start the emulator with "," french VP+ bios","",
-	 "-scoretype=m",
-     " Set Scoretype to m (see manual)","",
-	 "-scoreadr=n",
-     " Set Scoreaddress to n "," (decimal value)","",
-	 "-scorefile=file",
-     " Set Output-Scorefile to "," file (highscore.txt)","",
-	 "-score=n",
-     " Set Highscore to n","",
-	 "-savefile=file",
-     " Load/Save State "," from/to file"
-     };
-#ifndef __LIBRETRO__
-text_mode(-1);
-
-textout(bmp, font, "O2EM v" O2EM_VERSION " Help", 26 , 16, 2);
-textout(bmp, font, "Use: o2em <file> [options]", 26, 26, 2);
-#endif
-rect(bmp,20,12,315,228,6);
-line(bmp,20,35,315,35,6);
-for (cntt=0; cntt<16; cntt++)
-    {
-#ifndef __LIBRETRO__
-    textout(bmp, font, hl[cnt+cntt], 26, cnttt, 4);
-#endif
-    cnttt += 12;
-    }
-    cnttt = 40;
-    finish_display();
-		do {
-			rest(5);
-			if (NeedsPoll) 
-				poll_keyboard();
-
-			if (key[RETROK_UP]) {
-                                 cnt ++;
-                                 if (cnt >= 80) cnt = 80;
-                                 rectfill(bmp,25,36,306,227,0);
-                                 for (cntt=0; cntt<16; cntt++)
-                                     {
-#ifndef __LIBRETRO__
-                                     textout(bmp, font, hl[cnt+cntt], 26, cnttt, 4);
-#endif
-
-                                     cnttt += 12;
-                                     }
-                                 cnttt = 40;
-                                 for (way=0;way<8;way++)
-                                 finish_display();
-                             }
-             if (key[RETROK_DOWN]) {
-                                 cnt --;
-                                 if (cnt <= 0) cnt = 0;
-                                 rectfill(bmp,25,36,306,227,0);
-                                 for (cntt=0; cntt<16; cntt++)
-                                     {
-#ifndef __LIBRETRO__
-                                     textout(bmp, font, hl[cnt+cntt], 26, cnttt, 4);
-#endif
-                                     cnttt += 12;
-                                     }
-                                 cnttt = 40;
-                                 for (way=0;way<8;way++)
-                                 finish_display();
-                             }
-                                                                   
-			}		
-		while (!key[RETROK_ESCAPE]);
-		do {
-			rest(5);
-			if (NeedsPoll) 
-				poll_keyboard();
-
-			} while (key[RETROK_ESCAPE]);
-return;
-}
-

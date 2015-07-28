@@ -29,12 +29,8 @@ void finish_display();
 void close_display(void);
 void grmode(void);
 void display_bg(void);
-void display_msg(char *msg, int waits);
 void clear_collision(void);
 void clearscr(void);
-void abaut(void);
-void help(void);
-
 
 #endif
 

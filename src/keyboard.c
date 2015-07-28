@@ -42,6 +42,9 @@ uint8_t new_int=0;	/* Is new interrupt installed */
 uint8_t key_done=0;
 uint8_t key_debug=0;
 
+/* TODO/FIXME - we should find a way to do a non-timer based approach and get
+ * rid of the sleeping here */
+
 #define RETROK_TILDE 178
 
 struct keyb keybtab[] = {
@@ -246,84 +249,6 @@ void rscore()
 }
 
 #endif
-
-void handle_key(void)
-{
-	if (NeedsPoll)
-		 poll_keyboard();
-
-	if (key[syskeys[0]] || key[RETROK_ESCAPE])
-   {
-      do {
-         rest(5);
-         if (NeedsPoll)
-            poll_keyboard();
-
-      } while (key[syskeys[0]] || key[RETROK_ESCAPE]);
-      key_done=1;
-   }
-
-	if (key[syskeys[1]])
-   {
-		do {
-			rest(5);
-			if (NeedsPoll)
-				poll_keyboard();
-
-		} while (key[syskeys[1]]);
-
-		mute_audio();
-		mute_voice();
-		abaut();
-
-		do {
-			rest(5);
-			if (NeedsPoll)
-				poll_keyboard();
-
-			if (key[RETROK_LALT] && key[RETROK_RETURN])
-         {
-            app_data.fullscreen = app_data.fullscreen ? 0 : 1;
-            grmode();
-            abaut();
-            do {
-               rest(5);
-               if (NeedsPoll)
-                  poll_keyboard();
-
-            } while (key[RETROK_RETURN]);
-         }		
-
-		} while ((!key[syskeys[1]]) && (!key[RETROK_ESCAPE]) && (!key[syskeys[0]]));
-		do {
-			rest(5);
-			if (NeedsPoll)
-				poll_keyboard();
-
-		} while (key[syskeys[1]]);
-		
-		init_sound_stream();
-	}		
-
-	if (key[syskeys[2]]) key_debug=1;
-
-	if (key[syskeys[3]]) {
-		init_cpu();
-		init_roms();
-		init_vpp();
-		clearscr();
-		do {
-			rest(5);
-			if (NeedsPoll)
-				poll_keyboard();
-
-		} while (key[syskeys[3]]);
-	}
-
-    /* SET HIGHSCORE */
-	if (key[syskeys[7]])
-		set_score(app_data.scoretype, app_data.scoreaddress, app_data.default_highscore);
-}
 
 extern int joystick_data[2][5]; //Up, Down, Left, Right, "Action"
 

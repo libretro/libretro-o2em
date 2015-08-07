@@ -43,7 +43,6 @@ int sound_IRQ;
 static double flt_a=0.0, flt_b=0.0;
 static unsigned char flt_prv = 0;
 
-
 static void filter(unsigned char *buffer, unsigned long len)
 {
 	static unsigned char buf[SOUND_BUFFER_LEN];

@@ -23,7 +23,9 @@
 #include "cpu.h"
 #include "keyboard.h"
 #include "config.h"
+#ifdef HAVE_DEBUG
 #include "debug.h" 
+#endif
 #include "vdc.h" 
 #include "vpp.h"
 #include "voice.h"
@@ -89,38 +91,44 @@ static unsigned int key_map[6][8]= {
 static void do_kluges(void);
 static void setvideomode(int t);
 
-void run(void){
-	while(!key_done) {
+void run(void)
+{
+   while(!key_done)
+   {
+#ifdef HAVE_DEBUG
+      if (key_debug)
+      {
+         app_data.debug=1;
+         set_textmode();
+         mute_audio();
+         mute_voice();
+         debug();
+         grmode();
+         app_data.debug=0;
+         init_keyboard();
+         init_sound_stream();
+      }			
+#endif
 
-		if (key_debug) {
-			app_data.debug=1;
-			set_textmode();
-			mute_audio();
-			mute_voice();
-			debug();
-			grmode();
-			app_data.debug=0;
-			init_keyboard();
-			init_sound_stream();
-		}			
+      cpu_exec();
 
-		cpu_exec();
-
-	}
-	close_audio();
-	close_voice();
-	close_display();
+   }
+   close_audio();
+   close_voice();
+   close_display();
 }
 
 
 void handle_vbl(void)
 {
+#ifdef HAVE_DEBUG
 	if (!app_data.debug)
    {
 		update_joy();
 		update_audio();
 		update_voice();
 	}
+#endif
 	draw_region();
 	ext_IRQ();
 	mstate = 1;
@@ -138,9 +146,10 @@ void handle_evbl(void)
    last_line=0;
    master_clk -= evblclk;
    frame++;
-   if (!app_data.debug) {
+#ifdef HAVE_DEBUG
+   if (!app_data.debug)
       finish_display();
-   }
+#endif
 
    if (app_data.crc == 0xA7344D1F)
    {for (i=0; i<140; i++)

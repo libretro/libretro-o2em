@@ -25,10 +25,6 @@
 
 #include "wrapalleg.h"
 
-static void vpp_draw_char(int x, int y, uint8_t ch, uint8_t c0, uint8_t c1, uint8_t ext, uint8_t dw, uint8_t dh, uint8_t ul);
-static void vpp_update_screen(void);
-
-
 static uint8_t LumReg = 0xff, TraReg = 0xff;
 static BITMAP *vppbmp = NULL;
 static uint8_t *colplus = NULL;
@@ -235,103 +231,9 @@ if (vpp_data & 0x20) fprintf(stderr, "unsupported: global double height");
 	need_update = 1;
 }
 
-
-void vpp_finish_bmp(uint8_t *vmem, int offx, int offy, int w, int h, int totw, int toth){
-	int i, x, y, t, c, nc, clrx, clry;
-	int tcol[16], m[8] = {0x01, 0x10, 0x04, 0x40, 0x02, 0x20, 0x08, 0x80};
-	uint8_t *pnt, *pnt2, *pnt3;
-
-	if (vppon) {
-		memset(colplus,0,BMPW*BMPH);
-		vppon=0;
-	}
-
-	if (TraReg == 0xff) return;
-
-	vppon=1;
-	
-	frame_cnt--;
-	if (frame_cnt<=0) {
-		frame_cnt = 100;
-		blink_st = 1-blink_st;
-		need_update = 1;
-	}
-
-	if (need_update) vpp_update_screen();
-
-	for (i=0; i<8; i++) tcol[i] = tcol[i+8] = !(TraReg & m[i]);
-		
-	if (w > totw-offx) w = totw-offx;
-	if (h > toth-offy) h = toth-offy;
-
-	if (w > vppbmp->w) w = vppbmp->w;
-	if (h > vppbmp->h) h = vppbmp->h;
-	
-	clrx = clry = 0;
-	for (i=0; (!clrx) && (i<totw); i++) if (tcol[vmem[offy*totw+i]&7]) clrx=1;
-	for (i=0; (!clry) && (i<toth); i++) if (tcol[vmem[i*totw+offx]&7]) clry=1;
-	if (clrx) for (y=0; y<offy; y++) for (x=0; x<totw; x++) vmem[y*totw+x]=0;
-	if (clry) for (y=0; y<toth; y++) for (x=0; x<offx; x++) vmem[y*totw+x]=0;
-
-	for (y=0; y<h; y++){
-		pnt = vmem+(offy+y)*totw + offx;
-#ifndef __LIBRETRO__
-		pnt2 = (uint8_t *)vppbmp->line[y];
-#else
-		pnt2 = (uint8_t *)&vppbmp->line[y*vppbmp->w];
-#endif
-
-
-		x=0;
-		while (x < w) {
-			pnt3 = pnt;
-			c = *pnt++;
-			t = x++;
-
-			if ((((x+offx) & 3) == 0) && (sizeof(unsigned long)==4)) {
-				unsigned long cccc, dddd, *p = (unsigned long*) pnt;
-				int t2=x, w2=w-4;
-				cccc = (((unsigned long)c) & 0xff) | ((((unsigned long)c) & 0xff) << 8) | ((((unsigned long)c) & 0xff) << 16) | ((((unsigned long)c) & 0xff) << 24);
-				dddd = *p++;
-				while ((x<w2) && (dddd == cccc)) {
-					x += 4;
-					dddd = *p++;
-				}
-				pnt += x-t2;
-			}
-
-			if (c<16) {
-				if (tcol[c]){
-					if (app_data.openb)
-						for (i=0; i<x-t; i++) *pnt3++ = *pnt2++ & 0xf;
-					else {
-
-						memcpy(pnt3, pnt2, x-t);
-						pnt2 += x-t;
-
-					}
-				} else {
-					for (i=0; i<x-t; i++) {
-						nc = *pnt2++;
-						if ((nc & 0x10) && app_data.openb) {
-							*pnt3++ = nc & 0xf;
-						} else if (nc & 8) {
-							colplus[pnt3++ - vmem] = 0x40;
-						} else {
-							pnt3++;
-						}
-					}
-
-				}
-			}
-			
-		}
-
-	}
-
-}
-
-static void vpp_draw_char(int x, int y, uint8_t ch, uint8_t c0, uint8_t c1, uint8_t ext, uint8_t dw, uint8_t dh, uint8_t ul){
+static void vpp_draw_char(int x, int y, uint8_t ch,
+      uint8_t c0, uint8_t c1, uint8_t ext, uint8_t dw, uint8_t dh, uint8_t ul)
+{
 	int xx, yy, d, m, k;
 
 	if ((x>39) || (y>24) || (ext>1)) return;
@@ -350,26 +252,20 @@ static void vpp_draw_char(int x, int y, uint8_t ch, uint8_t c0, uint8_t c1, uint
 
 		m = (dw==2) ? 0x08 : 0x80;
 
-		for (xx=0; xx<8; xx++) {
-#ifndef __LIBRETRO__
-			vppbmp->line[y*10+yy][x*8+xx] = (k & m) ? c1 : c0;
-#else 
+		for (xx=0; xx<8; xx++)
+      {
 			vppbmp->line[(y*10+yy)*vppbmp->w+(x*8+xx)] = (k & m) ? c1 : c0;
-#endif
 			if ((xx%2) || (dw==0)) m >>= 1;
 		}
 		if ((yy%2) || (dh==0)) d++;
 	}
 
 }
-			
 
-static void vpp_update_screen(void){
+static void vpp_update_screen(void)
+{
 	int i,x,y,l,chr,attr,ext,c0,c1,dw,dh,hpar,vpar,lvd,lhd,ser_chr,ser_atr,ul,conc,box,swapcol;
 	int tlum[8], m[8] = {0x01, 0x10, 0x04, 0x40, 0x02, 0x20, 0x08, 0x80};
-#ifndef __LIBRETRO__
-	clear(vppbmp);
-#endif
 	for (i=0; i<8; i++) tlum[i] = (LumReg & m[i]) ? 0 : 8;
 
 	vpar = lvd = 0;
@@ -453,19 +349,107 @@ static void vpp_update_screen(void){
 		
 	}
 
-	if (vpp_r & 0x20) {
+	if (vpp_r & 0x20)
+   {
 		for (y = vppbmp->h-1; y >= 10; y--)
 			for (x = 0; x < vppbmp->w; x++) 
-#ifndef __LIBRETRO__
-				vppbmp->line[y][x] = vppbmp->line[(y-10)/2+10][x];
-#else
 				vppbmp->line[y*vppbmp->w +x] = vppbmp->line[((y-10)/2+10)*vppbmp->w +x];				;
-#endif
 	}
 
 	need_update=0;
 }
 
+void vpp_finish_bmp(uint8_t *vmem, int offx, int offy, int w, int h, int totw, int toth){
+	int i, x, y, t, c, nc, clrx, clry;
+	int tcol[16], m[8] = {0x01, 0x10, 0x04, 0x40, 0x02, 0x20, 0x08, 0x80};
+	uint8_t *pnt, *pnt2, *pnt3;
+
+	if (vppon) {
+		memset(colplus,0,BMPW*BMPH);
+		vppon=0;
+	}
+
+	if (TraReg == 0xff) return;
+
+	vppon=1;
+	
+	frame_cnt--;
+	if (frame_cnt<=0) {
+		frame_cnt = 100;
+		blink_st = 1-blink_st;
+		need_update = 1;
+	}
+
+	if (need_update)
+      vpp_update_screen();
+
+	for (i=0; i<8; i++) tcol[i] = tcol[i+8] = !(TraReg & m[i]);
+		
+	if (w > totw-offx) w = totw-offx;
+	if (h > toth-offy) h = toth-offy;
+
+	if (w > vppbmp->w) w = vppbmp->w;
+	if (h > vppbmp->h) h = vppbmp->h;
+	
+	clrx = clry = 0;
+	for (i=0; (!clrx) && (i<totw); i++) if (tcol[vmem[offy*totw+i]&7]) clrx=1;
+	for (i=0; (!clry) && (i<toth); i++) if (tcol[vmem[i*totw+offx]&7]) clry=1;
+	if (clrx) for (y=0; y<offy; y++) for (x=0; x<totw; x++) vmem[y*totw+x]=0;
+	if (clry) for (y=0; y<toth; y++) for (x=0; x<offx; x++) vmem[y*totw+x]=0;
+
+	for (y=0; y<h; y++){
+		pnt = vmem+(offy+y)*totw + offx;
+		pnt2 = (uint8_t *)&vppbmp->line[y*vppbmp->w];
+
+
+		x=0;
+		while (x < w) {
+			pnt3 = pnt;
+			c = *pnt++;
+			t = x++;
+
+			if ((((x+offx) & 3) == 0) && (sizeof(unsigned long)==4)) {
+				unsigned long cccc, dddd, *p = (unsigned long*) pnt;
+				int t2=x, w2=w-4;
+				cccc = (((unsigned long)c) & 0xff) | ((((unsigned long)c) & 0xff) << 8) | ((((unsigned long)c) & 0xff) << 16) | ((((unsigned long)c) & 0xff) << 24);
+				dddd = *p++;
+				while ((x<w2) && (dddd == cccc)) {
+					x += 4;
+					dddd = *p++;
+				}
+				pnt += x-t2;
+			}
+
+			if (c<16) {
+				if (tcol[c]){
+					if (app_data.openb)
+						for (i=0; i<x-t; i++) *pnt3++ = *pnt2++ & 0xf;
+					else {
+
+						memcpy(pnt3, pnt2, x-t);
+						pnt2 += x-t;
+
+					}
+				} else {
+					for (i=0; i<x-t; i++) {
+						nc = *pnt2++;
+						if ((nc & 0x10) && app_data.openb) {
+							*pnt3++ = nc & 0xf;
+						} else if (nc & 8) {
+							colplus[pnt3++ - vmem] = 0x40;
+						} else {
+							pnt3++;
+						}
+					}
+
+				}
+			}
+			
+		}
+
+	}
+
+}
 
 void load_colplus(uint8_t *col){
 	if (vppon)
@@ -475,19 +459,18 @@ void load_colplus(uint8_t *col){
 }
 
 
-void init_vpp(void){
+void init_vpp(void)
+{
 	int i,j,k;
 	
 	if (!vppbmp) vppbmp = create_bitmap(320,250);
 	if (!colplus) colplus = (uint8_t *)malloc(BMPW*BMPH);
 
-	if ((!vppbmp) || (!colplus)) {
+	if ((!vppbmp) || (!colplus))
+   {
 		fprintf(stderr,"Could not allocate memory for Videopac+ screen buffer.\n");
 		exit(EXIT_FAILURE);
 	}
-#ifndef __LIBRETRO__
-	clear(vppbmp);
-#endif
 	memset(colplus,0,BMPW*BMPH);
 
 	LumReg = TraReg = 0xff;
@@ -511,4 +494,3 @@ void init_vpp(void){
 		for (j=0; j<32; j++)
 			for (k=0; k<4; k++) vpp_mem[i][j][k] = 0;
 }
-

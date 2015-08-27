@@ -103,7 +103,7 @@ void set_score(int scoretype, int scoreaddress, int score)
 /*-----------------------------------------------------
 	Save Highscore to File
 -------------------------------------------------------*/
-void save_highscore(int highscore,char *scorefile)
+void save_highscore(int highscore, char *scorefile)
 {
 	FILE *fn;
 

@@ -397,6 +397,8 @@ uint8_t in_bus(void)
 {
 	uint8_t si=0,d=0,mode=0,jn=0,sticknum=0;
 
+   (void)sticknum;
+
 	if ((p1 & 0x08) && (p1 & 0x10)) {
 		/* Handle joystick read */
 		if (!(p1 & 0x04)) {

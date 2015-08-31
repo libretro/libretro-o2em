@@ -13,7 +13,6 @@
  *   Score loading/saving by manopac
  */
 
-#include <dirent.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>

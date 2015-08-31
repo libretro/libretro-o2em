@@ -67,13 +67,11 @@ ifeq ($(IOSSDK),)
 endif
 
    CC = clang -arch armv7 -isysroot $(IOSSDK)
-   CXX = clang++ -arch armv7 -isysroot $(IOSSDK)
    OSXVER = `sw_vers -productVersion | cut -d. -f 2`
    OSX_LT_MAVERICKS = `(( $(OSXVER) <= 9)) && echo "YES"`
 ifeq ($(OSX_LT_MAVERICKS),"YES")
    SHARED += -miphoneos-version-min=5.0
    CC +=  -miphoneos-version-min=5.0
-   CXX +=  -miphoneos-version-min=5.0
 endif
 else ifeq ($(platform), theos_ios)
 DEPLOYMENT_IOSVERSION = 5.0
@@ -89,11 +87,9 @@ else ifeq ($(platform), qnx)
    fpic := -fPIC
    SHARED := -shared -Wl,--no-undefined -Wl,--version-script=link.T
 	CC = qcc -Vgcc_ntoarmv7le
-	CXX = QCC -Vgcc_ntoarmv7le_cpp
 else ifeq ($(platform), ps3)
    TARGET := $(TARGET_NAME)_libretro_ps3.a
    CC = $(CELL_SDK)/host-win32/ppu/bin/ppu-lv2-gcc.exe
-   CXX = $(CELL_SDK)/host-win32/ppu/bin/ppu-lv2-g++.exe
    AR = $(CELL_SDK)/host-win32/ppu/bin/ppu-lv2-ar.exe
    STATIC_LINKING = 1
 	FLAGS += -DMSB_FIRST
@@ -101,22 +97,30 @@ else ifeq ($(platform), ps3)
 else ifeq ($(platform), sncps3)
    TARGET := $(TARGET_NAME)_libretro_ps3.a
    CC = $(CELL_SDK)/host-win32/sn/bin/ps3ppusnc.exe
-   CXX = $(CELL_SDK)/host-win32/sn/bin/ps3ppusnc.exe
    AR = $(CELL_SDK)/host-win32/sn/bin/ps3snarl.exe
    STATIC_LINKING = 1
 	FLAGS += -DMSB_FIRST
 	NO_GCC = 1
+
+# PSP1
 else ifeq ($(platform), psp1)
    TARGET := $(TARGET_NAME)_libretro_psp1.a
 	CC = psp-gcc$(EXE_EXT)
-	CXX = psp-g++$(EXE_EXT)
 	AR = psp-ar$(EXE_EXT)
    STATIC_LINKING = 1
 	FLAGS += -G0 
+
+# Vita
+else ifeq ($(platform), vita)
+   TARGET := $(TARGET_NAME)_libretro_vita.a
+	CC = arm-vita-eabi-gcc$(EXE_EXT)
+	AR = arm-vita-eabi-ar$(EXE_EXT)
+   STATIC_LINKING = 1
+	FLAGS += -DVITA
+
 else
    TARGET := $(TARGET_NAME)_libretro.dll
    CC = gcc
-   CXX = g++
    SHARED := -shared -Wl,--no-undefined -Wl,--version-script=link.T
    LDFLAGS += -static-libgcc -static-libstdc++ -lwinmm
 endif
@@ -154,7 +158,6 @@ endif
 
 FLAGS += -D__LIBRETRO__ $(WARNINGS)
 
-CXXFLAGS += $(FLAGS)
 CFLAGS += $(FLAGS)
 
 ifeq ($(platform), theos_ios)

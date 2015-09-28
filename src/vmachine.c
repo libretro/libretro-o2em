@@ -723,56 +723,54 @@ int savestate(char* filename)
 
 int loadstate(char* filename)
 {
-	FILE *fn;
-	int bios;
-	unsigned long crc;
+   int bios;
+   unsigned long crc;
+   FILE *fn = fopen(filename,"rb");
+   if (fn==NULL) 					// no savefile yet
+      return(errno);
 
-        fn = fopen(filename,"rb");
-	if (fn==NULL) 					// no savefile yet
-	{
-		return(errno);
-	}
+   fread (&crc,sizeof(crc),1,fn);
+   if (crc!=app_data.crc)				// wrong cart
+   {
+      fclose(fn);
+      return(199);
+   }
 
-	fread (&crc,sizeof(crc),1,fn);
-	if (crc!=app_data.crc)				// wrong cart
-	{
-		return(199);
-	}
+   fread (&bios,sizeof(bios),1,fn);
+   if (bios!=app_data.bios)			// wrong bios
+   {
+      fclose(fn);
+      return(200+bios);
+   }
 
-	fread (&bios,sizeof(bios),1,fn);
-	if (bios!=app_data.bios)			// wrong bios
-	{
-		return(200+bios);
-	}
+   fread (VDCwrite,256,1,fn);
+   fread (extRAM,256,1,fn);
+   fread (intRAM,64,1,fn);
 
-	fread (VDCwrite,256,1,fn);
-	fread (extRAM,256,1,fn);
-	fread (intRAM,64,1,fn);
+   fread(&pc, sizeof(pc),1,fn);
+   fread(&sp, sizeof(sp),1,fn);
+   fread(&bs, sizeof(bs),1,fn);
+   fread(&p1, sizeof(p1),1,fn);
+   fread(&p2, sizeof(p2),1,fn);
 
-	fread(&pc, sizeof(pc),1,fn);
-	fread(&sp, sizeof(sp),1,fn);
-	fread(&bs, sizeof(bs),1,fn);
-	fread(&p1, sizeof(p1),1,fn);
-	fread(&p2, sizeof(p2),1,fn);
+   fread(&ac, sizeof(ac),1,fn);
+   fread(&cy, sizeof(cy),1,fn);
+   fread(&f0, sizeof(f0),1,fn);
+   fread(&A11, sizeof(A11),1,fn);
+   fread(&A11ff, sizeof(A11ff),1,fn);
 
-	fread(&ac, sizeof(ac),1,fn);
-	fread(&cy, sizeof(cy),1,fn);
-	fread(&f0, sizeof(f0),1,fn);
-	fread(&A11, sizeof(A11),1,fn);
-	fread(&A11ff, sizeof(A11ff),1,fn);
+   fread(&timer_on, sizeof(timer_on),1,fn);
+   fread(&count_on, sizeof(count_on),1,fn);
+   fread(&reg_pnt, sizeof(reg_pnt),1,fn);
 
-	fread(&timer_on, sizeof(timer_on),1,fn);
-	fread(&count_on, sizeof(count_on),1,fn);
-	fread(&reg_pnt, sizeof(reg_pnt),1,fn);
-	
-	fread(&tirq_en, sizeof(tirq_en),1,fn);
-	fread(&xirq_en, sizeof(xirq_en),1,fn);
-	fread(&irq_ex, sizeof(irq_ex),1,fn);
-	fread(&xirq_pend, sizeof(xirq_pend),1,fn);
-	fread(&tirq_pend, sizeof(tirq_pend),1,fn);
+   fread(&tirq_en, sizeof(tirq_en),1,fn);
+   fread(&xirq_en, sizeof(xirq_en),1,fn);
+   fread(&irq_ex, sizeof(irq_ex),1,fn);
+   fread(&xirq_pend, sizeof(xirq_pend),1,fn);
+   fread(&tirq_pend, sizeof(tirq_pend),1,fn);
 
-	fclose(fn);
+   fclose(fn);
 
-	return(0);
+   return(0);
 
 }

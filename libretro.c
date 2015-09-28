@@ -85,39 +85,52 @@ static void load_bios(const char *biosname)
    unsigned long crc;
    int i;
 
-   if ((biosname[strlen(biosname)-1]=='/') || (biosname[strlen(biosname)-1]=='\\') || (biosname[strlen(biosname)-1]==':')) {
+   if ((biosname[strlen(biosname)-1]=='/') || (biosname[strlen(biosname)-1]=='\\') || (biosname[strlen(biosname)-1]==':'))
+   {
       strcpy(s,biosname);
       strcat(s,odyssey2);
       fn = fopen(s,"rb");
 
-      if (!fn) {
+      if (!fn)
+      {
          strcpy(s,biosname);
          strcat(s,odyssey2);
          fn = fopen(s,"rb");
       }
    }
-   else {
+   else
+   {
       strcpy(s,biosname);
       fn = fopen(biosname,"rb");
    }
 
-   if (!fn) {
+   if (!fn)
+   {
       fprintf(stderr,"Error loading bios ROM (%s)\n",s);
       exit(EXIT_FAILURE);
    }
-   if (fread(rom_table[0],1024,1,fn) != 1) {
+
+   if (fread(rom_table[0],1024,1,fn) != 1)
+   {
+      fclose(fn);
       fprintf(stderr,"Error loading bios ROM %s\n",odyssey2);
       exit(EXIT_FAILURE);
    }
 
+   fclose(fn);
+
    strcpy(s,biosname);
    fn = fopen(biosname,"rb");
 
-   if (!fn) {
+   if (!fn)
+   {
       fprintf(stderr,"Error loading bios ROM (%s)\n",s);
       exit(EXIT_FAILURE);
    }
-   if (fread(rom_table[0],1024,1,fn) != 1) {
+
+   if (fread(rom_table[0],1024,1,fn) != 1)
+   {
+      fclose(fn);
       fprintf(stderr,"Error loading bios ROM %s\n",odyssey2);
       exit(EXIT_FAILURE);
    }

@@ -243,11 +243,11 @@ static void draw_grid(void)
          for (i=0; i<9; i++) {
             pn1 = pnt + (i * 32) + 20;
             color = ColorVector[j*24+24];
-            mputvid(pn1, 4, (color & 0x07) | ((color & 0x40) >> 3) | (color & 0x80 ? 0 : 8), COL_HGRID);
+            mputvid(pn1, 4, (color & 0x07) | ((color & 0x40) >> 3) | ((color & 0x80) ? 0 : 8), COL_HGRID);
             color = ColorVector[j*24+25];
-            mputvid(pn1+BMPW, 4, (color & 0x07) | ((color & 0x40) >> 3) | (color & 0x80 ? 0 : 8), COL_HGRID);
+            mputvid(pn1+BMPW, 4, (color & 0x07) | ((color & 0x40) >> 3) | ((color & 0x80) ? 0 : 8), COL_HGRID);
             color = ColorVector[j*24+26];
-            mputvid(pn1+BMPW*2, 4, (color & 0x07) | ((color & 0x40) >> 3) | (color & 0x80 ? 0 : 8), COL_HGRID);
+            mputvid(pn1+BMPW*2, 4, (color & 0x07) | ((color & 0x40) >> 3) | ((color & 0x80) ? 0 : 8), COL_HGRID);
          }
       }
    }
@@ -265,11 +265,11 @@ static void draw_grid(void)
             }
             if (d & mask)	{
                color = ColorVector[j*24+24];
-               mputvid(pn1, 36, (color & 0x07) | ((color & 0x40) >> 3) | (color & 0x80 ? 0 : 8), COL_HGRID);
+               mputvid(pn1, 36, (color & 0x07) | ((color & 0x40) >> 3) | ((color & 0x80) ? 0 : 8), COL_HGRID);
                color = ColorVector[j*24+25];
-               mputvid(pn1+BMPW, 36, (color & 0x07) | ((color & 0x40) >> 3) | (color & 0x80 ? 0 : 8), COL_HGRID);
+               mputvid(pn1+BMPW, 36, (color & 0x07) | ((color & 0x40) >> 3) | ((color & 0x80) ? 0 : 8), COL_HGRID);
                color = ColorVector[j*24+26];
-               mputvid(pn1+BMPW*2, 36, (color & 0x07) | ((color & 0x40) >> 3) | (color & 0x80 ? 0 : 8), COL_HGRID);
+               mputvid(pn1+BMPW*2, 36, (color & 0x07) | ((color & 0x40) >> 3) | ((color & 0x80) ? 0 : 8), COL_HGRID);
             }
          }
       }

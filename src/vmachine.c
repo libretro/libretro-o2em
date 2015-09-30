@@ -169,31 +169,32 @@ void handle_evbl(void)
 
 }
 
-void handle_evbll(void){
-	static long last=0;
-	static int rest_cnt=0;
-	int i;
+void handle_evbll(void)
+{
+   static int rest_cnt=0;
+   int i;
 
-	i = (15*app_data.speed/100);
-	rest_cnt = (rest_cnt+1)%(i<5?5:i);
+   i = (15*app_data.speed/100);
+   rest_cnt = (rest_cnt+1)%(i<5?5:i);
 
-/******************* 150 */
+   /******************* 150 */
 
-    for (i=150; i<MAXLINES; i++)  {
-		ColorVector[i] = (VDCwrite[0xA3] & 0x7f) | (p1 & 0x80);
-		AudioVector[i] = VDCwrite[0xAA];
-	}
-
-	if (key2vcnt++ > 10) {
-		key2vcnt=0;
-		for (i=0; i<128; i++) key2[i] = 0;
-		dbstick1 = dbstick2 = 0;
-	}
-	if (app_data.limit)
+   for (i=150; i<MAXLINES; i++)
    {
-      RLOOP=0;
+      ColorVector[i] = (VDCwrite[0xA3] & 0x7f) | (p1 & 0x80);
+      AudioVector[i] = VDCwrite[0xAA];
    }
-	mstate=0;	
+
+   if (key2vcnt++ > 10)
+   {
+      key2vcnt=0;
+      for (i=0; i<128; i++) key2[i] = 0;
+      dbstick1 = dbstick2 = 0;
+   }
+
+   if (app_data.limit)
+      RLOOP=0;
+   mstate=0;	
 }
 
 void init_system(void){
@@ -279,39 +280,46 @@ void write_p1(uint8_t d){
 	}
 }
 
-uint8_t read_P2(void){
-	int i,si,so,km;
+uint8_t read_P2(void)
+{
+   if (NeedsPoll)
+      poll_keyboard();
 
-	if (NeedsPoll) poll_keyboard();
+   if (!(p1 & 0x04))
+   {
+      int si = (p2 & 7);
+      int so = 0xff;
 
-	if (!(p1 & 0x04)) {
-		si = (p2 & 7);
-		so=0xff;
-		if (si<6) {
-			for (i=0; i<8; i++) {
-				km = key_map[si][i];
+      if (si<6)
+      {
+         int i;
+
+         for (i=0; i<8; i++)
+         {
+            int km = key_map[si][i];
 #ifndef __LIBRETRO__
-				if ((key[km] && ((!joykeystab[km]) || (key_shifts & KB_CAPSLOCK_FLAG))) || (key2[km])) {
-					so = i ^ 0x07;
-				}
+            if ((key[km] && ((!joykeystab[km]) || (key_shifts & KB_CAPSLOCK_FLAG))) || (key2[km]))
+               so = i ^ 0x07;
 #else 
-//FIXME
-				if ( key[km] && (!joykeystab[km]) )
-					so = i ^ 0x07;
+            //FIXME
+            if ( key[km] && (!joykeystab[km]))
+               so = i ^ 0x07;
 #endif
-			}
-		}
-		if (so != 0xff) {
-			p2 = p2 & 0x0F;
-			p2 = p2 | (so << 5);
-		} else {
-			p2 = p2 | 0xF0;
-		}
-	 } else {
-		p2 = p2 | 0xF0;
-	 }
-	 return(p2);
-	 
+         }
+      }
+      if (so != 0xff)
+      {
+         p2 = p2 & 0x0F;
+         p2 = p2 | (so << 5);
+      }
+      else
+         p2 = p2 | 0xF0;
+   }
+   else
+      p2 = p2 | 0xF0;
+
+   return(p2);
+
 }
 
 
@@ -395,26 +403,33 @@ uint8_t ext_read(uint16_t adr){
 
 uint8_t in_bus(void)
 {
-	uint8_t si=0,d=0,mode=0,jn=0,sticknum=0;
+	uint8_t si=0,d=0, jn=0,sticknum=0;
 
    (void)sticknum;
 
-	if ((p1 & 0x08) && (p1 & 0x10)) {
+	if ((p1 & 0x08) && (p1 & 0x10))
+   {
+      uint8_t mode = 0;
+
 		/* Handle joystick read */
-		if (!(p1 & 0x04)) {
+		if (!(p1 & 0x04))
 			si = (p2 & 7);
-		}
 		d=0xFF;
-		if (si == 1) {
+		if (si == 1)
+      {
 			mode = app_data.stick[0];
 			jn = 0;
 			sticknum = app_data.sticknumber[0]-1;
-		} else {
+		}
+      else
+      {
 			mode = app_data.stick[1];
 			jn = 1;
 			sticknum = app_data.sticknumber[1]-1;
 		}
-		switch(mode) {
+
+		switch(mode)
+      {
 			case 1:
 				d = keyjoy(jn);
 				break;
@@ -434,10 +449,15 @@ uint8_t in_bus(void)
 
 				break;
 		}
-		if (si == 1) {
-			if (dbstick1) d = dbstick1;
-		} else {
-			if (dbstick2) d = dbstick2;
+		if (si == 1)
+      {
+			if (dbstick1)
+            d = dbstick1;
+		}
+      else
+      {
+			if (dbstick2)
+            d = dbstick2;
 		}
    }
    return d;

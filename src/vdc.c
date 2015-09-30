@@ -96,7 +96,8 @@ static void create_cmap(void)
 		colors[i+32].b = colors[i].b = colors[i-16].b/2;
 	}
 
-	for (i = 64; i < 256; i++) colors[i].r = colors[i].g = colors[i].b = 0;
+	for (i = 64; i < 256; i++)
+      colors[i].r = colors[i].g = colors[i].b = 0;
 }
 
 static INLINE void mputvid(unsigned int ad, unsigned int len, uint8_t d, uint8_t c)
@@ -128,44 +129,51 @@ static INLINE void mputvid(unsigned int ad, unsigned int len, uint8_t d, uint8_t
 
 static void draw_char(uint8_t ypos,uint8_t xpos,uint8_t chr,uint8_t col)
 {
-	int j,c;
+	int j;
 	uint8_t cl,d1;
-	int y,b,n;
-	unsigned int pnt;
-
-	y=(ypos & 0xFE); 
-	pnt = y * BMPW + ((xpos-8) * 2)+20;
+	int b,n;
+	int y=(ypos & 0xFE); 
+	unsigned int pnt = y * BMPW + ((xpos-8) * 2)+20;
 
 	ypos = ypos >> 1;
-	n = 8 - (ypos % 8) - (chr % 8);
-	if (n < 3) n = n + 7;
+	n    = 8 - (ypos % 8) - (chr % 8);
+
+	if (n < 3)
+      n = n + 7;
 	
-	if ((pnt+BMPW*2*n >= (unsigned long)clip_low) && (pnt <= (unsigned long)clip_high)) {
+	if ((pnt+BMPW*2*n >= (unsigned long)clip_low) && (pnt <= (unsigned long)clip_high))
+   {
+      int c=(int)chr + ypos;
+      if (col & 0x01)
+         c+=256;
+      if (c > 511)
+         c=c-512;
 
-		c=(int)chr + ypos;
-		if (col & 0x01) c+=256;
-		if (c > 511) c=c-512;
+      cl = ((col & 0x0E) >> 1);
+      cl = ((cl&2) | ((cl&1)<<2) | ((cl&4)>>2)) + 8;
 
-		cl = ((col & 0x0E) >> 1);
-		cl = ((cl&2) | ((cl&1)<<2) | ((cl&4)>>2)) + 8;
-
-		if ((y>0) && (y<232) && (xpos<157)) {
-			for (j=0; j<n; j++) {
-				d1 = cset[c+j];
-				for (b=0; b<8; b++) {
-					if (d1 & 0x80) {
-						if ((xpos-8+b < 160) && (y+j < 240)) {
-							mputvid(pnt,2,cl,COL_CHAR);
-							mputvid(pnt+BMPW,2,cl,COL_CHAR);
-						}
-					}
-					pnt+=2;
-					d1 = d1 << 1;
-				}
-				pnt += BMPW*2-16;
-			}
-		}
-	}
+      if ((y>0) && (y<232) && (xpos<157))
+      {
+         for (j=0; j<n; j++)
+         {
+            d1 = cset[c+j];
+            for (b=0; b<8; b++)
+            {
+               if (d1 & 0x80)
+               {
+                  if ((xpos-8+b < 160) && (y+j < 240))
+                  {
+                     mputvid(pnt,2,cl,COL_CHAR);
+                     mputvid(pnt+BMPW,2,cl,COL_CHAR);
+                  }
+               }
+               pnt+=2;
+               d1 = d1 << 1;
+            }
+            pnt += BMPW*2-16;
+         }
+      }
+   }
 }
 
 /* This quad drawing routine can display the quad cut off effect used in KTAA.
@@ -206,7 +214,8 @@ static void draw_quad(uint8_t ypos, uint8_t xpos, uint8_t cp0l, uint8_t cp0h, ui
 	col[3] = (cp3h & 0xe) >> 1;
 	for(i = 0; i < 4; i++) col[i] = ((col[i] & 2) | ((col[i] & 1) << 2) | ((col[i] & 4) >> 2)) + 8;
 	/* now draw the quad line by line controlled by the last quad */
-	while(lines-- > 0) {
+	while(lines-- > 0)
+   {
 		off = 0;
 		/* draw all 4 sub-quads */
 		for(i = 0; i < 4; i++) {

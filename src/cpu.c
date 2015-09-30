@@ -87,13 +87,14 @@ extern int RLOOP;
 
 void cpu_exec(void)
 {
-	uint8_t op;
 	uint16_t adr;
 	uint8_t dat;
 	int temp;
 
 	while(RLOOP == 1)
    {
+      uint8_t op;
+
       clk=0;	
 
       lastpc=pc;

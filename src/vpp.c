@@ -264,20 +264,30 @@ static void vpp_draw_char(int x, int y, uint8_t ch,
 
 static void vpp_update_screen(void)
 {
-	int i,x,y,l,chr,attr,ext,c0,c1,dw,dh,hpar,vpar,lvd,lhd,ser_chr,ser_atr,ul,conc,box,swapcol;
+	int i,x,y,chr,attr,ext,dw,dh,vpar,lvd, ser_chr,ser_atr, swapcol;
 	int tlum[8], m[8] = {0x01, 0x10, 0x04, 0x40, 0x02, 0x20, 0x08, 0x80};
-	for (i=0; i<8; i++) tlum[i] = (LumReg & m[i]) ? 0 : 8;
+
+	for (i=0; i<8; i++)
+      tlum[i] = (LumReg & m[i]) ? 0 : 8;
 
 	vpar = lvd = 0;
-	for (y=0; y<25; y++) {
-
+	for (y=0; y<25; y++)
+   {
+      int l;
+      int c0   = 0;
+      int lhd  = 0;
+      int hpar = 0;
+      int   ul = 0;
+      int conc = 0;
+      int box  = 0;
 		vpar = (lvd==0) ? 0 : 1-vpar;
 
 		l = (y==0) ? 31 : (y-1+vpp_y0)%24;
-		c0 = ul = conc = box = 0;
 
-		hpar = lhd = 0;
-		for (x=0; x<40; x++) {
+		for (x=0; x<40; x++)
+      {
+         int c1;
+
 			hpar = (lhd==0) ? 0 : 1-hpar;
 
 			chr = vpp_mem[x][l][0];

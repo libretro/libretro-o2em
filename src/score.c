@@ -75,22 +75,18 @@ void set_score(int scoretype, int scoreaddress, int score)
 
 	if (scoretype!=0 && score>0)
 	{
-		int position;
 		int i;
-		uint8_t *RAM;
-		int digit;
 
 		int count = scoretype%10;
 		int direction = ((scoretype/10)%10)==1?-1:1;
 		float valuetype = (float) (3-((scoretype/100)%10))/2;
 		int ramtype = scoretype/1000;
-
-		position = scoreaddress+ (direction==1?0:(count*valuetype-1));
-		RAM = ramtype==1?extRAM:intRAM;
+		int position = scoreaddress+ (direction==1?0:(count*valuetype-1));
+		uint8_t *RAM = ramtype==1?extRAM:intRAM;
 
 		for(i=count-1;i>=0;i--)
 		{
-			digit = score / power(10,i);
+			int digit = score / power(10,i);
 			RAM[position+(int)(valuetype*i*direction)]=((valuetype==0.5)&&(i%2==0))?(RAM[position+(int)(valuetype*i*direction)]<<4)+digit:digit;
 			score = score - digit*power(10,i);
 		}

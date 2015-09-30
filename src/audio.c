@@ -47,19 +47,20 @@ static unsigned char flt_prv = 0;
 static void filter(unsigned char *buffer, unsigned long len)
 {
 	static unsigned char buf[SOUND_BUFFER_LEN];
-	int t;
 	unsigned long i;
 	if (len>SOUND_BUFFER_LEN)
       return;
+
 	memcpy(buf,buffer,len);	
 
 	for (i=0; i<len; i++)
    {
-		t = (i==0)?(buf[0]-flt_prv):(buf[i]-buf[i-1]);
+		int t = (i==0)?(buf[0]-flt_prv):(buf[i]-buf[i-1]);
 		if (t) flt_b = (double)t;
 		flt_a += flt_b/4.0 - flt_a/80.0;
 		flt_b -= flt_b/4.0;
-		if ((flt_a>255.0)||(flt_a<-255.0)) flt_a=0.0;
+		if ((flt_a>255.0)||(flt_a<-255.0))
+         flt_a=0.0;
 		buffer[i] = (unsigned char)((flt_a+255.0)/2.0);
 	}
 	flt_prv = buf[len-1];
@@ -67,23 +68,23 @@ static void filter(unsigned char *buffer, unsigned long len)
 
 void audio_process(unsigned char *buffer)
 {
-   unsigned long aud_data;
-   int volume, re_circ, noise, enabled, intena, period, pnt, cnt, rndbit, pos;
+   unsigned long aud_data = (VDCwrite[AUD_D2] | 
+         (VDCwrite[AUD_D1] << 8) | (VDCwrite[AUD_D0] << 16));
 
-   aud_data = (VDCwrite[AUD_D2] | (VDCwrite[AUD_D1] << 8) | (VDCwrite[AUD_D0] << 16));
+   int intena = VDCwrite[0xA0] & 0x04;
+   int pnt    = 0;
+   int cnt    = 0;
 
-   intena = VDCwrite[0xA0] & 0x04;
-
-   pnt = cnt = 0;
-
-   noise = VDCwrite[AUD_CTRL] & 0x10;
-   enabled = VDCwrite[AUD_CTRL] & 0x80;
-   rndbit = (enabled && noise) ? (rand()%2) : 0;
+   int noise = VDCwrite[AUD_CTRL] & 0x10;
+   int enabled = VDCwrite[AUD_CTRL] & 0x80;
+   int rndbit = (enabled && noise) ? (rand()%2) : 0;
 
    while (pnt < SOUND_BUFFER_LEN)
    {
-      pos = (tweakedaudio) ? (pnt/3) : (MAXLINES-1);
-      volume = AudioVector[pos] & 0x0F;
+      int period, re_circ;
+
+      int pos = (tweakedaudio) ? (pnt/3) : (MAXLINES-1);
+      int volume = AudioVector[pos] & 0x0F;
       enabled = AudioVector[pos] & 0x80;
       period = (AudioVector[pos] & 0x20) ? PERIOD1 : PERIOD2;
       re_circ = AudioVector[pos] & 0x40;

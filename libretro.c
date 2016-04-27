@@ -643,7 +643,6 @@ void retro_run(void)
    for(i = 0; i < length; i++)
    {
       int16_t sample16 = (soundBuffer[i]-128) << 8;
-      int16_t frame[2] = {sample16, sample16};
-      audio_cb(frame[0], frame[1]);
+      audio_cb(sample16, sample16);
    }
 }

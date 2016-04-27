@@ -642,7 +642,7 @@ void retro_run(void)
    /* Convert 8u to 16s */
    for(i = 0; i < length; i++)
    {
-      int16_t sample16 = (soundBuffer[i] << 8);
+      int16_t sample16 = (soundBuffer[i]-128) << 8;
       int16_t frame[2] = {sample16, sample16};
       audio_cb(frame[0], frame[1]);
    }

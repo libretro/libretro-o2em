@@ -78,7 +78,7 @@ static long filesize(FILE *stream)
    return length;
 }
 
-static void load_bios(const char *biosname)
+static bool load_bios(const char *biosname)
 {
    FILE *fn;
    static char s[MAXC+10];
@@ -107,14 +107,14 @@ static void load_bios(const char *biosname)
    if (!fn)
    {
       fprintf(stderr,"Error loading bios ROM (%s)\n",s);
-      exit(EXIT_FAILURE);
+      return false;
    }
 
    if (fread(rom_table[0],1024,1,fn) != 1)
    {
       fclose(fn);
       fprintf(stderr,"Error loading bios ROM %s\n",odyssey2);
-      exit(EXIT_FAILURE);
+      return false;
    }
 
    fclose(fn);
@@ -125,14 +125,14 @@ static void load_bios(const char *biosname)
    if (!fn)
    {
       fprintf(stderr,"Error loading bios ROM (%s)\n",s);
-      exit(EXIT_FAILURE);
+      return false;
    }
 
    if (fread(rom_table[0],1024,1,fn) != 1)
    {
       fclose(fn);
       fprintf(stderr,"Error loading bios ROM %s\n",odyssey2);
-      exit(EXIT_FAILURE);
+      return false;
    }
 
    fclose(fn);
@@ -163,9 +163,11 @@ static void load_bios(const char *biosname)
       app_data.vpp = 0;
       app_data.bios = ROM_UNKNOWN;
    }
+
+   return true;
 }
 
-static void load_cart(const char *file)
+static bool load_cart(const char *file)
 {
    FILE *fn;
    long l;
@@ -182,20 +184,20 @@ static void load_cart(const char *file)
    if (((app_data.crc == 0x975AB8DA) || (app_data.crc == 0xE246A812)) && (!app_data.debug))
    {
       fprintf(stderr,"Error: file %s is an incomplete ROM dump\n",file_v);
-      exit(EXIT_FAILURE);
+      return false;
    }
 
    fn=fopen(file,"rb");
    if (!fn) {
       fprintf(stderr,"Error loading %s\n",file_v);
-      exit(EXIT_FAILURE);
+      return false;
    }
    printf("Loading: \"%s\"  Size: ",file_v);
    l = filesize(fn);
 
    if ((l % 1024) != 0) {
       fprintf(stderr,"Error: file %s is an invalid ROM dump\n",file_v);
-      exit(EXIT_FAILURE);
+      return false;
    }
 
    /* special MegaCART design by Soeren Gust */
@@ -208,12 +210,12 @@ static void load_cart(const char *file)
       if (megarom == NULL)
       {
          fprintf(stderr, "Out of memory loading %s\n", file);
-         exit(EXIT_FAILURE);
+         return false;
       }
       if (fread(megarom, l, 1, fn) != 1)
       {
          fprintf(stderr,"Error loading %s\n",file);
-         exit(EXIT_FAILURE);
+         return false;
       }
 
       /* mirror shorter files into full megabyte */
@@ -242,7 +244,7 @@ static void load_cart(const char *file)
          if (fread(&rom_table[i][1024],3072,1,fn) != 1)
          {
             fprintf(stderr,"Error loading %s\n",file);
-            exit(EXIT_FAILURE);
+            return false;
          }
       }
       printf("%dK",nb*3);
@@ -257,12 +259,12 @@ static void load_cart(const char *file)
          if (fread(&extROM[0], 1024,1,fn) != 1)
          {
             fprintf(stderr,"Error loading %s\n",file);
-            exit(EXIT_FAILURE);
+            return false;
          }
          if (fread(&rom_table[0][1024],3072,1,fn) != 1)
          {
             fprintf(stderr,"Error loading %s\n",file);
-            exit(EXIT_FAILURE);
+            return false;
          }
          printf("3K EXROM");
 
@@ -274,7 +276,7 @@ static void load_cart(const char *file)
             if (fread(&rom_table[i][1024],2048,1,fn) != 1)
             {
                fprintf(stderr,"Error loading %s\n",file);
-               exit(EXIT_FAILURE);
+               return false;
             }
             memcpy(&rom_table[i][3072],&rom_table[i][2048],1024); /* simulate missing A10 */
          }
@@ -296,6 +298,8 @@ static void load_cart(const char *file)
       app_data.openb=1;
 
    printf("  CRC: %08lX\n",app_data.crc);
+
+   return true;
 }
 
 void update_joy(void)
@@ -547,9 +551,12 @@ bool retro_load_game(const struct retro_game_info *info)
     crcx = app_data.crc;
     //suck_roms();
 
-    load_bios(bios_file_path);
+    if (!load_bios(bios_file_path))
+       return false;
 
-    load_cart(full_path);
+    if (!load_cart(full_path))
+       return false;
+
     //if (app_data.voice) load_voice_samples(path2);
 
     init_display();

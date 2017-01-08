@@ -143,19 +143,19 @@ static bool load_bios(const char *biosname)
    crc = crc32_buf(rom_table[0],1024);
 
    if (crc==0x8016A315) {
-      printf("Odyssey2 bios ROM loaded\n");
+      printf("Magnavox Odyssey2 BIOS ROM loaded (G7000 model)\n");
       app_data.vpp = 0;
       app_data.bios = ROM_O2;
    } else if (crc==0xE20A9F41) {
-      printf("Videopac+ G7400 bios ROM loaded\n");
+      printf("Phillips Videopac+ European BIOS ROM loaded (G7400 model)\n");
       app_data.vpp = 1;
       app_data.bios = ROM_G7400;
    } else if (crc==0xA318E8D6) {
-      if (!((!o2flag)&&(c52flag))) printf("C52 bios ROM loaded\n"); else printf("Ok\n");
+      if (!((!o2flag)&&(c52flag))) printf("Phillips Videopac+ French BIOS ROM loaded (G7000 model)\n"); else printf("Ok\n");
       app_data.vpp = 0;
       app_data.bios = ROM_C52;
    } else if (crc==0x11647CA5) {
-      if (g74flag) printf("Jopac bios ROM loaded\n"); else printf(" Ok\n");
+      if (g74flag) printf("Phillips Videopac+ French BIOS ROM loaded (G7400 model)\n"); else printf(" Ok\n");
       app_data.vpp = 1;
       app_data.bios = ROM_JOPAC;
    } else {

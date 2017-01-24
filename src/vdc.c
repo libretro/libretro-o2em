@@ -65,9 +65,10 @@ static uint8_t *col = NULL;
 static PALETTE colors,oldcol;
 
 /* The pointer to the graphics buffer */
-static uint8_t *vscreen = NULL;
+static uint8_t *vscreen           = NULL;
 
-static BITMAP *bmp, *bmpcache;
+static BITMAP *bmp                = NULL;
+static BITMAP *bmpcache           = NULL;
 static int cached_lines[MAXLINES];
 
 uint8_t coltab[256];
@@ -474,8 +475,10 @@ void retro_blit(void)
 
 void retro_destroybmp(void)
 {
-	destroy_bitmap(bmp);
+   destroy_bitmap(bmp);
+   bmp = NULL;
 	destroy_bitmap(bmpcache);
+   bmpcache = NULL;
 }
 
 void finish_display(void)

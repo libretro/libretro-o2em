@@ -445,8 +445,11 @@ bool retro_load_game(const struct retro_game_info *info)
 {
     char bios_file_path[256];
     const char *full_path, *system_directory_c;
-
     enum retro_pixel_format fmt = RETRO_PIXEL_FORMAT_RGB565;
+
+    if (!info)
+       return false;
+
     if (!environ_cb(RETRO_ENVIRONMENT_SET_PIXEL_FORMAT, &fmt))
     {
         if (log_cb)

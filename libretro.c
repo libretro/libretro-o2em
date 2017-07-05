@@ -446,17 +446,6 @@ bool retro_load_game(const struct retro_game_info *info)
     char bios_file_path[256];
     const char *full_path, *system_directory_c;
     enum retro_pixel_format fmt = RETRO_PIXEL_FORMAT_RGB565;
-
-    if (!info)
-       return false;
-
-    if (!environ_cb(RETRO_ENVIRONMENT_SET_PIXEL_FORMAT, &fmt))
-    {
-        if (log_cb)
-            log_cb(RETRO_LOG_INFO, "[O2EM]: RGB565 is not supported.\n");
-        return false;
-    }
-
     struct retro_input_descriptor desc[] = {
        { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_LEFT,  "Left" },
        { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP,    "Up" },
@@ -473,6 +462,16 @@ bool retro_load_game(const struct retro_game_info *info)
        { 0 },
     };
 
+    if (!info)
+       return false;
+
+    if (!environ_cb(RETRO_ENVIRONMENT_SET_PIXEL_FORMAT, &fmt))
+    {
+        if (log_cb)
+            log_cb(RETRO_LOG_INFO, "[O2EM]: RGB565 is not supported.\n");
+        return false;
+    }
+
    environ_cb(RETRO_ENVIRONMENT_SET_INPUT_DESCRIPTORS, desc);
 
     full_path = info->path;
@@ -488,7 +487,6 @@ bool retro_load_game(const struct retro_game_info *info)
     }
     else
     {
-
 #ifdef _WIN32
       char slash = '\\';
 #else

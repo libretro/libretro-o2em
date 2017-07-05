@@ -640,7 +640,7 @@ void retro_reset(void)
 
 void retro_run(void)
 {
-   int i;
+   int i, length;
    update_input();
 
    cpu_exec();
@@ -648,7 +648,7 @@ void retro_run(void)
 
    video_cb(mbmp, EMUWIDTH, EMUHEIGHT, TEX_WIDTH << 1);
    
-   int length = (evblclk == EVBLCLK_NTSC) ? 44100 / 60 : 44100 / 50;
+   length = (evblclk == EVBLCLK_NTSC) ? 44100 / 60 : 44100 / 50;
 
    /* Convert 8u to 16s */
    for(i = 0; i < length; i++)

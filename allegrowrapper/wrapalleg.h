@@ -1,8 +1,9 @@
 #ifndef WRAP_H
 #define WRAP_H
 
-#ifdef _MSVC
+#ifdef _MSC_VER
 #define INLINE _inline
+#include <direct.h>
 #else
 #include <unistd.h>
 #define INLINE inline

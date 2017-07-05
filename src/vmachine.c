@@ -23,7 +23,9 @@
 #include "cpu.h"
 #include "keyboard.h"
 #include "config.h"
+#ifdef HAVE_DEBUG
 #include "debug.h" 
+#endif
 #include "vdc.h" 
 #include "vpp.h"
 #include "voice.h"
@@ -97,7 +99,9 @@ void run(void){
 			set_textmode();
 			mute_audio();
 			mute_voice();
+#ifdef HAVE_DEBUG
 			debug();
+#endif
 			grmode();
 			app_data.debug=0;
 			init_keyboard();

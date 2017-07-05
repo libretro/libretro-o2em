@@ -195,7 +195,7 @@ include Makefile.common
 OBJECTS := $(SOURCES_C:.c=.o)
 
 ifeq ($(DEBUG),1)
-FLAGS += -O0 -g
+FLAGS += -O0 -g -DHAVE_DEBUG
 else
 FLAGS += -O2 -DNDEBUG
 endif

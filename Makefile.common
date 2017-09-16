@@ -1,4 +1,5 @@
-INCFLAGS += -I$(CORE_DIR) -I$(CORE_DIR)/src -I$(CORE_DIR)/allegrowrapper
+LIBRETRO_COMM_DIR = $(CORE_DIR)/libretro-common
+INCFLAGS := -I$(CORE_DIR) -I$(CORE_DIR)/src -I$(CORE_DIR)/allegrowrapper
 
 SOURCES_C := $(CORE_DIR)/src/audio.c \
     $(CORE_DIR)/src/cpu.c \

@@ -167,6 +167,7 @@ CXXFLAGS += -D_XBOX -D_XBOX360
 STATIC_LINKING=1
 HAS_GCC := 0
 HAVE_SYS_PARAM = 0
+FLAGS += -DMSB_FIRST
 
 # Windows MSVC 2010 x64
 else ifeq ($(platform), windows_msvc2010_x64)

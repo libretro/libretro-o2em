@@ -416,20 +416,19 @@ void retro_set_controller_port_device(unsigned port, unsigned device)
 
 size_t retro_serialize_size(void) 
 { 
-	//return STATE_SIZE;
-	return 0;
+	return STATE_SIZE;
 }
 
 bool retro_serialize(void *data, size_t size)
 {
-   //savestate(fileName);
-   return false;
+   savestate_to_mem(data);
+   return true;
 }
 
 bool retro_unserialize(const void *data, size_t size)
 {
-   //loadstate(fileName);
-   return false;
+   loadstate_from_mem(data);
+   return true;
 }
 
 void retro_cheat_reset(void)

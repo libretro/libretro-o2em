@@ -56,10 +56,9 @@ int contax, o2flag, g74flag, c52flag, jopflag, helpflag;
 
 unsigned long crcx = ~0;
 
-static char bios[MAXC], scshot[MAXC], xrom[MAXC], romdir[MAXC], xbios[MAXC],
-biosdir[MAXC], arkivo[MAXC][MAXC], biossux[MAXC], romssux[MAXC],
-odyssey2[MAXC], g7400[MAXC], c52[MAXC], jopac[MAXC], file_l[MAXC], bios_l[MAXC],
-file_v[MAXC],scorefile[MAXC], statefile[MAXC], path2[MAXC];
+static char scshot[MAXC],
+odyssey2[MAXC],
+file_v[MAXC],scorefile[MAXC], statefile[MAXC];
 
 static int does_file_exist(const char *filename)
 {
@@ -384,8 +383,6 @@ static void update_input(void)
  * libretro implementation
  ************************************/
 
-static struct retro_system_av_info g_av_info;
-
 void retro_get_system_info(struct retro_system_info *info)
 {
    memset(info, 0, sizeof(*info));
@@ -543,13 +540,6 @@ bool retro_load_game(const struct retro_game_info *info)
     app_data.default_highscore = 0;
     app_data.breakpoint = 65535;
     app_data.megaxrom = 0;
-    //strcpy(file,"");
-    //strcpy(file_l,"");
-    //strcpy(bios_l,"");
-    //strcpy(bios,"");
-    //strcpy(scshot,"");
-    //strcpy(statefile,"");
-    //strcpy(xrom,"");
     strcpy(scorefile,"highscore.txt");
     //read_default_config();
 

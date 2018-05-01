@@ -699,6 +699,107 @@ static void setvideomode(int t){
 
 #ifdef __LIBRETRO__
 #include <errno.h>
+#include <string.h>
+
+void savestate_to_mem(void *data)
+{
+  int offset = 0;
+  memcpy(data+offset, &app_data.crc, sizeof(app_data.crc));
+  offset += sizeof(app_data.crc);
+  memcpy(data+offset, &app_data.bios, sizeof(app_data.bios));
+  offset += sizeof(app_data.bios);
+  memcpy(data+offset, VDCwrite, 256);
+  offset += 256;
+  memcpy(data+offset, extRAM, 256);
+  offset += 256;
+  memcpy(data+offset, intRAM, 64);
+  offset += 64;
+  memcpy(data+offset, &pc, sizeof(pc));
+  offset += sizeof(pc);
+  memcpy(data+offset, &sp, sizeof(sp));
+  offset += sizeof(sp);
+  memcpy(data+offset, &bs, sizeof(bs));
+  offset += sizeof(bs);
+  memcpy(data+offset, &p1, sizeof(p1));
+  offset += sizeof(p1);
+  memcpy(data+offset, &p2, sizeof(p2));
+  offset += sizeof(p2);
+  memcpy(data+offset, &ac, sizeof(ac));
+  offset += sizeof(ac);
+  memcpy(data+offset, &cy, sizeof(cy));
+  offset += sizeof(cy);
+  memcpy(data+offset, &f0, sizeof(f0));
+  offset += sizeof(f0);
+  memcpy(data+offset, &A11, sizeof(A11));
+  offset += sizeof(A11);
+  memcpy(data+offset, &A11ff, sizeof(A11ff));
+  offset += sizeof(A11ff);
+  memcpy(data+offset, &timer_on, sizeof(timer_on));
+  offset += sizeof(timer_on);
+  memcpy(data+offset, &count_on, sizeof(count_on));
+  offset += sizeof(count_on);
+  memcpy(data+offset, &reg_pnt, sizeof(reg_pnt));
+  offset += sizeof(reg_pnt);
+  memcpy(data+offset, &tirq_en, sizeof(tirq_en));
+  offset += sizeof(tirq_en);
+  memcpy(data+offset, &xirq_en, sizeof(xirq_en));
+  offset += sizeof(xirq_en);
+  memcpy(data+offset, &irq_ex, sizeof(irq_ex));
+  offset += sizeof(irq_ex);
+  memcpy(data+offset, &xirq_pend, sizeof(xirq_pend));
+  offset += sizeof(xirq_pend);
+  memcpy(data+offset, &tirq_pend, sizeof(tirq_pend));
+}
+
+void loadstate_from_mem(const void *data)
+{
+  int offset = 0;
+  memcpy(&app_data.crc, data+offset, sizeof(app_data.crc));
+  offset += sizeof(app_data.crc);
+  memcpy(&app_data.bios, data+offset, sizeof(app_data.bios));
+  offset += sizeof(app_data.bios);
+  memcpy(VDCwrite, data+offset, 256);
+  offset += 256;
+  memcpy(extRAM, data+offset, 256);
+  offset += 256;
+  memcpy(intRAM, data+offset, 64);
+  offset += 64;
+  memcpy(&pc, data+offset, sizeof(pc));
+  offset += sizeof(pc);
+  memcpy(&sp, data+offset, sizeof(sp));
+  offset += sizeof(sp);
+  memcpy(&bs, data+offset, sizeof(bs));
+  offset += sizeof(bs);
+  memcpy(&p1, data+offset, sizeof(p1));
+  offset += sizeof(p1);
+  memcpy(&p2, data+offset, sizeof(p2));
+  offset += sizeof(p2);
+  memcpy(&ac, data+offset, sizeof(ac));
+  offset += sizeof(ac);
+  memcpy(&cy, data+offset, sizeof(cy));
+  offset += sizeof(cy);
+  memcpy(&f0, data+offset, sizeof(f0));
+  offset += sizeof(f0);
+  memcpy(&A11, data+offset, sizeof(A11));
+  offset += sizeof(A11);
+  memcpy(&A11ff, data+offset, sizeof(A11ff));
+  offset += sizeof(A11ff);
+  memcpy(&timer_on, data+offset, sizeof(timer_on));
+  offset += sizeof(timer_on);
+  memcpy(&count_on, data+offset, sizeof(count_on));
+  offset += sizeof(count_on);
+  memcpy(&reg_pnt, data+offset, sizeof(reg_pnt));
+  offset += sizeof(reg_pnt);
+  memcpy(&tirq_en, data+offset, sizeof(tirq_en));
+  offset += sizeof(tirq_en);
+  memcpy(&xirq_en, data+offset, sizeof(xirq_en));
+  offset += sizeof(xirq_en);
+  memcpy(&irq_ex, data+offset, sizeof(irq_ex));
+  offset += sizeof(irq_ex);
+  memcpy(&xirq_pend, data+offset, sizeof(xirq_pend));
+  offset += sizeof(xirq_pend);
+  memcpy(&tirq_pend, data+offset, sizeof(tirq_pend));
+}
 #endif 
 
 int savestate(char* filename)

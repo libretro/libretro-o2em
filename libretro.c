@@ -421,13 +421,13 @@ size_t retro_serialize_size(void)
 
 bool retro_serialize(void *data, size_t size)
 {
-   savestate_to_mem(data);
+   savestate_to_mem((uint8_t *)data);
    return true;
 }
 
 bool retro_unserialize(const void *data, size_t size)
 {
-   loadstate_from_mem(data);
+   loadstate_from_mem((uint8_t *)data);
    return true;
 }
 

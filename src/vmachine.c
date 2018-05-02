@@ -701,7 +701,7 @@ static void setvideomode(int t){
 #include <errno.h>
 #include <string.h>
 
-void savestate_to_mem(void *data)
+void savestate_to_mem(uint8_t *data)
 {
   int offset = 0;
   memcpy(data+offset, &app_data.crc, sizeof(app_data.crc));
@@ -751,7 +751,7 @@ void savestate_to_mem(void *data)
   memcpy(data+offset, &tirq_pend, sizeof(tirq_pend));
 }
 
-void loadstate_from_mem(const void *data)
+void loadstate_from_mem(const uint8_t *data)
 {
   int offset = 0;
   memcpy(&app_data.crc, data+offset, sizeof(app_data.crc));

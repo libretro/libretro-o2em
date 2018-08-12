@@ -60,6 +60,8 @@ static char scshot[MAXC],
 odyssey2[MAXC],
 file_v[MAXC],scorefile[MAXC], statefile[MAXC];
 
+extern uint8_t intRAM[];
+
 static int does_file_exist(const char *filename)
 {
    struct stat st;
@@ -595,11 +597,15 @@ unsigned retro_api_version(void)
 
 void *retro_get_memory_data(unsigned id)
 {
+    if ( id == RETRO_MEMORY_SYSTEM_RAM )
+        return intRAM;
     return NULL;
 }
 
 size_t retro_get_memory_size(unsigned id)
 {
+    if ( id == RETRO_MEMORY_SYSTEM_RAM )
+        return 64;
     return 0;
 }
 

@@ -144,8 +144,8 @@ else ifeq ($(platform), emscripten)
    TARGET := $(TARGET_NAME)_libretro_$(platform).bc
    STATIC_LINKING = 1
 
-# Nintendo WiiU
-else ifeq ($(platform), wiiu)
+# Nintendo Game Cube / Wii / WiiU
+else ifneq (,$(filter $(platform), ngc wii wiiu))
 	EXT=a
 	TARGET := $(TARGET_NAME)_libretro_$(platform).$(EXT)
 	CC = $(DEVKITPPC)/bin/powerpc-eabi-gcc$(EXE_EXT)

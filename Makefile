@@ -66,6 +66,25 @@ endif
    OSX_LT_MAVERICKS = `(( $(OSXVER) <= 9)) && echo "YES"`
    fpic += -mmacosx-version-min=10.1
 
+# ARM
+else ifneq (,$(findstring armv,$(platform)))
+   TARGET := $(TARGET_NAME)_libretro.so
+   fpic := -fPIC
+   SHARED := -shared -Wl,--no-undefined -Wl,--version-script=link.T
+   CC = gcc
+   CXX = g++
+   FLAGS += -marm
+      ifneq (,$(findstring softfloat,$(platform)))
+         FLAGS += -mfloat-abi=softfp
+      else ifneq (,$(findstring hardfloat,$(platform)))
+         FLAGS += -mfloat-abi=hard
+      endif
+      ifneq (,$(findstring neon,$(platform)))
+         FLAGS += -mfpu=neon
+         HAVE_NEON = 1
+      endif
+      FLAGS += -DARM
+
 # iOS
 else ifneq (,$(findstring ios,$(platform)))
 

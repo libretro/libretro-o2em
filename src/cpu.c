@@ -31,6 +31,36 @@
 #define undef(i) {printf("** unimplemented instruction %x, %x**\n",i,pc);}
 #define ROM(adr) (rom[(adr) & 0xfff])
 
+uint8_t acc;
+uint16_t pc;
+long clk;
+
+uint8_t itimer;
+uint8_t reg_pnt;
+uint8_t timer_on;
+uint8_t count_on;
+uint8_t psw;
+uint8_t sp;
+
+uint8_t p1;
+uint8_t p2;
+uint8_t xirq_pend;
+uint8_t tirq_pend;
+uint8_t t_flag;
+
+uint16_t lastpc;
+uint16_t A11;
+uint16_t A11ff;
+uint8_t bs;
+uint8_t f0;
+uint8_t f1;
+uint8_t ac;
+uint8_t cy;
+uint8_t xirq_en;
+uint8_t tirq_en;
+uint8_t irq_ex;
+
+int master_count;
 
 void init_cpu(void){
 	pc=0;

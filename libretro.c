@@ -38,7 +38,6 @@ static retro_environment_t environ_cb;
 static retro_audio_sample_t audio_cb;
 static retro_audio_sample_batch_t audio_batch_cb;
 
-void retro_set_environment(retro_environment_t cb) { environ_cb = cb; }
 void retro_set_video_refresh(retro_video_refresh_t cb) { video_cb = cb; }
 void retro_set_audio_sample(retro_audio_sample_t cb) { audio_cb = cb; }
 void retro_set_audio_sample_batch(retro_audio_sample_batch_t cb) { audio_batch_cb = cb; }
@@ -76,6 +75,19 @@ struct ButtonsState
 struct ButtonsState last_btn_state = { false, false, false, false,
                                        false, false,
                                        false, false };
+
+static const struct retro_variable prefs[] = {
+    { "o2em_vkb_transparency", "Virtual keyboard transparency; 0%|10%|20%|30%|40%|50%|60%|70%|80%|90%" },
+    { NULL, NULL }
+};
+
+void retro_set_environment(retro_environment_t cb)
+{
+  // Emulator's preferences
+  cb(RETRO_ENVIRONMENT_SET_VARIABLES, (void *) prefs);
+
+  environ_cb = cb;
+}
 
 static int does_file_exist(const char *filename)
 {
@@ -731,6 +743,17 @@ size_t retro_get_memory_size(unsigned id)
     return 0;
 }
 
+static void check_variables(void)
+{
+  struct retro_variable var = {0, 0};
+  var.key = "o2em_vkb_transparency";
+  if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var))
+  {
+    int alpha = 255 - (255 * atoi(var.value) / 100);
+    vkb_set_virtual_keyboard_transparency(alpha);
+  }
+}
+
 void retro_init(void)
 {
    struct retro_log_callback log;
@@ -745,6 +768,7 @@ void retro_init(void)
    
    memset(mbmp, 0, sizeof(mbmp));
    vkb_configure_virtual_keyboard(mbmp, EMUWIDTH, EMUHEIGHT, TEX_WIDTH);
+   check_variables();
    RLOOP=1;
 }
 
@@ -767,6 +791,8 @@ void retro_reset(void)
 void retro_run(void)
 {
    int i, length;
+   bool var_updated;
+
    update_input();
 
    cpu_exec();
@@ -785,5 +811,11 @@ void retro_run(void)
    {
       int16_t sample16 = (soundBuffer[i]-128) << 8;
       audio_cb(sample16, sample16);
+   }
+
+   var_updated = false;
+   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE_UPDATE, &var_updated) && var_updated)
+   {
+     check_variables();
    }
 }

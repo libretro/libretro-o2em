@@ -22,7 +22,11 @@ SOURCES_C := \
 	$(CORE_DIR)/src/vpp.c \
 	$(CORE_DIR)/src/vpp_cset.c \
 	$(CORE_DIR)/libretro.c \
-	$(CORE_DIR)/allegrowrapper/wrapalleg.c
+	$(CORE_DIR)/allegrowrapper/wrapalleg.c \
+	$(CORE_DIR)/src/vkeyb/ui.c \
+	$(CORE_DIR)/src/vkeyb/vkeyb.c \
+	$(CORE_DIR)/src/vkeyb/vkeyb_config.c \
+	$(CORE_DIR)/src/vkeyb/vkeyb_layout.c
 
 ifeq ($(DEBUG),1)
 SOURCES_C += $(CORE_DIR)/src/debug.c

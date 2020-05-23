@@ -48,6 +48,7 @@ extern void update_joy(void);
 #define TEX_WIDTH 400
 #define TEX_HEIGHT 300
 
-#define RGB565(r, g, b)  (((r) << (5+6)) | ((g) << 6) | (b))
+#define RGB565(r, g, b)   ((((r) << 8) &  0xf800) | (((g) << 3) & 0x7e0) | (((b) >> 3) & 0x1f))
+#define ABGR1555(r, g, b) ((((b) << 7) &  0x7C00) | (((g) << 2) & 0x3e0) | (((r) >> 3) & 0x1f))
 
 #endif

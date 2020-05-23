@@ -467,7 +467,7 @@ void retro_blit(void)
 		for(j=0;j<340;j++)
       {
 			ind=inp[i*340 + j];
-#if defined(SUPPORT_ARGB1555)
+#if defined(SUPPORT_ABGR1555)
 // Hack for PS2 that expects ABGR1555 encoded pixels
 			(*outp++) = ABGR1555(colors[ind].r, colors[ind].g, colors[ind].b);
 #else

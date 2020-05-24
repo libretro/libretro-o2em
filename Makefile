@@ -160,6 +160,7 @@ else ifeq ($(platform), ps2)
 	AR = ee-ar$(EXE_EXT)
 	PLATFORM_DEFINES := -DPS2 -G0 -DSUPPORT_ABGR1555
 	STATIC_LINKING = 1
+	FLAGS += -DMSB_FIRST
 	OLD_GCC := 1
 
 # PSP1

@@ -158,9 +158,8 @@ else ifeq ($(platform), ps2)
 	CC = ee-gcc$(EXE_EXT)
 	CXX = ee-g++$(EXE_EXT)
 	AR = ee-ar$(EXE_EXT)
-	PLATFORM_DEFINES := -DPS2 -G0 -DSUPPORT_ABGR1555
 	STATIC_LINKING = 1
-	FLAGS += -DMSB_FIRST
+	FLAGS += -DMSB_FIRST -DPS2 -G0 -DSUPPORT_ABGR1555
 	OLD_GCC := 1
 
 # PSP1

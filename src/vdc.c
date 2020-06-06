@@ -461,6 +461,7 @@ void retro_blit(void)
 	unsigned  char ind;
 	uint16_t *outp = &mbmp[0];
 	uint8_t  *inp  = &bmp->line[0];
+	uint16_t color;
 
 	for(i=0;i<250;i++)
    {
@@ -468,8 +469,9 @@ void retro_blit(void)
       {
 			ind=inp[i*340 + j];
 #if defined(SUPPORT_ABGR1555)
-// Hack for PS2 that expects ABGR1555 encoded pixels
-			(*outp++) = ABGR1555(colors[ind].r, colors[ind].g, colors[ind].b);
+      // Hack for PS2 that expects ABGR1555 encoded pixels
+			color = ABGR1555(colors[ind].r, colors[ind].g, colors[ind].b);
+			(*outp++) = (color << 8) | (color >> 8);
 #else
 			(*outp++) = RGB565(colors[ind].r, colors[ind].g, colors[ind].b);
 #endif

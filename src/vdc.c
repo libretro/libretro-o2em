@@ -85,9 +85,9 @@ static void create_cmap(void)
 	/* Initialise parts of the colors array */
 	for (i = 0; i < 16; i++) {
 		/* Use the color values from the color table */
-		colors[i+32].r = colors[i].r = (colortable[app_data.vpp?1:0][i] & 0xff0000) >> 18;
-		colors[i+32].g = colors[i].g = (colortable[app_data.vpp?1:0][i] & 0x00ff00) >> 10;
-		colors[i+32].b = colors[i].b = (colortable[app_data.vpp?1:0][i] & 0x0000ff) >> 2;
+		colors[i+32].r = colors[i].r = (colortable[app_data.vpp?1:0][i] & 0xff0000) >> 16;
+		colors[i+32].g = colors[i].g = (colortable[app_data.vpp?1:0][i] & 0x00ff00) >> 8;
+		colors[i+32].b = colors[i].b = (colortable[app_data.vpp?1:0][i] & 0x0000ff);
 	}
 
 	for (i = 16; i < 32; i++) {
@@ -467,7 +467,12 @@ void retro_blit(void)
 		for(j=0;j<340;j++)
       {
 			ind=inp[i*340 + j];
-			(*outp++)= RGB565( colors[ ind].r>>1 , colors[ind].g>>1 , colors[ind].b>>1 );
+#if defined(SUPPORT_ABGR1555)
+      // Hack for PS2 that expects ABGR1555 encoded pixels
+			(*outp++) = ABGR1555(colors[ind].r, colors[ind].g, colors[ind].b);
+#else
+			(*outp++) = RGB565(colors[ind].r, colors[ind].g, colors[ind].b);
+#endif
 		}
 		outp+=	(TEX_WIDTH-340);
 	}

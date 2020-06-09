@@ -15,7 +15,13 @@ static enum VkbPosition vkb_position = VKB_POS_DOWN;
 static const struct VKey *current_keyboard_layout = o2_kb;
 static int current_keyboard_keys = ODYSSEY2_KB_KEYS;
 
+#if defined(SUPPORT_ABGR1555)
+// Hack for PS2 that expects ABGR1555 encoded pixels
+static uint16_t color_select = 0x03FF;
+#else
 static uint16_t color_select = 0xFFC0;
+#endif
+
 static int box_thickness = 2;
 
 void vkb_configure_virtual_keyboard(uint16_t *video_buffer, int width, int height, int pitch)

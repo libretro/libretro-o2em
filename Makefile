@@ -71,8 +71,6 @@ else ifneq (,$(findstring armv,$(platform)))
    TARGET := $(TARGET_NAME)_libretro.so
    fpic := -fPIC
    SHARED := -shared -Wl,--no-undefined -Wl,--version-script=link.T
-   CC = gcc
-   CXX = g++
    FLAGS += -marm
       ifneq (,$(findstring softfloat,$(platform)))
          FLAGS += -mfloat-abi=softfp

@@ -15,7 +15,6 @@
  */
 
 
-#include <stdio.h>
 #include "vmachine.h"
 #include "cpu.h"
 #include "voice.h"

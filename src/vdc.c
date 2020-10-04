@@ -18,7 +18,6 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
 #include "vmachine.h"
 #include "config.h"
 #include "keyboard.h"
@@ -557,7 +556,6 @@ void init_display(void)
    bmpcache = create_bitmap(BMPW,BMPH);
 
    if ((!bmp) || (!bmpcache)) {
-      fprintf(stderr,"Could not allocate memory for screen buffer.\n");
       exit(EXIT_FAILURE);
    }
    vscreen = (uint8_t *) &bmp->line[0];
@@ -565,7 +563,6 @@ void init_display(void)
    col = (uint8_t *)malloc(BMPW*BMPH);
    if (!col)
    {
-      fprintf(stderr,"Could not allocate memory for collision buffer.\n");
       free(vscreen);
       exit(EXIT_FAILURE);
    }

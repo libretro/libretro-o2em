@@ -15,7 +15,6 @@
  */
 
 
-#include <stdio.h>
 #include <stdint.h>
 #include "vmachine.h"
 #include "keyboard.h"
@@ -28,7 +27,7 @@
 #define pull() (sp--, (sp < 8)?(sp=23):0, intRAM[sp])
 #define make_psw() {psw = (cy << 7) | ac | f0 | bs | 0x08; psw = psw | ((sp - 8) >> 1);}
 #define illegal(o) {}
-#define undef(i) {printf("** unimplemented instruction %x, %x**\n",i,pc);}
+#define undef(i) { }
 #define ROM(adr) (rom[(adr) & 0xfff])
 
 uint8_t acc;

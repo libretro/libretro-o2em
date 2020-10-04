@@ -15,7 +15,6 @@
  */
 
 
-#include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -122,10 +121,7 @@ void init_audio(void)
 {
    sound_IRQ=0;		
    if ((app_data.sound_en) || (app_data.voice))
-   {
-      printf("Initializing sound system...\n");
       init_sound_stream();
-   }
 }
 
 

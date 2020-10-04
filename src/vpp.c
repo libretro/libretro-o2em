@@ -17,7 +17,6 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
 #include "vmachine.h"
 #include "vdc.h"
 #include "vpp_cset.h"
@@ -102,7 +101,6 @@ uint8_t vpp_read(uint16_t adr){
 				ext = (vpp_mem[vpp_cx][vpp_cy][1] & 0x80) ? 1 : 0;
 				if (chr < 0xA0) {
 					ta = 0;
-fprintf(stderr, "unsupported: CHARROM read %d %d %d\n", chr, ext, slice);
 				} else {
 					ta = dchars[ext][(chr-0xA0)*10+slice];
 					ta = ((ta&0x80)>>7) | ((ta&0x40)>>5) | ((ta&0x20)>>3) | ((ta&0x10)>>1) | ((ta&0x08)<<1) | ((ta&0x04)<<3) | ((ta&0x02)<<5) | ((ta&0x01)<<7);
@@ -217,7 +215,6 @@ void vpp_write(uint8_t dat, uint16_t adr){
 					vpp_r = vpp_data;
 					break;
 				case 0xC0:	/* plus_cmd_loady0 */
-if (vpp_data & 0x20) fprintf(stderr, "unsupported: global double height");
 					vpp_y0 = (vpp_data & 0x1f) % 24;
 					break;
 				default:
@@ -477,10 +474,7 @@ void init_vpp(void)
 	if (!colplus) colplus = (uint8_t *)malloc(BMPW*BMPH);
 
 	if ((!vppbmp) || (!colplus))
-   {
-		fprintf(stderr,"Could not allocate memory for Videopac+ screen buffer.\n");
 		exit(EXIT_FAILURE);
-	}
 	memset(colplus,0,BMPW*BMPH);
 
 	LumReg = TraReg = 0xff;

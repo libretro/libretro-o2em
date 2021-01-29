@@ -23,6 +23,9 @@ EXE_EXT = .exe
 else ifneq ($(findstring Darwin,$(shell uname -a)),)
    system_platform = osx
 	arch = intel
+ifeq ($(shell uname -p),arm)
+	arch = arm
+endif
 ifeq ($(shell uname -p),powerpc)
 	arch = ppc
 endif
@@ -64,7 +67,22 @@ ifeq ($(arch),ppc)
 endif
    OSXVER = `sw_vers -productVersion | cut -d. -f 2`
    OSX_LT_MAVERICKS = `(( $(OSXVER) <= 9)) && echo "YES"`
-   fpic += -mmacosx-version-min=10.1
+   MINVERSION =
+
+   ifeq ($(OSX_LT_MAVERICKS),YES)
+   	   MINVERSION += -mmacosx-version-min=10.1
+   endif
+
+   ifeq ($(CROSS_COMPILE),1)
+	TARGET_RULE   = -target $(LIBRETRO_APPLE_PLATFORM) -isysroot $(LIBRETRO_APPLE_ISYSROOT)
+	CFLAGS   += $(TARGET_RULE)
+	CPPFLAGS += $(TARGET_RULE)
+	CXXFLAGS += $(TARGET_RULE)
+	LDFLAGS  += $(TARGET_RULE)
+	MINVERSION =
+   endif
+
+   fpic += $(MINVERSION)
 
 # ARM
 else ifneq (,$(findstring armv,$(platform)))

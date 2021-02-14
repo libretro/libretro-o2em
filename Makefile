@@ -535,36 +535,24 @@ OBJECTS := $(SOURCES_C:.c=.o)
 
 ifeq ($(DEBUG), 1)
 ifneq (,$(findstring msvc,$(platform)))
-	ifeq ($(STATIC_LINKING),1)
-	CFLAGS += -MTd
-	CXXFLAGS += -MTd
-else
-	CFLAGS += -MDd
-	CXXFLAGS += -MDd
-endif
+   CFLAGS     += -MTd
+   CXXFLAGS   += -MTd
 
-CFLAGS += -Od -Zi -DDEBUG -D_DEBUG
-CXXFLAGS += -Od -Zi -DDEBUG -D_DEBUG
-	else
-	CFLAGS += -O0 -g -DDEBUG
-	CXXFLAGS += -O0 -g -DDEBUG
+   CFLAGS     += -Od -Zi -D_DEBUG
+   CXXFLAGS   += -Od -Zi -D_DEBUG
+else
+   CFLAGS     += -O0 -g
+   CXXFLAGS   += -O0 -g
 endif
+   CFLAGS     += -DDEBUG
+   CXXFLAGS   += -DDEBUG
 else
 ifneq (,$(findstring msvc,$(platform)))
-ifeq ($(STATIC_LINKING),1)
-	CFLAGS += -MT
-	CXXFLAGS += -MT
-else
-	CFLAGS += -MD
-	CXXFLAGS += -MD
+   CFLAGS   += -MT
+   CXXFLAGS += -MT
 endif
-
-CFLAGS += -O2 -DNDEBUG
-CXXFLAGS += -O2 -DNDEBUG
-else
-	CFLAGS += -O2 -DNDEBUG
-	CXXFLAGS += -O2 -DNDEBUG
-endif
+   CFLAGS   += -O2 -DNDEBUG
+   CXXFLAGS += -O2 -DNDEBUG
 endif
 
 LDFLAGS += $(fpic) $(SHARED)

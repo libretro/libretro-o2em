@@ -38,6 +38,8 @@ static retro_environment_t environ_cb;
 static retro_audio_sample_t audio_cb;
 static retro_audio_sample_batch_t audio_batch_cb;
 
+static bool libretro_supports_bitmasks = false;
+
 void retro_set_video_refresh(retro_video_refresh_t cb) { video_cb = cb; }
 void retro_set_audio_sample(retro_audio_sample_t cb) { audio_cb = cb; }
 void retro_set_audio_sample_batch(retro_audio_sample_batch_t cb) { audio_batch_cb = cb; }
@@ -335,22 +337,17 @@ static void pointerToScreenCoordinates(int *x, int *y)
   *y = (*y + 0x7FFF) * EMUHEIGHT / 0xFFFF;
 }
 
-static void update_input_virtual_keyboard()
+static void update_input_virtual_keyboard(unsigned joypad_bits)
 {
-  bool select, start;
-  bool b, y;
-  bool left, right, up, down;
-  bool click;
-
-  select = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_SELECT);
-  start = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_START);
-  y = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_Y);
-  up = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP);
-  down = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_DOWN);
-  left = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_LEFT);
-  right = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_RIGHT);
-  b = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_B);
-  click = input_state_cb(0, RETRO_DEVICE_POINTER, 0, RETRO_DEVICE_ID_POINTER_PRESSED);
+  bool select = joypad_bits & (1 << RETRO_DEVICE_ID_JOYPAD_SELECT);
+  bool start  = joypad_bits & (1 << RETRO_DEVICE_ID_JOYPAD_START);
+  bool y      = joypad_bits & (1 << RETRO_DEVICE_ID_JOYPAD_Y);
+  bool up     = joypad_bits & (1 << RETRO_DEVICE_ID_JOYPAD_UP);
+  bool down   = joypad_bits & (1 << RETRO_DEVICE_ID_JOYPAD_DOWN);
+  bool left   = joypad_bits & (1 << RETRO_DEVICE_ID_JOYPAD_LEFT);
+  bool right  = joypad_bits & (1 << RETRO_DEVICE_ID_JOYPAD_RIGHT);
+  bool b      = joypad_bits & (1 << RETRO_DEVICE_ID_JOYPAD_B);
+  bool click  = input_state_cb(0, RETRO_DEVICE_POINTER, 0, RETRO_DEVICE_ID_POINTER_PRESSED);
 
   // Show the virtual keyboard?
   if (select && !last_btn_state.select)
@@ -427,26 +424,43 @@ static void update_input_virtual_keyboard()
 
 static void update_input(void)
 {
+   unsigned joypad_bits[2] = {0};
+   size_t i, j;
+
    if (!input_poll_cb)
       return;
 
    input_poll_cb();
 
+   for (i = 0; i < 2; i++)
+   {
+      if (libretro_supports_bitmasks)
+         joypad_bits[i] = input_state_cb(i, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_MASK);
+      else
+         for (j = 0; j < (RETRO_DEVICE_ID_JOYPAD_R3+1); j++)
+            joypad_bits[i] |= input_state_cb(i, RETRO_DEVICE_JOYPAD, 0, j) ? (1 << j) : 0;
+
+      /* If virtual KBD is shown, only need input
+       * from port 1 */
+      if (vkb_show)
+         break;
+   }
+
    if (!vkb_show)
    {
      // Joystick
      // Player 1
-     joystick_data[0][0]= input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP);
-     joystick_data[0][1]= input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_DOWN);
-     joystick_data[0][2]= input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_LEFT);
-     joystick_data[0][3]= input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_RIGHT);
-     joystick_data[0][4]= input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_B); // "Action" button on the joystick
+     joystick_data[0][0]= joypad_bits[0] & (1 << RETRO_DEVICE_ID_JOYPAD_UP);
+     joystick_data[0][1]= joypad_bits[0] & (1 << RETRO_DEVICE_ID_JOYPAD_DOWN);
+     joystick_data[0][2]= joypad_bits[0] & (1 << RETRO_DEVICE_ID_JOYPAD_LEFT);
+     joystick_data[0][3]= joypad_bits[0] & (1 << RETRO_DEVICE_ID_JOYPAD_RIGHT);
+     joystick_data[0][4]= joypad_bits[0] & (1 << RETRO_DEVICE_ID_JOYPAD_B); /* "Action" button on the joystick */
      // Player 2
-     joystick_data[1][0]= input_state_cb(1, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP);
-     joystick_data[1][1]= input_state_cb(1, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_DOWN);
-     joystick_data[1][2]= input_state_cb(1, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_LEFT);
-     joystick_data[1][3]= input_state_cb(1, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_RIGHT);
-     joystick_data[1][4]= input_state_cb(1, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_B); // "Action" button on the joystick
+     joystick_data[1][0]= joypad_bits[1] & (1 << RETRO_DEVICE_ID_JOYPAD_UP);
+     joystick_data[1][1]= joypad_bits[1] & (1 << RETRO_DEVICE_ID_JOYPAD_DOWN);
+     joystick_data[1][2]= joypad_bits[1] & (1 << RETRO_DEVICE_ID_JOYPAD_LEFT);
+     joystick_data[1][3]= joypad_bits[1] & (1 << RETRO_DEVICE_ID_JOYPAD_RIGHT);
+     joystick_data[1][4]= joypad_bits[1] & (1 << RETRO_DEVICE_ID_JOYPAD_B); /* "Action" button on the joystick */
 
      // Numeric and Alpha
      key[RETROK_0] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_0);
@@ -498,7 +512,7 @@ static void update_input(void)
    }
 
    // Virtual keyboard management
-   update_input_virtual_keyboard();
+   update_input_virtual_keyboard(joypad_bits[0]);
 }
 
 /************************************
@@ -805,9 +819,14 @@ void retro_init(void)
       log_cb = NULL;
 
    environ_cb(RETRO_ENVIRONMENT_SET_PERFORMANCE_LEVEL, &level);
-   
+
+   libretro_supports_bitmasks = false;
+   if (environ_cb(RETRO_ENVIRONMENT_GET_INPUT_BITMASKS, NULL))
+      libretro_supports_bitmasks = true;
+
    memset(mbmp, 0, sizeof(mbmp));
    vkb_configure_virtual_keyboard(mbmp, EMUWIDTH, EMUHEIGHT, TEX_WIDTH);
+   vkb_show = false;
    check_variables(true);
    RLOOP=1;
 }

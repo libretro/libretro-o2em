@@ -538,19 +538,17 @@ void retro_set_controller_port_device(unsigned port, unsigned device)
 
 size_t retro_serialize_size(void) 
 { 
-	return STATE_SIZE;
+	return savestate_size();
 }
 
 bool retro_serialize(void *data, size_t size)
 {
-   savestate_to_mem((uint8_t *)data);
-   return true;
+   return savestate_to_mem((uint8_t *)data, size);
 }
 
 bool retro_unserialize(const void *data, size_t size)
 {
-   loadstate_from_mem((uint8_t *)data);
-   return true;
+   return loadstate_from_mem((uint8_t *)data, size);
 }
 
 void retro_cheat_reset(void)

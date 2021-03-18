@@ -701,9 +701,40 @@ static void setvideomode(int t){
 #include <errno.h>
 #include <string.h>
 
-void savestate_to_mem(uint8_t *data)
+size_t savestate_size(void)
+{
+   return sizeof(app_data.crc) +
+          sizeof(app_data.bios) +
+          256 +
+          256 +
+          64 +
+          sizeof(pc) +
+          sizeof(sp) +
+          sizeof(bs) +
+          sizeof(p1) +
+          sizeof(p2) +
+          sizeof(ac) +
+          sizeof(cy) +
+          sizeof(f0) +
+          sizeof(A11) +
+          sizeof(A11ff) +
+          sizeof(timer_on) +
+          sizeof(count_on) +
+          sizeof(reg_pnt) +
+          sizeof(tirq_en) +
+          sizeof(xirq_en) +
+          sizeof(irq_ex) +
+          sizeof(xirq_pend) +
+          sizeof(tirq_pend);
+}
+
+bool savestate_to_mem(uint8_t *data, size_t size)
 {
   int offset = 0;
+
+  if (size < savestate_size())
+    return false;
+
   memcpy(data+offset, &app_data.crc, sizeof(app_data.crc));
   offset += sizeof(app_data.crc);
   memcpy(data+offset, &app_data.bios, sizeof(app_data.bios));
@@ -749,15 +780,39 @@ void savestate_to_mem(uint8_t *data)
   memcpy(data+offset, &xirq_pend, sizeof(xirq_pend));
   offset += sizeof(xirq_pend);
   memcpy(data+offset, &tirq_pend, sizeof(tirq_pend));
+
+  return true;
 }
 
-void loadstate_from_mem(const uint8_t *data)
+bool loadstate_from_mem(const uint8_t *data, size_t size)
 {
-  int offset = 0;
+  int offset        = 0;
+  int bios          = app_data.bios;
+  unsigned long crc = app_data.crc;
+
+  if (size < savestate_size())
+    return false;
+
   memcpy(&app_data.crc, data+offset, sizeof(app_data.crc));
   offset += sizeof(app_data.crc);
+
+  if (app_data.crc != crc)
+  {
+    /* Wrong cart */
+    app_data.crc = crc;
+    return false;
+  }
+
   memcpy(&app_data.bios, data+offset, sizeof(app_data.bios));
   offset += sizeof(app_data.bios);
+
+  if (app_data.bios != bios)
+  {
+    /* Wrong bios */
+    app_data.bios = bios;
+    return false;
+  }
+
   memcpy(VDCwrite, data+offset, 256);
   offset += 256;
   memcpy(extRAM, data+offset, 256);
@@ -799,6 +854,8 @@ void loadstate_from_mem(const uint8_t *data)
   memcpy(&xirq_pend, data+offset, sizeof(xirq_pend));
   offset += sizeof(xirq_pend);
   memcpy(&tirq_pend, data+offset, sizeof(tirq_pend));
+
+  return true;
 }
 #endif 
 

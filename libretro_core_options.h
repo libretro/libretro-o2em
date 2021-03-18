@@ -93,6 +93,65 @@ struct retro_core_option_definition option_defs_us[] = {
       },
       "0"
    },
+   {
+      "o2em_audio_volume",
+      "Audio Volume",
+      "Set output audio volume level.",
+      {
+         { "0",   "0%" },
+         { "10",  "10%" },
+         { "20",  "20%" },
+         { "30",  "30%" },
+         { "40",  "40%" },
+         { "50",  "50%" },
+         { "60",  "60%" },
+         { "70",  "70%" },
+         { "80",  "80%" },
+         { "90",  "90%" },
+         { "100", "100%" },
+         { NULL, NULL },
+      },
+      "50"
+   },
+   {
+      "o2em_low_pass_filter",
+      "Audio Filter",
+      "Apply a low pass audio filter to soften the 'harsh' sound effects produced by most Odyssey2/Videopac+ games.",
+      {
+         { "disabled", NULL },
+         { "enabled",  NULL },
+         { NULL, NULL },
+      },
+      "disabled"
+   },
+   {
+      "o2em_low_pass_range",
+      "Audio Filter Level",
+      "Specifies the cut-off frequency of the low pass audio filter. A higher value increases the perceived 'strength' of the filter, since a wider range of the high frequency spectrum is attenuated.",
+      {
+         { "5",  "5%" },
+         { "10", "10%" },
+         { "15", "15%" },
+         { "20", "20%" },
+         { "25", "25%" },
+         { "30", "30%" },
+         { "35", "35%" },
+         { "40", "40%" },
+         { "45", "45%" },
+         { "50", "50%" },
+         { "55", "55%" },
+         { "60", "60%" },
+         { "65", "65%" },
+         { "70", "70%" },
+         { "75", "75%" },
+         { "80", "80%" },
+         { "85", "85%" },
+         { "90", "90%" },
+         { "95", "95%" },
+         { NULL, NULL },
+      },
+      "60"
+   },
    { NULL, NULL, NULL, {{0}}, NULL },
 };
 

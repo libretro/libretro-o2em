@@ -51,7 +51,12 @@ void retro_destroybmp(void);
 char bios_file[16] = {0};
 
 unsigned short int mbmp[TEX_WIDTH * TEX_HEIGHT];
-uint8_t soundBuffer[1056];
+uint8_t soundBuffer[SOUND_BUFFER_LEN];
+static int16_t audioOutBuffer[SOUND_BUFFER_LEN * 2 * sizeof(int16_t)];
+static int16_t audio_volume   = 50;
+static bool low_pass_enabled  = false;
+static int32_t low_pass_range = 0;
+static int32_t low_pass_prev  = 0;
 int SND;
 int RLOOP=0;
 int joystick_data[2][5]={{0,0,0,0,0},{0,0,0,0,0}};
@@ -515,6 +520,59 @@ static void update_input(void)
    update_input_virtual_keyboard(joypad_bits[0]);
 }
 
+static void upate_audio(void)
+{
+   uint8_t *audio_samples_ptr = soundBuffer;
+   int16_t *audio_out_ptr     = audioOutBuffer;
+   int length                 = (evblclk == EVBLCLK_NTSC) ? 44100 / 60 : 44100 / 50;
+
+   /* Convert 8u mono to 16s stereo */
+   if (low_pass_enabled)
+   {
+      int samples = length;
+
+      /* Restore previous sample */
+      int32_t low_pass = low_pass_prev;
+
+      /* Single-pole low-pass filter (6 dB/octave) */
+      int32_t factor_a = low_pass_range;
+      int32_t factor_b = 0x10000 - factor_a;
+
+      do
+      {
+         /* Get current sample */
+         int16_t sample16 = (((*(audio_samples_ptr++) - 128) << 8) * audio_volume) / 100;
+
+         /* Apply low-pass filter */
+         low_pass = (low_pass * factor_a) + (sample16 * factor_b);
+
+         /* 16.16 fixed point */
+         low_pass >>= 16;
+
+         /* Update output buffer */
+         *(audio_out_ptr++) = (int16_t)low_pass;
+         *(audio_out_ptr++) = (int16_t)low_pass;
+      }
+      while (--samples);
+
+      /* Save last sample for next frame */
+      low_pass_prev = low_pass;
+   }
+   else
+   {
+      int i;
+
+      for(i = 0; i < length; i++)
+      {
+         int16_t sample16   = (((*(audio_samples_ptr++) - 128) << 8) * audio_volume) / 100;
+         *(audio_out_ptr++) = sample16;
+         *(audio_out_ptr++) = sample16;
+      }
+   }
+
+   audio_batch_cb(audioOutBuffer, length);
+}
+
 /************************************
  * libretro implementation
  ************************************/
@@ -658,8 +716,12 @@ bool retro_load_game(const struct retro_game_info *info)
     app_data.scanlines = 0;
     app_data.voice = 1;
     app_data.window_title = "O2EM v" O2EM_VERSION;
+    /* These volume settings have no effect
+     * (they are allegro-specific) */
     app_data.svolume = 100;
     app_data.vvolume = 100;
+    /* Internal audio filter is worthless,
+     * disable it and use our own */
     app_data.filter = 0;
     app_data.exrom = 0;
     app_data.three_k = 0;
@@ -755,7 +817,7 @@ static void check_variables(bool startup)
       var.value     = NULL;
       app_data.euro = 0;
 
-      if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var))
+      if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
       {
          if (!strcmp(var.value, "NTSC"))
          {
@@ -774,7 +836,7 @@ static void check_variables(bool startup)
       var.value = NULL;
       strcpy(bios_file, "o2rom.bin");
 
-      if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var))
+      if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
       {
          /* Ugly, but we don't want to inadvertently
           * copy an invalid value */
@@ -801,11 +863,46 @@ static void check_variables(bool startup)
 
    /* Virtual KBD Transparency */
    var.key = "o2em_vkbd_transparency";
-   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var))
+   var.value = NULL;
+   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
    {
       int alpha = 255 - (255 * atoi(var.value) / 100);
       vkb_set_virtual_keyboard_transparency(alpha);
    }
+
+   /* Audio Volume */
+   var.key      = "o2em_audio_volume";
+   var.value    = NULL;
+   audio_volume = 50;
+
+   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+   {
+      audio_volume = atoi(var.value);
+      audio_volume = (audio_volume > 100) ? 100 : audio_volume;
+      audio_volume = (audio_volume < 0)   ? 0   : audio_volume;
+   }
+
+   /* > Since we are not using the internal audio
+    *   filter, volume must be divided by a factor
+    *   of two */
+   audio_volume = audio_volume >> 1;
+
+   /* Audio Filter */
+   var.key          = "o2em_low_pass_filter";
+   var.value        = NULL;
+   low_pass_enabled = false;
+
+   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+      if (strcmp(var.value, "enabled") == 0)
+         low_pass_enabled = true;
+
+   /* Audio Filter Level */
+   var.key        = "o2em_low_pass_range";
+   var.value      = NULL;
+   low_pass_range = (60 * 0x10000) / 100;
+
+   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+      low_pass_range = (strtol(var.value, NULL, 10) * 0x10000) / 100;
 }
 
 void retro_init(void)
@@ -826,9 +923,12 @@ void retro_init(void)
 
    memset(mbmp, 0, sizeof(mbmp));
    vkb_configure_virtual_keyboard(mbmp, EMUWIDTH, EMUHEIGHT, TEX_WIDTH);
-   vkb_show = false;
+
    check_variables(true);
-   RLOOP=1;
+
+   vkb_show      = false;
+   low_pass_prev = 0;
+   RLOOP         = 1;
 }
 
 void retro_deinit(void)
@@ -849,8 +949,10 @@ void retro_reset(void)
 
 void retro_run(void)
 {
-   int i, length;
-   bool var_updated;
+   bool var_updated = false;
+
+   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE_UPDATE, &var_updated) && var_updated)
+     check_variables(false);
 
    update_input();
 
@@ -858,23 +960,9 @@ void retro_run(void)
    RLOOP=1;
 
    if (vkb_show)
-   {
      vkb_show_virtual_keyboard();
-   }
+
    video_cb(mbmp, EMUWIDTH, EMUHEIGHT, TEX_WIDTH << 1);
-   
-   length = (evblclk == EVBLCLK_NTSC) ? 44100 / 60 : 44100 / 50;
 
-   /* Convert 8u to 16s */
-   for(i = 0; i < length; i++)
-   {
-      int16_t sample16 = (soundBuffer[i]-128) << 8;
-      audio_cb(sample16, sample16);
-   }
-
-   var_updated = false;
-   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE_UPDATE, &var_updated) && var_updated)
-   {
-     check_variables(false);
-   }
+   upate_audio();
 }

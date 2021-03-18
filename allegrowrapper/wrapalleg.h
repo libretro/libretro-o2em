@@ -2,12 +2,12 @@
 #define WRAP_H
 
 #ifdef _MSC_VER
-#define INLINE _inline
 #include <direct.h>
 #else
 #include <unistd.h>
-#define INLINE inline
 #endif
+
+#include <retro_inline.h>
 
 #define keypressed() 0
 #define poll_keyboard()

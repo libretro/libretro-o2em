@@ -13,6 +13,7 @@
 #endif
 
 #include "libretro.h"
+#include "libretro_core_options.h"
 
 #include "audio.h"
 #include "config.h"
@@ -45,6 +46,8 @@ void retro_set_input_state(retro_input_state_t cb) { input_state_cb = cb; }
 
 void retro_destroybmp(void);
 
+char bios_file[16] = {0};
+
 unsigned short int mbmp[TEX_WIDTH * TEX_HEIGHT];
 uint8_t soundBuffer[1056];
 int SND;
@@ -75,17 +78,10 @@ struct ButtonsState last_btn_state = { false, false, false, false,
                                        false, false,
                                        false, false };
 
-static const struct retro_variable prefs[] = {
-    { "o2em_vkb_transparency", "Virtual keyboard transparency; 0%|10%|20%|30%|40%|50%|60%|70%|80%|90%" },
-    { NULL, NULL }
-};
-
 void retro_set_environment(retro_environment_t cb)
 {
-  // Emulator's preferences
-  cb(RETRO_ENVIRONMENT_SET_VARIABLES, (void *) prefs);
-
-  environ_cb = cb;
+   environ_cb = cb;
+   libretro_set_core_options(environ_cb);
 }
 
 static int does_file_exist(const char *filename)
@@ -210,20 +206,20 @@ static bool load_cart(const char *file)
 
    if (((app_data.crc == 0x975AB8DA) || (app_data.crc == 0xE246A812)) && (!app_data.debug))
    {
-      fprintf(stderr,"Error: file %s is an incomplete ROM dump\n",file_v);
+      fprintf(stderr,"Error: file %s is an incomplete ROM dump\n",file);
       return false;
    }
 
    fn=fopen(file,"rb");
    if (!fn) {
-      fprintf(stderr,"Error loading %s\n",file_v);
+      fprintf(stderr,"Error loading %s\n",file);
       return false;
    }
-   printf("Loading: \"%s\"  Size: ",file_v);
+   printf("Loading: \"%s\"  Size: ",file);
    l = filesize(fn);
 
    if ((l % 1024) != 0) {
-      fprintf(stderr,"Error: file %s is an invalid ROM dump\n",file_v);
+      fprintf(stderr,"Error: file %s is an invalid ROM dump\n",file);
       return false;
    }
 
@@ -614,7 +610,7 @@ bool retro_load_game(const struct retro_game_info *info)
     if (!system_directory_c)
     {
        if (log_cb)
-          log_cb(RETRO_LOG_WARN, "[O2EM]: no system directory defined, unable to look for o2rom.bin\n");
+          log_cb(RETRO_LOG_WARN, "[O2EM]: no system directory defined, unable to look for %s\n", bios_file);
        return false;
     }
     else
@@ -625,12 +621,12 @@ bool retro_load_game(const struct retro_game_info *info)
       char slash = '/';
 #endif
 
-       snprintf(bios_file_path, sizeof(bios_file_path), "%s%c%s", system_directory_c, slash, "o2rom.bin");
+       snprintf(bios_file_path, sizeof(bios_file_path), "%s%c%s", system_directory_c, slash, bios_file);
 
        if (!does_file_exist(bios_file_path))
        {
           if (log_cb)
-             log_cb(RETRO_LOG_WARN, "[O2EM]: o2rom.bin not found, cannot load BIOS\n");
+             log_cb(RETRO_LOG_WARN, "[O2EM]: %s not found, cannot load BIOS\n", bios_file);
           return false;
        }
     }
@@ -658,7 +654,6 @@ bool retro_load_game(const struct retro_game_info *info)
     app_data.crc = 0;
     app_data.scshot = scshot;
     app_data.statefile = statefile;
-    app_data.euro = 0;
     app_data.openb = 0;
     app_data.vpp = 0;
     app_data.bios = 0;
@@ -735,15 +730,70 @@ size_t retro_get_memory_size(unsigned id)
     return 0;
 }
 
-static void check_variables(void)
+static void check_variables(bool startup)
 {
-  struct retro_variable var = {0, 0};
-  var.key = "o2em_vkb_transparency";
-  if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var))
-  {
-    int alpha = 255 - (255 * atoi(var.value) / 100);
-    vkb_set_virtual_keyboard_transparency(alpha);
-  }
+   struct retro_variable var;
+
+   if (startup)
+   {
+      bool auto_region = true;
+
+      /* Console Region */
+      var.key       = "o2em_region";
+      var.value     = NULL;
+      app_data.euro = 0;
+
+      if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var))
+      {
+         if (!strcmp(var.value, "NTSC"))
+         {
+            app_data.euro = 0;
+            auto_region   = false;
+         }
+         else if (!strcmp(var.value, "PAL"))
+         {
+            app_data.euro = 1;
+            auto_region   = false;
+         }
+      }
+
+      /* Emulated Hardware */
+      var.key   = "o2em_bios";
+      var.value = NULL;
+      strcpy(bios_file, "o2rom.bin");
+
+      if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var))
+      {
+         /* Ugly, but we don't want to inadvertently
+          * copy an invalid value */
+         if (!strcmp(var.value, "c52.bin"))
+         {
+            strcpy(bios_file, "c52.bin");
+            if (auto_region)
+               app_data.euro = 1;
+         }
+         else if (!strcmp(var.value, "g7400.bin"))
+         {
+            strcpy(bios_file, "g7400.bin");
+            if (auto_region)
+               app_data.euro = 1;
+         }
+         else if (!strcmp(var.value, "jopac.bin"))
+         {
+            strcpy(bios_file, "jopac.bin");
+            if (auto_region)
+               app_data.euro = 1;
+         }
+      }
+   }
+
+   /* Virtual KBD Transparency */
+   var.key = "o2em_vkbd_transparency";
+   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var))
+   {
+      int alpha = 255 - (255 * atoi(var.value) / 100);
+      vkb_set_virtual_keyboard_transparency(alpha);
+   }
 }
 
 void retro_init(void)
@@ -760,7 +810,7 @@ void retro_init(void)
    
    memset(mbmp, 0, sizeof(mbmp));
    vkb_configure_virtual_keyboard(mbmp, EMUWIDTH, EMUHEIGHT, TEX_WIDTH);
-   check_variables();
+   check_variables(true);
    RLOOP=1;
 }
 
@@ -808,6 +858,6 @@ void retro_run(void)
    var_updated = false;
    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE_UPDATE, &var_updated) && var_updated)
    {
-     check_variables();
+     check_variables(false);
    }
 }

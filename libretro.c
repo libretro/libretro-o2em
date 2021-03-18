@@ -344,14 +344,14 @@ static void pointerToScreenCoordinates(int *x, int *y)
 
 static void update_input_virtual_keyboard(unsigned joypad_bits)
 {
-  bool select = joypad_bits & (1 << RETRO_DEVICE_ID_JOYPAD_SELECT);
-  bool start  = joypad_bits & (1 << RETRO_DEVICE_ID_JOYPAD_START);
-  bool y      = joypad_bits & (1 << RETRO_DEVICE_ID_JOYPAD_Y);
-  bool up     = joypad_bits & (1 << RETRO_DEVICE_ID_JOYPAD_UP);
-  bool down   = joypad_bits & (1 << RETRO_DEVICE_ID_JOYPAD_DOWN);
-  bool left   = joypad_bits & (1 << RETRO_DEVICE_ID_JOYPAD_LEFT);
-  bool right  = joypad_bits & (1 << RETRO_DEVICE_ID_JOYPAD_RIGHT);
-  bool b      = joypad_bits & (1 << RETRO_DEVICE_ID_JOYPAD_B);
+  bool select = (joypad_bits & (1 << RETRO_DEVICE_ID_JOYPAD_SELECT)) >> RETRO_DEVICE_ID_JOYPAD_SELECT;
+  bool start  = (joypad_bits & (1 << RETRO_DEVICE_ID_JOYPAD_START)) >> RETRO_DEVICE_ID_JOYPAD_START;
+  bool y      = (joypad_bits & (1 << RETRO_DEVICE_ID_JOYPAD_Y)) >> RETRO_DEVICE_ID_JOYPAD_Y;
+  bool up     = (joypad_bits & (1 << RETRO_DEVICE_ID_JOYPAD_UP)) >> RETRO_DEVICE_ID_JOYPAD_UP;
+  bool down   = (joypad_bits & (1 << RETRO_DEVICE_ID_JOYPAD_DOWN)) >> RETRO_DEVICE_ID_JOYPAD_DOWN;
+  bool left   = (joypad_bits & (1 << RETRO_DEVICE_ID_JOYPAD_LEFT)) >> RETRO_DEVICE_ID_JOYPAD_LEFT;
+  bool right  = (joypad_bits & (1 << RETRO_DEVICE_ID_JOYPAD_RIGHT)) >> RETRO_DEVICE_ID_JOYPAD_RIGHT;
+  bool b      = (joypad_bits & (1 << RETRO_DEVICE_ID_JOYPAD_B)) >> RETRO_DEVICE_ID_JOYPAD_B;
   bool click  = input_state_cb(0, RETRO_DEVICE_POINTER, 0, RETRO_DEVICE_ID_POINTER_PRESSED);
 
   // Show the virtual keyboard?
@@ -455,26 +455,34 @@ static void update_input(void)
    {
      // Joystick
      // Player 1
-     joystick_data[0][0]= joypad_bits[0] & (1 << RETRO_DEVICE_ID_JOYPAD_UP);
-     joystick_data[0][1]= joypad_bits[0] & (1 << RETRO_DEVICE_ID_JOYPAD_DOWN);
-     joystick_data[0][2]= joypad_bits[0] & (1 << RETRO_DEVICE_ID_JOYPAD_LEFT);
-     joystick_data[0][3]= joypad_bits[0] & (1 << RETRO_DEVICE_ID_JOYPAD_RIGHT);
-     joystick_data[0][4]= joypad_bits[0] & (1 << RETRO_DEVICE_ID_JOYPAD_B); /* "Action" button on the joystick */
+     joystick_data[0][0]= (joypad_bits[0] & (1 << RETRO_DEVICE_ID_JOYPAD_UP)) >> RETRO_DEVICE_ID_JOYPAD_UP;
+     joystick_data[0][1]= (joypad_bits[0] & (1 << RETRO_DEVICE_ID_JOYPAD_DOWN)) >> RETRO_DEVICE_ID_JOYPAD_DOWN;
+     joystick_data[0][2]= (joypad_bits[0] & (1 << RETRO_DEVICE_ID_JOYPAD_LEFT)) >> RETRO_DEVICE_ID_JOYPAD_LEFT;
+     joystick_data[0][3]= (joypad_bits[0] & (1 << RETRO_DEVICE_ID_JOYPAD_RIGHT)) >> RETRO_DEVICE_ID_JOYPAD_RIGHT;
+     joystick_data[0][4]= (joypad_bits[0] & (1 << RETRO_DEVICE_ID_JOYPAD_B)) >> RETRO_DEVICE_ID_JOYPAD_B; /* "Action" button on the joystick */
      // Player 2
-     joystick_data[1][0]= joypad_bits[1] & (1 << RETRO_DEVICE_ID_JOYPAD_UP);
-     joystick_data[1][1]= joypad_bits[1] & (1 << RETRO_DEVICE_ID_JOYPAD_DOWN);
-     joystick_data[1][2]= joypad_bits[1] & (1 << RETRO_DEVICE_ID_JOYPAD_LEFT);
-     joystick_data[1][3]= joypad_bits[1] & (1 << RETRO_DEVICE_ID_JOYPAD_RIGHT);
-     joystick_data[1][4]= joypad_bits[1] & (1 << RETRO_DEVICE_ID_JOYPAD_B); /* "Action" button on the joystick */
+     joystick_data[1][0]= (joypad_bits[1] & (1 << RETRO_DEVICE_ID_JOYPAD_UP)) >> RETRO_DEVICE_ID_JOYPAD_UP;
+     joystick_data[1][1]= (joypad_bits[1] & (1 << RETRO_DEVICE_ID_JOYPAD_DOWN)) >> RETRO_DEVICE_ID_JOYPAD_DOWN;
+     joystick_data[1][2]= (joypad_bits[1] & (1 << RETRO_DEVICE_ID_JOYPAD_LEFT)) >> RETRO_DEVICE_ID_JOYPAD_LEFT;
+     joystick_data[1][3]= (joypad_bits[1] & (1 << RETRO_DEVICE_ID_JOYPAD_RIGHT)) >> RETRO_DEVICE_ID_JOYPAD_RIGHT;
+     joystick_data[1][4]= (joypad_bits[1] & (1 << RETRO_DEVICE_ID_JOYPAD_B)) >> RETRO_DEVICE_ID_JOYPAD_B; /* "Action" button on the joystick */
 
      // Numeric and Alpha
-     key[RETROK_0] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_0);
-     key[RETROK_1] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_1);
-     key[RETROK_2] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_2);
-     key[RETROK_3] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_3);
-     key[RETROK_4] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_4);
-     key[RETROK_5] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_5);
-     key[RETROK_6] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_6);
+     key[RETROK_0] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_0) |
+         ((joypad_bits[0] & (1 << RETRO_DEVICE_ID_JOYPAD_X)) >> RETRO_DEVICE_ID_JOYPAD_X);
+     key[RETROK_1] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_1) |
+         ((joypad_bits[0] & (1 << RETRO_DEVICE_ID_JOYPAD_L)) >> RETRO_DEVICE_ID_JOYPAD_L);
+     key[RETROK_2] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_2) |
+         ((joypad_bits[0] & (1 << RETRO_DEVICE_ID_JOYPAD_R)) >> RETRO_DEVICE_ID_JOYPAD_R);
+     key[RETROK_3] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_3) |
+         ((joypad_bits[0] & (1 << RETRO_DEVICE_ID_JOYPAD_L2)) >> RETRO_DEVICE_ID_JOYPAD_L2);
+     key[RETROK_4] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_4) |
+         ((joypad_bits[0] & (1 << RETRO_DEVICE_ID_JOYPAD_R2)) >> RETRO_DEVICE_ID_JOYPAD_R2);
+     key[RETROK_5] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_5) |
+         ((joypad_bits[0] & (1 << RETRO_DEVICE_ID_JOYPAD_L3)) >> RETRO_DEVICE_ID_JOYPAD_L3);
+     key[RETROK_6] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_6) |
+         ((joypad_bits[0] & (1 << RETRO_DEVICE_ID_JOYPAD_R3)) >> RETRO_DEVICE_ID_JOYPAD_R3);
+
      key[RETROK_7] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_7);
      key[RETROK_8] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_8);
      key[RETROK_9] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_9);
@@ -646,6 +654,13 @@ bool retro_load_game(const struct retro_game_info *info)
        { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_B,     "Action" },
        { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_Y,     "Move Virtual Keyboard" },
        { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_SELECT,"Show/Hide Virtual Keyboard" },
+       { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_X,     "Numeric Key 0" },
+       { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_L,     "Numeric Key 1" },
+       { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R,     "Numeric Key 2" },
+       { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_L2,    "Numeric Key 3" },
+       { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R2,    "Numeric Key 4" },
+       { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_L3,    "Numeric Key 5" },
+       { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R3,    "Numeric Key 6" },
 
        { 1, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_LEFT,  "Left" },
        { 1, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP,    "Up" },

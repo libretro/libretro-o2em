@@ -60,6 +60,8 @@ static int32_t low_pass_prev  = 0;
 int SND;
 int RLOOP=0;
 int joystick_data[2][5]={{0,0,0,0,0},{0,0,0,0,0}};
+static uint8_t p1_index = 0;
+static uint8_t p2_index = 1;
 
 int contax, o2flag, g74flag, c52flag, jopflag, helpflag;
 
@@ -455,17 +457,17 @@ static void update_input(void)
    {
      // Joystick
      // Player 1
-     joystick_data[0][0]= (joypad_bits[0] & (1 << RETRO_DEVICE_ID_JOYPAD_UP)) >> RETRO_DEVICE_ID_JOYPAD_UP;
-     joystick_data[0][1]= (joypad_bits[0] & (1 << RETRO_DEVICE_ID_JOYPAD_DOWN)) >> RETRO_DEVICE_ID_JOYPAD_DOWN;
-     joystick_data[0][2]= (joypad_bits[0] & (1 << RETRO_DEVICE_ID_JOYPAD_LEFT)) >> RETRO_DEVICE_ID_JOYPAD_LEFT;
-     joystick_data[0][3]= (joypad_bits[0] & (1 << RETRO_DEVICE_ID_JOYPAD_RIGHT)) >> RETRO_DEVICE_ID_JOYPAD_RIGHT;
-     joystick_data[0][4]= (joypad_bits[0] & (1 << RETRO_DEVICE_ID_JOYPAD_B)) >> RETRO_DEVICE_ID_JOYPAD_B; /* "Action" button on the joystick */
+     joystick_data[p1_index][0]= (joypad_bits[0] & (1 << RETRO_DEVICE_ID_JOYPAD_UP)) >> RETRO_DEVICE_ID_JOYPAD_UP;
+     joystick_data[p1_index][1]= (joypad_bits[0] & (1 << RETRO_DEVICE_ID_JOYPAD_DOWN)) >> RETRO_DEVICE_ID_JOYPAD_DOWN;
+     joystick_data[p1_index][2]= (joypad_bits[0] & (1 << RETRO_DEVICE_ID_JOYPAD_LEFT)) >> RETRO_DEVICE_ID_JOYPAD_LEFT;
+     joystick_data[p1_index][3]= (joypad_bits[0] & (1 << RETRO_DEVICE_ID_JOYPAD_RIGHT)) >> RETRO_DEVICE_ID_JOYPAD_RIGHT;
+     joystick_data[p1_index][4]= (joypad_bits[0] & (1 << RETRO_DEVICE_ID_JOYPAD_B)) >> RETRO_DEVICE_ID_JOYPAD_B; /* "Action" button on the joystick */
      // Player 2
-     joystick_data[1][0]= (joypad_bits[1] & (1 << RETRO_DEVICE_ID_JOYPAD_UP)) >> RETRO_DEVICE_ID_JOYPAD_UP;
-     joystick_data[1][1]= (joypad_bits[1] & (1 << RETRO_DEVICE_ID_JOYPAD_DOWN)) >> RETRO_DEVICE_ID_JOYPAD_DOWN;
-     joystick_data[1][2]= (joypad_bits[1] & (1 << RETRO_DEVICE_ID_JOYPAD_LEFT)) >> RETRO_DEVICE_ID_JOYPAD_LEFT;
-     joystick_data[1][3]= (joypad_bits[1] & (1 << RETRO_DEVICE_ID_JOYPAD_RIGHT)) >> RETRO_DEVICE_ID_JOYPAD_RIGHT;
-     joystick_data[1][4]= (joypad_bits[1] & (1 << RETRO_DEVICE_ID_JOYPAD_B)) >> RETRO_DEVICE_ID_JOYPAD_B; /* "Action" button on the joystick */
+     joystick_data[p2_index][0]= (joypad_bits[1] & (1 << RETRO_DEVICE_ID_JOYPAD_UP)) >> RETRO_DEVICE_ID_JOYPAD_UP;
+     joystick_data[p2_index][1]= (joypad_bits[1] & (1 << RETRO_DEVICE_ID_JOYPAD_DOWN)) >> RETRO_DEVICE_ID_JOYPAD_DOWN;
+     joystick_data[p2_index][2]= (joypad_bits[1] & (1 << RETRO_DEVICE_ID_JOYPAD_LEFT)) >> RETRO_DEVICE_ID_JOYPAD_LEFT;
+     joystick_data[p2_index][3]= (joypad_bits[1] & (1 << RETRO_DEVICE_ID_JOYPAD_RIGHT)) >> RETRO_DEVICE_ID_JOYPAD_RIGHT;
+     joystick_data[p2_index][4]= (joypad_bits[1] & (1 << RETRO_DEVICE_ID_JOYPAD_B)) >> RETRO_DEVICE_ID_JOYPAD_B; /* "Action" button on the joystick */
 
      // Numeric and Alpha
      key[RETROK_0] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_0) |
@@ -876,6 +878,21 @@ static void check_variables(bool startup)
       }
    }
 
+   /* Swap Gamepads */
+   var.key   = "o2em_swap_gamepads";
+   var.value = NULL;
+   p1_index  = 0;
+   p2_index  = 1;
+
+   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+   {
+      if (!strcmp(var.value, "enabled"))
+      {
+         p1_index = 1;
+         p2_index = 0;
+      }
+   }
+
    /* Virtual KBD Transparency */
    var.key = "o2em_vkbd_transparency";
    var.value = NULL;
@@ -908,7 +925,7 @@ static void check_variables(bool startup)
    low_pass_enabled = false;
 
    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
-      if (strcmp(var.value, "enabled") == 0)
+      if (!strcmp(var.value, "enabled"))
          low_pass_enabled = true;
 
    /* Audio Filter Level */

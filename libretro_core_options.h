@@ -75,6 +75,17 @@ struct retro_core_option_definition option_defs_us[] = {
       "auto"
    },
    {
+      "o2em_swap_gamepads",
+      "Swap Gamepads",
+      "Swap inputs from the two connected controllers of the emulated console. Required for games such as UFO and P.T. Barnum's Acrobats, which accept player 1 input from the second controller.",
+      {
+         { "disabled", NULL },
+         { "enabled",  NULL },
+         { NULL, NULL },
+      },
+      "disabled"
+   },
+   {
       "o2em_vkbd_transparency",
       "Virtual KBD Transparency",
       "Set transparency level of the virtual on-screen keyboard.",

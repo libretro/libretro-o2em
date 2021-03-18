@@ -50,13 +50,16 @@ void retro_destroybmp(void);
 
 char bios_file[16] = {0};
 
-unsigned short int mbmp[TEX_WIDTH * TEX_HEIGHT];
+uint16_t mbmp[TEX_WIDTH * TEX_HEIGHT];
+uint16_t *mbmp_prev = NULL;
+
 uint8_t soundBuffer[SOUND_BUFFER_LEN];
 static int16_t audioOutBuffer[SOUND_BUFFER_LEN * 2 * sizeof(int16_t)];
 static int16_t audio_volume   = 50;
 static bool low_pass_enabled  = false;
 static int32_t low_pass_range = 0;
 static int32_t low_pass_prev  = 0;
+
 int SND;
 int RLOOP=0;
 int joystick_data[2][5]={{0,0,0,0,0},{0,0,0,0,0}};
@@ -584,6 +587,213 @@ static void upate_audio(void)
 }
 
 /************************************
+ * Interframe blending
+ ************************************/
+
+enum frame_blend_method
+{
+   FRAME_BLEND_NONE = 0,
+   FRAME_BLEND_MIX,
+   FRAME_BLEND_GHOST_65,
+   FRAME_BLEND_GHOST_75,
+   FRAME_BLEND_GHOST_85,
+   FRAME_BLEND_GHOST_95
+};
+
+/* It would be more flexible to have 'persistence'
+ * as a core option, but using a variable parameter
+ * reduces performance by ~15%. We therefore offer
+ * fixed values, and use a macro to avoid excessive
+ * duplication of code... (and yet we still have to
+ * duplicate code due to the annoying SUPPORT_ABGR1555
+ * ifdefs...)
+ * Note: persistence fraction is (persistence/128),
+ * using a power of 2 like this further increases
+ * performance by ~15% */
+#if defined(SUPPORT_ABGR1555)
+#define BLEND_FRAMES_GHOST(persistence)                                                               \
+{                                                                                                     \
+   uint16_t *curr = mbmp;                                                                             \
+   uint16_t *prev = mbmp_prev;                                                                        \
+   size_t x, y;                                                                                       \
+                                                                                                      \
+   for (y = 0; y < EMUHEIGHT; y++)                                                                    \
+   {                                                                                                  \
+      for (x = 0; x < EMUWIDTH; x++)                                                                  \
+      {                                                                                               \
+         /* Get colours from current + previous frames */                                             \
+         uint16_t color_curr = *(curr);                                                               \
+         uint16_t color_prev = *(prev);                                                               \
+                                                                                                      \
+         /* Unpack colours */                                                                         \
+         uint16_t r_curr     = (color_curr      ) & 0x1F;                                             \
+         uint16_t g_curr     = (color_curr >>  5) & 0x1F;                                             \
+         uint16_t b_curr     = (color_curr >> 10) & 0x1F;                                             \
+                                                                                                      \
+         uint16_t r_prev     = (color_curr      ) & 0x1F;                                             \
+         uint16_t g_prev     = (color_curr >>  5) & 0x1F;                                             \
+         uint16_t b_prev     = (color_curr >> 10) & 0x1F;                                             \
+                                                                                                      \
+         /* Mix colors */                                                                             \
+         uint16_t r_mix      = ((r_curr * (128 - persistence)) >> 7) + ((r_prev * persistence) >> 7); \
+         uint16_t g_mix      = ((g_curr * (128 - persistence)) >> 7) + ((g_prev * persistence) >> 7); \
+         uint16_t b_mix      = ((b_curr * (128 - persistence)) >> 7) + ((b_prev * persistence) >> 7); \
+                                                                                                      \
+         /* Output colour is the maximum of the input                                                 \
+          * and decayed values */                                                                     \
+         uint16_t r_out      = (r_mix > r_curr) ? r_mix : r_curr;                                     \
+         uint16_t g_out      = (g_mix > g_curr) ? g_mix : g_curr;                                     \
+         uint16_t b_out      = (b_mix > b_curr) ? b_mix : b_curr;                                     \
+         uint16_t color_out  = b_out << 10 | g_out << 5 | r_out;                                      \
+                                                                                                      \
+         /* Assign colour and store for next frame */                                                 \
+         *(prev++)           = color_out;                                                             \
+         *(curr++)           = color_out;                                                             \
+      }                                                                                               \
+                                                                                                      \
+      curr += (TEX_WIDTH - EMUWIDTH);                                                                 \
+      prev += (TEX_WIDTH - EMUWIDTH);                                                                 \
+   }                                                                                                  \
+}
+#else
+#define BLEND_FRAMES_GHOST(persistence)                                                               \
+{                                                                                                     \
+   uint16_t *curr = mbmp;                                                                             \
+   uint16_t *prev = mbmp_prev;                                                                        \
+   size_t x, y;                                                                                       \
+                                                                                                      \
+   for (y = 0; y < EMUHEIGHT; y++)                                                                    \
+   {                                                                                                  \
+      for (x = 0; x < EMUWIDTH; x++)                                                                  \
+      {                                                                                               \
+         /* Get colours from current + previous frames */                                             \
+         uint16_t color_curr = *(curr);                                                               \
+         uint16_t color_prev = *(prev);                                                               \
+                                                                                                      \
+         /* Unpack colours */                                                                         \
+         uint16_t r_curr     = (color_curr >> 11) & 0x1F;                                             \
+         uint16_t g_curr     = (color_curr >>  6) & 0x1F;                                             \
+         uint16_t b_curr     = (color_curr      ) & 0x1F;                                             \
+                                                                                                      \
+         uint16_t r_prev     = (color_prev >> 11) & 0x1F;                                             \
+         uint16_t g_prev     = (color_prev >>  6) & 0x1F;                                             \
+         uint16_t b_prev     = (color_prev      ) & 0x1F;                                             \
+                                                                                                      \
+         /* Mix colors */                                                                             \
+         uint16_t r_mix      = ((r_curr * (128 - persistence)) >> 7) + ((r_prev * persistence) >> 7); \
+         uint16_t g_mix      = ((g_curr * (128 - persistence)) >> 7) + ((g_prev * persistence) >> 7); \
+         uint16_t b_mix      = ((b_curr * (128 - persistence)) >> 7) + ((b_prev * persistence) >> 7); \
+                                                                                                      \
+         /* Output colour is the maximum of the input                                                 \
+          * and decayed values */                                                                     \
+         uint16_t r_out      = (r_mix > r_curr) ? r_mix : r_curr;                                     \
+         uint16_t g_out      = (g_mix > g_curr) ? g_mix : g_curr;                                     \
+         uint16_t b_out      = (b_mix > b_curr) ? b_mix : b_curr;                                     \
+         uint16_t color_out  = r_out << 11 | g_out << 6 | b_out;                                      \
+                                                                                                      \
+         /* Assign colour and store for next frame */                                                 \
+         *(prev++)           = color_out;                                                             \
+         *(curr++)           = color_out;                                                             \
+      }                                                                                               \
+                                                                                                      \
+      curr += (TEX_WIDTH - EMUWIDTH);                                                                 \
+      prev += (TEX_WIDTH - EMUWIDTH);                                                                 \
+   }                                                                                                  \
+}
+#endif
+
+static void blend_frames_mix(void)
+{
+   uint16_t *curr = mbmp;
+   uint16_t *prev = mbmp_prev;
+   size_t x, y;
+
+   for (y = 0; y < EMUHEIGHT; y++)
+   {
+      for (x = 0; x < EMUWIDTH; x++)
+      {
+         /* Get colours from current + previous frames */
+         uint16_t color_curr = *(curr);
+         uint16_t color_prev = *(prev);
+
+         /* Store colours for next frame */
+         *(prev++) = color_curr;
+
+         /* Mix colours */
+   #if defined(SUPPORT_ABGR1555)
+         *(curr++) = (color_curr + color_prev + ((color_curr ^ color_prev) & 0x521)) >> 1;
+   #else
+         *(curr++) = (color_curr + color_prev + ((color_curr ^ color_prev) & 0x821)) >> 1;
+   #endif
+      }
+
+      curr += (TEX_WIDTH - EMUWIDTH);
+      prev += (TEX_WIDTH - EMUWIDTH);
+   }
+}
+
+static void blend_frames_ghost65(void)
+{
+   /* 65% = 83 / 128 */
+   BLEND_FRAMES_GHOST(83);
+}
+
+static void blend_frames_ghost75(void)
+{
+   /* 75% = 95 / 128 */
+   BLEND_FRAMES_GHOST(95);
+}
+
+static void blend_frames_ghost85(void)
+{
+   /* 85% ~= 109 / 128 */
+   BLEND_FRAMES_GHOST(109);
+}
+
+static void blend_frames_ghost95(void)
+{
+   /* 95% ~= 122 / 128 */
+   BLEND_FRAMES_GHOST(122);
+}
+
+static void (*blend_frames)(void) = NULL;
+
+static void init_frame_blending(enum frame_blend_method blend_method)
+{
+   /* Allocate/zero out buffer, if required */
+   if (blend_method != FRAME_BLEND_NONE)
+   {
+      if (!mbmp_prev)
+         mbmp_prev = (uint16_t*)malloc(TEX_WIDTH * TEX_HEIGHT * sizeof(uint16_t));
+
+      memset(mbmp_prev, 0, TEX_WIDTH * TEX_HEIGHT * sizeof(uint16_t));
+   }
+
+   /* Assign function pointer */
+   switch (blend_method)
+   {
+      case FRAME_BLEND_MIX:
+         blend_frames = blend_frames_mix;
+         break;
+      case FRAME_BLEND_GHOST_65:
+         blend_frames = blend_frames_ghost65;
+         break;
+      case FRAME_BLEND_GHOST_75:
+         blend_frames = blend_frames_ghost75;
+         break;
+      case FRAME_BLEND_GHOST_85:
+         blend_frames = blend_frames_ghost85;
+         break;
+      case FRAME_BLEND_GHOST_95:
+         blend_frames = blend_frames_ghost95;
+         break;
+      default:
+         blend_frames = NULL;
+         break;
+   }
+}
+
+/************************************
  * libretro implementation
  ************************************/
 
@@ -823,6 +1033,7 @@ size_t retro_get_memory_size(unsigned id)
 
 static void check_variables(bool startup)
 {
+   enum frame_blend_method blend_method = FRAME_BLEND_NONE;
    struct retro_variable var;
 
    if (startup)
@@ -902,6 +1113,26 @@ static void check_variables(bool startup)
       vkb_set_virtual_keyboard_transparency(alpha);
    }
 
+   /* Interframe Blending */
+   var.key      = "o2em_mix_frames";
+   var.value    = NULL;
+
+   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+   {
+      if (!strcmp(var.value, "mix"))
+         blend_method = FRAME_BLEND_MIX;
+      else if (!strcmp(var.value, "ghost_65"))
+         blend_method = FRAME_BLEND_GHOST_65;
+      else if (!strcmp(var.value, "ghost_75"))
+         blend_method = FRAME_BLEND_GHOST_75;
+      else if (!strcmp(var.value, "ghost_85"))
+         blend_method = FRAME_BLEND_GHOST_85;
+      else if (!strcmp(var.value, "ghost_95"))
+         blend_method = FRAME_BLEND_GHOST_95;
+   }
+
+   init_frame_blending(blend_method);
+
    /* Audio Volume */
    var.key      = "o2em_audio_volume";
    var.value    = NULL;
@@ -969,6 +1200,12 @@ void retro_deinit(void)
    close_voice();
    close_display();
    retro_destroybmp();
+
+   if (mbmp_prev)
+   {
+      free(mbmp_prev);
+      mbmp_prev = NULL;
+   }
 }
 
 void retro_reset(void)
@@ -990,6 +1227,9 @@ void retro_run(void)
 
    cpu_exec();
    RLOOP=1;
+
+   if (blend_frames)
+      blend_frames();
 
    if (vkb_show)
      vkb_show_virtual_keyboard();

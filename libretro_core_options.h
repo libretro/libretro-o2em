@@ -105,6 +105,21 @@ struct retro_core_option_definition option_defs_us[] = {
       "0"
    },
    {
+      "o2em_mix_frames",
+      "Interframe Blending",
+      "Simulates CRT phosphor ghosting effects. 'Simple' performs a 50:50 mix of the current and previous frames. 'Ghosting' accumulates pixels from multiple successive frames. May be used to alleviate screen flicker.",
+      {
+         { "disabled", NULL },
+         { "mix",      "Simple" },
+         { "ghost_65", "Ghosting (65%)" },
+         { "ghost_75", "Ghosting (75%)" },
+         { "ghost_85", "Ghosting (85%)" },
+         { "ghost_95", "Ghosting (95%)" },
+         { NULL,    NULL },
+      },
+      "disabled"
+   },
+   {
       "o2em_audio_volume",
       "Audio Volume",
       "Set output audio volume level.",

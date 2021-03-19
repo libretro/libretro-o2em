@@ -91,15 +91,9 @@ struct retro_core_option_definition option_defs_us[] = {
       "Set transparency level of the virtual on-screen keyboard.",
       {
          { "0",  "0%" },
-         { "10", "10%" },
-         { "20", "20%" },
-         { "30", "30%" },
-         { "40", "40%" },
+         { "25", "25%" },
          { "50", "50%" },
-         { "60", "60%" },
-         { "70", "70%" },
-         { "80", "80%" },
-         { "90", "90%" },
+         { "75", "75%" },
          { NULL, NULL },
       },
       "0"

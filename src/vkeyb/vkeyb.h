@@ -11,10 +11,19 @@ enum VkbMoveDirection { VKB_MOVE_LEFT, VKB_MOVE_RIGHT, VKB_MOVE_UP, VKB_MOVE_DOW
 // Positions of the virtual keyboard
 enum VkbPosition { VKB_POS_DOWN, VKB_POS_UP };
 
+// Opacity of the virtual keyboard
+enum VkbAlpha
+{
+	VKB_ALPHA_25 = 0,
+	VKB_ALPHA_50,
+	VKB_ALPHA_75,
+	VKB_ALPHA_100
+};
+
 // Configure the virtual keyboard feature
 extern void vkb_configure_virtual_keyboard(uint16_t *video_buffer, int width, int height, int pitch);
-// Set the virtual keyboard transparency (0 = transparent, 255 = opaque)
-extern void vkb_set_virtual_keyboard_transparency(unsigned int alpha);
+// Set the virtual keyboard transparency
+extern void vkb_set_virtual_keyboard_transparency(enum VkbAlpha alpha);
 // Set the position of the virtual keyboard
 extern void vkb_set_virtual_keyboard_position(enum VkbPosition position);
 // Get the currently configured position of the virtual keyboard

@@ -1033,8 +1033,9 @@ size_t retro_get_memory_size(unsigned id)
 
 static void check_variables(bool startup)
 {
-   enum frame_blend_method blend_method = FRAME_BLEND_NONE;
    struct retro_variable var;
+   enum VkbAlpha keyboard_alpha;
+   enum frame_blend_method blend_method;
 
    if (startup)
    {
@@ -1105,17 +1106,26 @@ static void check_variables(bool startup)
    }
 
    /* Virtual KBD Transparency */
-   var.key = "o2em_vkbd_transparency";
-   var.value = NULL;
+   var.key        = "o2em_vkbd_transparency";
+   var.value      = NULL;
+   keyboard_alpha = VKB_ALPHA_100;
+
    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
    {
-      int alpha = 255 - (255 * atoi(var.value) / 100);
-      vkb_set_virtual_keyboard_transparency(alpha);
+      if (!strcmp(var.value, "25"))
+         keyboard_alpha = VKB_ALPHA_75;
+      else if (!strcmp(var.value, "50"))
+         keyboard_alpha = VKB_ALPHA_50;
+      else if (!strcmp(var.value, "75"))
+         keyboard_alpha = VKB_ALPHA_25;
    }
+
+   vkb_set_virtual_keyboard_transparency(keyboard_alpha);
 
    /* Interframe Blending */
    var.key      = "o2em_mix_frames";
    var.value    = NULL;
+   blend_method = FRAME_BLEND_NONE;
 
    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
    {

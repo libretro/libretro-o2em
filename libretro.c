@@ -13,6 +13,7 @@
 #endif
 
 #include "libretro.h"
+#include "libretro_core_options.h"
 
 #include "audio.h"
 #include "config.h"
@@ -37,6 +38,8 @@ static retro_environment_t environ_cb;
 static retro_audio_sample_t audio_cb;
 static retro_audio_sample_batch_t audio_batch_cb;
 
+static bool libretro_supports_bitmasks = false;
+
 void retro_set_video_refresh(retro_video_refresh_t cb) { video_cb = cb; }
 void retro_set_audio_sample(retro_audio_sample_t cb) { audio_cb = cb; }
 void retro_set_audio_sample_batch(retro_audio_sample_batch_t cb) { audio_batch_cb = cb; }
@@ -45,11 +48,45 @@ void retro_set_input_state(retro_input_state_t cb) { input_state_cb = cb; }
 
 void retro_destroybmp(void);
 
-unsigned short int mbmp[TEX_WIDTH * TEX_HEIGHT];
-uint8_t soundBuffer[1056];
+char bios_file[16] = {0};
+
+uint16_t mbmp[TEX_WIDTH * TEX_HEIGHT];
+uint16_t *mbmp_prev = NULL;
+static bool crop_overscan = false;
+/* Note: 320x240 is not really correct,
+ * since the actual overscan region varies
+ * per system and is not strictly defined.
+ * Cropping to 320x240 does however remove
+ * any glitchy border content in most games,
+ * and it optimises the display for devices
+ * with a native 320x240 resolution (this can
+ * have a significant beneficial performance
+ * impact) */
+#define CROPPED_WIDTH  320
+#define CROPPED_HEIGHT 240
+/* 9 is not a typo. The emulated display
+ * is offset by 1 pixel, so we only crop
+ * 9 pixels from the left, not 10.
+ * (This means we lose one row of pixels
+ * from the active area of the virtual
+ * keyboard when cropping is enabled,
+ * but it does not affect usability
+ * in any meaningful way) */
+#define CROPPED_OFFSET_X 9
+#define CROPPED_OFFSET_Y 5
+
+uint8_t soundBuffer[SOUND_BUFFER_LEN];
+static int16_t audioOutBuffer[SOUND_BUFFER_LEN * 2 * sizeof(int16_t)];
+static int16_t audio_volume   = 50;
+static bool low_pass_enabled  = false;
+static int32_t low_pass_range = 0;
+static int32_t low_pass_prev  = 0;
+
 int SND;
 int RLOOP=0;
 int joystick_data[2][5]={{0,0,0,0,0},{0,0,0,0,0}};
+static uint8_t p1_index = 0;
+static uint8_t p2_index = 1;
 
 int contax, o2flag, g74flag, c52flag, jopflag, helpflag;
 
@@ -75,17 +112,10 @@ struct ButtonsState last_btn_state = { false, false, false, false,
                                        false, false,
                                        false, false };
 
-static const struct retro_variable prefs[] = {
-    { "o2em_vkb_transparency", "Virtual keyboard transparency; 0%|10%|20%|30%|40%|50%|60%|70%|80%|90%" },
-    { NULL, NULL }
-};
-
 void retro_set_environment(retro_environment_t cb)
 {
-  // Emulator's preferences
-  cb(RETRO_ENVIRONMENT_SET_VARIABLES, (void *) prefs);
-
-  environ_cb = cb;
+   environ_cb = cb;
+   libretro_set_core_options(environ_cb);
 }
 
 static int does_file_exist(const char *filename)
@@ -210,20 +240,20 @@ static bool load_cart(const char *file)
 
    if (((app_data.crc == 0x975AB8DA) || (app_data.crc == 0xE246A812)) && (!app_data.debug))
    {
-      fprintf(stderr,"Error: file %s is an incomplete ROM dump\n",file_v);
+      fprintf(stderr,"Error: file %s is an incomplete ROM dump\n",file);
       return false;
    }
 
    fn=fopen(file,"rb");
    if (!fn) {
-      fprintf(stderr,"Error loading %s\n",file_v);
+      fprintf(stderr,"Error loading %s\n",file);
       return false;
    }
-   printf("Loading: \"%s\"  Size: ",file_v);
+   printf("Loading: \"%s\"  Size: ",file);
    l = filesize(fn);
 
    if ((l % 1024) != 0) {
-      fprintf(stderr,"Error: file %s is an invalid ROM dump\n",file_v);
+      fprintf(stderr,"Error: file %s is an invalid ROM dump\n",file);
       return false;
    }
 
@@ -335,26 +365,29 @@ void update_joy(void)
 
 static void pointerToScreenCoordinates(int *x, int *y)
 {
-  *x = (*x + 0x7FFF) * EMUWIDTH / 0xFFFF;
-  *y = (*y + 0x7FFF) * EMUHEIGHT / 0xFFFF;
+   if (crop_overscan)
+   {
+      *x = ((*x + 0x7FFF) * CROPPED_WIDTH / 0xFFFF)  + CROPPED_OFFSET_X;
+      *y = ((*y + 0x7FFF) * CROPPED_HEIGHT / 0xFFFF) + CROPPED_OFFSET_Y;
+   }
+   else
+   {
+      *x = (*x + 0x7FFF) * EMUWIDTH / 0xFFFF;
+      *y = (*y + 0x7FFF) * EMUHEIGHT / 0xFFFF;
+   }
 }
 
-static void update_input_virtual_keyboard()
+static void update_input_virtual_keyboard(unsigned joypad_bits)
 {
-  bool select, start;
-  bool b, y;
-  bool left, right, up, down;
-  bool click;
-
-  select = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_SELECT);
-  start = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_START);
-  y = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_Y);
-  up = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP);
-  down = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_DOWN);
-  left = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_LEFT);
-  right = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_RIGHT);
-  b = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_B);
-  click = input_state_cb(0, RETRO_DEVICE_POINTER, 0, RETRO_DEVICE_ID_POINTER_PRESSED);
+  bool select = (joypad_bits & (1 << RETRO_DEVICE_ID_JOYPAD_SELECT)) >> RETRO_DEVICE_ID_JOYPAD_SELECT;
+  bool start  = (joypad_bits & (1 << RETRO_DEVICE_ID_JOYPAD_START)) >> RETRO_DEVICE_ID_JOYPAD_START;
+  bool y      = (joypad_bits & (1 << RETRO_DEVICE_ID_JOYPAD_Y)) >> RETRO_DEVICE_ID_JOYPAD_Y;
+  bool up     = (joypad_bits & (1 << RETRO_DEVICE_ID_JOYPAD_UP)) >> RETRO_DEVICE_ID_JOYPAD_UP;
+  bool down   = (joypad_bits & (1 << RETRO_DEVICE_ID_JOYPAD_DOWN)) >> RETRO_DEVICE_ID_JOYPAD_DOWN;
+  bool left   = (joypad_bits & (1 << RETRO_DEVICE_ID_JOYPAD_LEFT)) >> RETRO_DEVICE_ID_JOYPAD_LEFT;
+  bool right  = (joypad_bits & (1 << RETRO_DEVICE_ID_JOYPAD_RIGHT)) >> RETRO_DEVICE_ID_JOYPAD_RIGHT;
+  bool b      = (joypad_bits & (1 << RETRO_DEVICE_ID_JOYPAD_B)) >> RETRO_DEVICE_ID_JOYPAD_B;
+  bool click  = input_state_cb(2, RETRO_DEVICE_POINTER, 0, RETRO_DEVICE_ID_POINTER_PRESSED);
 
   // Show the virtual keyboard?
   if (select && !last_btn_state.select)
@@ -431,35 +464,60 @@ static void update_input_virtual_keyboard()
 
 static void update_input(void)
 {
+   unsigned joypad_bits[2] = {0};
+   size_t i, j;
+
    if (!input_poll_cb)
       return;
 
    input_poll_cb();
 
+   for (i = 0; i < 2; i++)
+   {
+      if (libretro_supports_bitmasks)
+         joypad_bits[i] = input_state_cb(i, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_MASK);
+      else
+         for (j = 0; j < (RETRO_DEVICE_ID_JOYPAD_R3+1); j++)
+            joypad_bits[i] |= input_state_cb(i, RETRO_DEVICE_JOYPAD, 0, j) ? (1 << j) : 0;
+
+      /* If virtual KBD is shown, only need input
+       * from port 1 */
+      if (vkb_show)
+         break;
+   }
+
    if (!vkb_show)
    {
      // Joystick
      // Player 1
-     joystick_data[0][0]= input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP);
-     joystick_data[0][1]= input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_DOWN);
-     joystick_data[0][2]= input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_LEFT);
-     joystick_data[0][3]= input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_RIGHT);
-     joystick_data[0][4]= input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_B); // "Action" button on the joystick
+     joystick_data[p1_index][0]= (joypad_bits[0] & (1 << RETRO_DEVICE_ID_JOYPAD_UP)) >> RETRO_DEVICE_ID_JOYPAD_UP;
+     joystick_data[p1_index][1]= (joypad_bits[0] & (1 << RETRO_DEVICE_ID_JOYPAD_DOWN)) >> RETRO_DEVICE_ID_JOYPAD_DOWN;
+     joystick_data[p1_index][2]= (joypad_bits[0] & (1 << RETRO_DEVICE_ID_JOYPAD_LEFT)) >> RETRO_DEVICE_ID_JOYPAD_LEFT;
+     joystick_data[p1_index][3]= (joypad_bits[0] & (1 << RETRO_DEVICE_ID_JOYPAD_RIGHT)) >> RETRO_DEVICE_ID_JOYPAD_RIGHT;
+     joystick_data[p1_index][4]= (joypad_bits[0] & (1 << RETRO_DEVICE_ID_JOYPAD_B)) >> RETRO_DEVICE_ID_JOYPAD_B; /* "Action" button on the joystick */
      // Player 2
-     joystick_data[1][0]= input_state_cb(1, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP);
-     joystick_data[1][1]= input_state_cb(1, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_DOWN);
-     joystick_data[1][2]= input_state_cb(1, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_LEFT);
-     joystick_data[1][3]= input_state_cb(1, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_RIGHT);
-     joystick_data[1][4]= input_state_cb(1, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_B); // "Action" button on the joystick
+     joystick_data[p2_index][0]= (joypad_bits[1] & (1 << RETRO_DEVICE_ID_JOYPAD_UP)) >> RETRO_DEVICE_ID_JOYPAD_UP;
+     joystick_data[p2_index][1]= (joypad_bits[1] & (1 << RETRO_DEVICE_ID_JOYPAD_DOWN)) >> RETRO_DEVICE_ID_JOYPAD_DOWN;
+     joystick_data[p2_index][2]= (joypad_bits[1] & (1 << RETRO_DEVICE_ID_JOYPAD_LEFT)) >> RETRO_DEVICE_ID_JOYPAD_LEFT;
+     joystick_data[p2_index][3]= (joypad_bits[1] & (1 << RETRO_DEVICE_ID_JOYPAD_RIGHT)) >> RETRO_DEVICE_ID_JOYPAD_RIGHT;
+     joystick_data[p2_index][4]= (joypad_bits[1] & (1 << RETRO_DEVICE_ID_JOYPAD_B)) >> RETRO_DEVICE_ID_JOYPAD_B; /* "Action" button on the joystick */
 
      // Numeric and Alpha
-     key[RETROK_0] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_0);
-     key[RETROK_1] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_1);
-     key[RETROK_2] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_2);
-     key[RETROK_3] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_3);
-     key[RETROK_4] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_4);
-     key[RETROK_5] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_5);
-     key[RETROK_6] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_6);
+     key[RETROK_0] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_0) |
+         ((joypad_bits[0] & (1 << RETRO_DEVICE_ID_JOYPAD_X)) >> RETRO_DEVICE_ID_JOYPAD_X);
+     key[RETROK_1] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_1) |
+         ((joypad_bits[0] & (1 << RETRO_DEVICE_ID_JOYPAD_L)) >> RETRO_DEVICE_ID_JOYPAD_L);
+     key[RETROK_2] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_2) |
+         ((joypad_bits[0] & (1 << RETRO_DEVICE_ID_JOYPAD_R)) >> RETRO_DEVICE_ID_JOYPAD_R);
+     key[RETROK_3] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_3) |
+         ((joypad_bits[0] & (1 << RETRO_DEVICE_ID_JOYPAD_L2)) >> RETRO_DEVICE_ID_JOYPAD_L2);
+     key[RETROK_4] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_4) |
+         ((joypad_bits[0] & (1 << RETRO_DEVICE_ID_JOYPAD_R2)) >> RETRO_DEVICE_ID_JOYPAD_R2);
+     key[RETROK_5] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_5) |
+         ((joypad_bits[0] & (1 << RETRO_DEVICE_ID_JOYPAD_L3)) >> RETRO_DEVICE_ID_JOYPAD_L3);
+     key[RETROK_6] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_6) |
+         ((joypad_bits[0] & (1 << RETRO_DEVICE_ID_JOYPAD_R3)) >> RETRO_DEVICE_ID_JOYPAD_R3);
+
      key[RETROK_7] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_7);
      key[RETROK_8] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_8);
      key[RETROK_9] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_9);
@@ -502,7 +560,267 @@ static void update_input(void)
    }
 
    // Virtual keyboard management
-   update_input_virtual_keyboard();
+   update_input_virtual_keyboard(joypad_bits[0]);
+}
+
+static void upate_audio(void)
+{
+   uint8_t *audio_samples_ptr = soundBuffer;
+   int16_t *audio_out_ptr     = audioOutBuffer;
+   int length                 = (evblclk == EVBLCLK_NTSC) ? 44100 / 60 : 44100 / 50;
+
+   /* Convert 8u mono to 16s stereo */
+   if (low_pass_enabled)
+   {
+      int samples = length;
+
+      /* Restore previous sample */
+      int32_t low_pass = low_pass_prev;
+
+      /* Single-pole low-pass filter (6 dB/octave) */
+      int32_t factor_a = low_pass_range;
+      int32_t factor_b = 0x10000 - factor_a;
+
+      do
+      {
+         /* Get current sample */
+         int16_t sample16 = (((*(audio_samples_ptr++) - 128) << 8) * audio_volume) / 100;
+
+         /* Apply low-pass filter */
+         low_pass = (low_pass * factor_a) + (sample16 * factor_b);
+
+         /* 16.16 fixed point */
+         low_pass >>= 16;
+
+         /* Update output buffer */
+         *(audio_out_ptr++) = (int16_t)low_pass;
+         *(audio_out_ptr++) = (int16_t)low_pass;
+      }
+      while (--samples);
+
+      /* Save last sample for next frame */
+      low_pass_prev = low_pass;
+   }
+   else
+   {
+      int i;
+
+      for(i = 0; i < length; i++)
+      {
+         int16_t sample16   = (((*(audio_samples_ptr++) - 128) << 8) * audio_volume) / 100;
+         *(audio_out_ptr++) = sample16;
+         *(audio_out_ptr++) = sample16;
+      }
+   }
+
+   audio_batch_cb(audioOutBuffer, length);
+}
+
+/************************************
+ * Interframe blending
+ ************************************/
+
+enum frame_blend_method
+{
+   FRAME_BLEND_NONE = 0,
+   FRAME_BLEND_MIX,
+   FRAME_BLEND_GHOST_65,
+   FRAME_BLEND_GHOST_75,
+   FRAME_BLEND_GHOST_85,
+   FRAME_BLEND_GHOST_95
+};
+
+/* It would be more flexible to have 'persistence'
+ * as a core option, but using a variable parameter
+ * reduces performance by ~15%. We therefore offer
+ * fixed values, and use a macro to avoid excessive
+ * duplication of code... (and yet we still have to
+ * duplicate code due to the annoying SUPPORT_ABGR1555
+ * ifdefs...)
+ * Note: persistence fraction is (persistence/128),
+ * using a power of 2 like this further increases
+ * performance by ~15% */
+#if defined(SUPPORT_ABGR1555)
+#define BLEND_FRAMES_GHOST(persistence)                                                               \
+{                                                                                                     \
+   uint16_t *curr = mbmp;                                                                             \
+   uint16_t *prev = mbmp_prev;                                                                        \
+   size_t x, y;                                                                                       \
+                                                                                                      \
+   for (y = 0; y < EMUHEIGHT; y++)                                                                    \
+   {                                                                                                  \
+      for (x = 0; x < EMUWIDTH; x++)                                                                  \
+      {                                                                                               \
+         /* Get colours from current + previous frames */                                             \
+         uint16_t color_curr = *(curr);                                                               \
+         uint16_t color_prev = *(prev);                                                               \
+                                                                                                      \
+         /* Unpack colours */                                                                         \
+         uint16_t r_curr     = (color_curr      ) & 0x1F;                                             \
+         uint16_t g_curr     = (color_curr >>  5) & 0x1F;                                             \
+         uint16_t b_curr     = (color_curr >> 10) & 0x1F;                                             \
+                                                                                                      \
+         uint16_t r_prev     = (color_curr      ) & 0x1F;                                             \
+         uint16_t g_prev     = (color_curr >>  5) & 0x1F;                                             \
+         uint16_t b_prev     = (color_curr >> 10) & 0x1F;                                             \
+                                                                                                      \
+         /* Mix colors */                                                                             \
+         uint16_t r_mix      = ((r_curr * (128 - persistence)) >> 7) + ((r_prev * persistence) >> 7); \
+         uint16_t g_mix      = ((g_curr * (128 - persistence)) >> 7) + ((g_prev * persistence) >> 7); \
+         uint16_t b_mix      = ((b_curr * (128 - persistence)) >> 7) + ((b_prev * persistence) >> 7); \
+                                                                                                      \
+         /* Output colour is the maximum of the input                                                 \
+          * and decayed values */                                                                     \
+         uint16_t r_out      = (r_mix > r_curr) ? r_mix : r_curr;                                     \
+         uint16_t g_out      = (g_mix > g_curr) ? g_mix : g_curr;                                     \
+         uint16_t b_out      = (b_mix > b_curr) ? b_mix : b_curr;                                     \
+         uint16_t color_out  = b_out << 10 | g_out << 5 | r_out;                                      \
+                                                                                                      \
+         /* Assign colour and store for next frame */                                                 \
+         *(prev++)           = color_out;                                                             \
+         *(curr++)           = color_out;                                                             \
+      }                                                                                               \
+                                                                                                      \
+      curr += (TEX_WIDTH - EMUWIDTH);                                                                 \
+      prev += (TEX_WIDTH - EMUWIDTH);                                                                 \
+   }                                                                                                  \
+}
+#else
+#define BLEND_FRAMES_GHOST(persistence)                                                               \
+{                                                                                                     \
+   uint16_t *curr = mbmp;                                                                             \
+   uint16_t *prev = mbmp_prev;                                                                        \
+   size_t x, y;                                                                                       \
+                                                                                                      \
+   for (y = 0; y < EMUHEIGHT; y++)                                                                    \
+   {                                                                                                  \
+      for (x = 0; x < EMUWIDTH; x++)                                                                  \
+      {                                                                                               \
+         /* Get colours from current + previous frames */                                             \
+         uint16_t color_curr = *(curr);                                                               \
+         uint16_t color_prev = *(prev);                                                               \
+                                                                                                      \
+         /* Unpack colours */                                                                         \
+         uint16_t r_curr     = (color_curr >> 11) & 0x1F;                                             \
+         uint16_t g_curr     = (color_curr >>  6) & 0x1F;                                             \
+         uint16_t b_curr     = (color_curr      ) & 0x1F;                                             \
+                                                                                                      \
+         uint16_t r_prev     = (color_prev >> 11) & 0x1F;                                             \
+         uint16_t g_prev     = (color_prev >>  6) & 0x1F;                                             \
+         uint16_t b_prev     = (color_prev      ) & 0x1F;                                             \
+                                                                                                      \
+         /* Mix colors */                                                                             \
+         uint16_t r_mix      = ((r_curr * (128 - persistence)) >> 7) + ((r_prev * persistence) >> 7); \
+         uint16_t g_mix      = ((g_curr * (128 - persistence)) >> 7) + ((g_prev * persistence) >> 7); \
+         uint16_t b_mix      = ((b_curr * (128 - persistence)) >> 7) + ((b_prev * persistence) >> 7); \
+                                                                                                      \
+         /* Output colour is the maximum of the input                                                 \
+          * and decayed values */                                                                     \
+         uint16_t r_out      = (r_mix > r_curr) ? r_mix : r_curr;                                     \
+         uint16_t g_out      = (g_mix > g_curr) ? g_mix : g_curr;                                     \
+         uint16_t b_out      = (b_mix > b_curr) ? b_mix : b_curr;                                     \
+         uint16_t color_out  = r_out << 11 | g_out << 6 | b_out;                                      \
+                                                                                                      \
+         /* Assign colour and store for next frame */                                                 \
+         *(prev++)           = color_out;                                                             \
+         *(curr++)           = color_out;                                                             \
+      }                                                                                               \
+                                                                                                      \
+      curr += (TEX_WIDTH - EMUWIDTH);                                                                 \
+      prev += (TEX_WIDTH - EMUWIDTH);                                                                 \
+   }                                                                                                  \
+}
+#endif
+
+static void blend_frames_mix(void)
+{
+   uint16_t *curr = mbmp;
+   uint16_t *prev = mbmp_prev;
+   size_t x, y;
+
+   for (y = 0; y < EMUHEIGHT; y++)
+   {
+      for (x = 0; x < EMUWIDTH; x++)
+      {
+         /* Get colours from current + previous frames */
+         uint16_t color_curr = *(curr);
+         uint16_t color_prev = *(prev);
+
+         /* Store colours for next frame */
+         *(prev++) = color_curr;
+
+         /* Mix colours */
+   #if defined(SUPPORT_ABGR1555)
+         *(curr++) = (color_curr + color_prev + ((color_curr ^ color_prev) & 0x521)) >> 1;
+   #else
+         *(curr++) = (color_curr + color_prev + ((color_curr ^ color_prev) & 0x821)) >> 1;
+   #endif
+      }
+
+      curr += (TEX_WIDTH - EMUWIDTH);
+      prev += (TEX_WIDTH - EMUWIDTH);
+   }
+}
+
+static void blend_frames_ghost65(void)
+{
+   /* 65% = 83 / 128 */
+   BLEND_FRAMES_GHOST(83);
+}
+
+static void blend_frames_ghost75(void)
+{
+   /* 75% = 95 / 128 */
+   BLEND_FRAMES_GHOST(95);
+}
+
+static void blend_frames_ghost85(void)
+{
+   /* 85% ~= 109 / 128 */
+   BLEND_FRAMES_GHOST(109);
+}
+
+static void blend_frames_ghost95(void)
+{
+   /* 95% ~= 122 / 128 */
+   BLEND_FRAMES_GHOST(122);
+}
+
+static void (*blend_frames)(void) = NULL;
+
+static void init_frame_blending(enum frame_blend_method blend_method)
+{
+   /* Allocate/zero out buffer, if required */
+   if (blend_method != FRAME_BLEND_NONE)
+   {
+      if (!mbmp_prev)
+         mbmp_prev = (uint16_t*)malloc(TEX_WIDTH * TEX_HEIGHT * sizeof(uint16_t));
+
+      memset(mbmp_prev, 0, TEX_WIDTH * TEX_HEIGHT * sizeof(uint16_t));
+   }
+
+   /* Assign function pointer */
+   switch (blend_method)
+   {
+      case FRAME_BLEND_MIX:
+         blend_frames = blend_frames_mix;
+         break;
+      case FRAME_BLEND_GHOST_65:
+         blend_frames = blend_frames_ghost65;
+         break;
+      case FRAME_BLEND_GHOST_75:
+         blend_frames = blend_frames_ghost75;
+         break;
+      case FRAME_BLEND_GHOST_85:
+         blend_frames = blend_frames_ghost85;
+         break;
+      case FRAME_BLEND_GHOST_95:
+         blend_frames = blend_frames_ghost95;
+         break;
+      default:
+         blend_frames = NULL;
+         break;
+   }
 }
 
 /************************************
@@ -525,13 +843,23 @@ void retro_get_system_av_info(struct retro_system_av_info *info)
 {
    memset(info, 0, sizeof(*info));
 
-   info->timing.fps            = (evblclk == EVBLCLK_NTSC) ? 60 : 50;
-   info->timing.sample_rate    = 44100;
-   info->geometry.base_width   = EMUWIDTH;
-   info->geometry.base_height  = EMUHEIGHT;
-   info->geometry.max_width    = EMUWIDTH;
-   info->geometry.max_height   = EMUHEIGHT;
-   info->geometry.aspect_ratio = 4.0 / 3.0;
+   info->timing.fps               = (evblclk == EVBLCLK_NTSC) ? 60 : 50;
+   info->timing.sample_rate       = 44100;
+
+   if (crop_overscan)
+   {
+      info->geometry.base_width   = CROPPED_WIDTH;
+      info->geometry.base_height  = CROPPED_HEIGHT;
+   }
+   else
+   {
+      info->geometry.base_width   = EMUWIDTH;
+      info->geometry.base_height  = EMUHEIGHT;
+   }
+
+   info->geometry.max_width       = EMUWIDTH;
+   info->geometry.max_height      = EMUHEIGHT;
+   info->geometry.aspect_ratio    = 4.0f / 3.0f;
 }
 
 void retro_set_controller_port_device(unsigned port, unsigned device)
@@ -542,19 +870,17 @@ void retro_set_controller_port_device(unsigned port, unsigned device)
 
 size_t retro_serialize_size(void) 
 { 
-	return STATE_SIZE;
+	return savestate_size();
 }
 
 bool retro_serialize(void *data, size_t size)
 {
-   savestate_to_mem((uint8_t *)data);
-   return true;
+   return savestate_to_mem((uint8_t *)data, size);
 }
 
 bool retro_unserialize(const void *data, size_t size)
 {
-   loadstate_from_mem((uint8_t *)data);
-   return true;
+   return loadstate_from_mem((uint8_t *)data, size);
 }
 
 void retro_cheat_reset(void)
@@ -580,6 +906,13 @@ bool retro_load_game(const struct retro_game_info *info)
        { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_B,     "Action" },
        { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_Y,     "Move Virtual Keyboard" },
        { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_SELECT,"Show/Hide Virtual Keyboard" },
+       { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_X,     "Numeric Key 0" },
+       { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_L,     "Numeric Key 1" },
+       { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R,     "Numeric Key 2" },
+       { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_L2,    "Numeric Key 3" },
+       { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R2,    "Numeric Key 4" },
+       { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_L3,    "Numeric Key 5" },
+       { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R3,    "Numeric Key 6" },
 
        { 1, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_LEFT,  "Left" },
        { 1, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP,    "Up" },
@@ -614,7 +947,7 @@ bool retro_load_game(const struct retro_game_info *info)
     if (!system_directory_c)
     {
        if (log_cb)
-          log_cb(RETRO_LOG_WARN, "[O2EM]: no system directory defined, unable to look for o2rom.bin\n");
+          log_cb(RETRO_LOG_WARN, "[O2EM]: no system directory defined, unable to look for %s\n", bios_file);
        return false;
     }
     else
@@ -625,12 +958,12 @@ bool retro_load_game(const struct retro_game_info *info)
       char slash = '/';
 #endif
 
-       snprintf(bios_file_path, sizeof(bios_file_path), "%s%c%s", system_directory_c, slash, "o2rom.bin");
+       snprintf(bios_file_path, sizeof(bios_file_path), "%s%c%s", system_directory_c, slash, bios_file);
 
        if (!does_file_exist(bios_file_path))
        {
           if (log_cb)
-             log_cb(RETRO_LOG_WARN, "[O2EM]: o2rom.bin not found, cannot load BIOS\n");
+             log_cb(RETRO_LOG_WARN, "[O2EM]: %s not found, cannot load BIOS\n", bios_file);
           return false;
        }
     }
@@ -650,15 +983,18 @@ bool retro_load_game(const struct retro_game_info *info)
     app_data.scanlines = 0;
     app_data.voice = 1;
     app_data.window_title = "O2EM v" O2EM_VERSION;
+    /* These volume settings have no effect
+     * (they are allegro-specific) */
     app_data.svolume = 100;
     app_data.vvolume = 100;
+    /* Internal audio filter is worthless,
+     * disable it and use our own */
     app_data.filter = 0;
     app_data.exrom = 0;
     app_data.three_k = 0;
     app_data.crc = 0;
     app_data.scshot = scshot;
     app_data.statefile = statefile;
-    app_data.euro = 0;
     app_data.openb = 0;
     app_data.vpp = 0;
     app_data.bios = 0;
@@ -735,15 +1071,169 @@ size_t retro_get_memory_size(unsigned id)
     return 0;
 }
 
-static void check_variables(void)
+static void check_variables(bool startup)
 {
-  struct retro_variable var = {0, 0};
-  var.key = "o2em_vkb_transparency";
-  if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var))
-  {
-    int alpha = 255 - (255 * atoi(var.value) / 100);
-    vkb_set_virtual_keyboard_transparency(alpha);
-  }
+   struct retro_variable var;
+   enum VkbAlpha keyboard_alpha;
+   enum frame_blend_method blend_method;
+   bool last_crop_overscan;
+
+   if (startup)
+   {
+      bool auto_region = true;
+
+      /* Console Region */
+      var.key       = "o2em_region";
+      var.value     = NULL;
+      app_data.euro = 0;
+
+      if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+      {
+         if (!strcmp(var.value, "NTSC"))
+         {
+            app_data.euro = 0;
+            auto_region   = false;
+         }
+         else if (!strcmp(var.value, "PAL"))
+         {
+            app_data.euro = 1;
+            auto_region   = false;
+         }
+      }
+
+      /* Emulated Hardware */
+      var.key   = "o2em_bios";
+      var.value = NULL;
+      strcpy(bios_file, "o2rom.bin");
+
+      if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+      {
+         /* Ugly, but we don't want to inadvertently
+          * copy an invalid value */
+         if (!strcmp(var.value, "c52.bin"))
+         {
+            strcpy(bios_file, "c52.bin");
+            if (auto_region)
+               app_data.euro = 1;
+         }
+         else if (!strcmp(var.value, "g7400.bin"))
+         {
+            strcpy(bios_file, "g7400.bin");
+            if (auto_region)
+               app_data.euro = 1;
+         }
+         else if (!strcmp(var.value, "jopac.bin"))
+         {
+            strcpy(bios_file, "jopac.bin");
+            if (auto_region)
+               app_data.euro = 1;
+         }
+      }
+   }
+
+   /* Swap Gamepads */
+   var.key   = "o2em_swap_gamepads";
+   var.value = NULL;
+   p1_index  = 0;
+   p2_index  = 1;
+
+   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+   {
+      if (!strcmp(var.value, "enabled"))
+      {
+         p1_index = 1;
+         p2_index = 0;
+      }
+   }
+
+   /* Virtual KBD Transparency */
+   var.key        = "o2em_vkbd_transparency";
+   var.value      = NULL;
+   keyboard_alpha = VKB_ALPHA_100;
+
+   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+   {
+      if (!strcmp(var.value, "25"))
+         keyboard_alpha = VKB_ALPHA_75;
+      else if (!strcmp(var.value, "50"))
+         keyboard_alpha = VKB_ALPHA_50;
+      else if (!strcmp(var.value, "75"))
+         keyboard_alpha = VKB_ALPHA_25;
+   }
+
+   vkb_set_virtual_keyboard_transparency(keyboard_alpha);
+
+   /* Crop Overscan */
+   var.key            = "o2em_crop_overscan";
+   var.value          = NULL;
+   last_crop_overscan = crop_overscan;
+   crop_overscan      = false;
+
+   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+      if (!strcmp(var.value, "enabled"))
+         crop_overscan = true;
+
+   if (!startup && (crop_overscan != last_crop_overscan))
+   {
+      struct retro_system_av_info av_info;
+      retro_get_system_av_info(&av_info);
+      environ_cb(RETRO_ENVIRONMENT_SET_GEOMETRY, &av_info);
+   }
+
+   /* Interframe Blending */
+   var.key      = "o2em_mix_frames";
+   var.value    = NULL;
+   blend_method = FRAME_BLEND_NONE;
+
+   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+   {
+      if (!strcmp(var.value, "mix"))
+         blend_method = FRAME_BLEND_MIX;
+      else if (!strcmp(var.value, "ghost_65"))
+         blend_method = FRAME_BLEND_GHOST_65;
+      else if (!strcmp(var.value, "ghost_75"))
+         blend_method = FRAME_BLEND_GHOST_75;
+      else if (!strcmp(var.value, "ghost_85"))
+         blend_method = FRAME_BLEND_GHOST_85;
+      else if (!strcmp(var.value, "ghost_95"))
+         blend_method = FRAME_BLEND_GHOST_95;
+   }
+
+   init_frame_blending(blend_method);
+
+   /* Audio Volume */
+   var.key      = "o2em_audio_volume";
+   var.value    = NULL;
+   audio_volume = 50;
+
+   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+   {
+      audio_volume = atoi(var.value);
+      audio_volume = (audio_volume > 100) ? 100 : audio_volume;
+      audio_volume = (audio_volume < 0)   ? 0   : audio_volume;
+   }
+
+   /* > Since we are not using the internal audio
+    *   filter, volume must be divided by a factor
+    *   of two */
+   audio_volume = audio_volume >> 1;
+
+   /* Audio Filter */
+   var.key          = "o2em_low_pass_filter";
+   var.value        = NULL;
+   low_pass_enabled = false;
+
+   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+      if (!strcmp(var.value, "enabled"))
+         low_pass_enabled = true;
+
+   /* Audio Filter Level */
+   var.key        = "o2em_low_pass_range";
+   var.value      = NULL;
+   low_pass_range = (60 * 0x10000) / 100;
+
+   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+      low_pass_range = (strtol(var.value, NULL, 10) * 0x10000) / 100;
 }
 
 void retro_init(void)
@@ -751,17 +1241,26 @@ void retro_init(void)
    struct retro_log_callback log;
    unsigned level = 5;
 
+   libretro_supports_bitmasks = false;
+   crop_overscan              = false;
+   vkb_show                   = false;
+   low_pass_prev              = 0;
+   RLOOP                      = 1;
+
+   memset(mbmp, 0, sizeof(mbmp));
+
    if (environ_cb(RETRO_ENVIRONMENT_GET_LOG_INTERFACE, &log))
       log_cb = log.log;
    else
       log_cb = NULL;
 
    environ_cb(RETRO_ENVIRONMENT_SET_PERFORMANCE_LEVEL, &level);
-   
-   memset(mbmp, 0, sizeof(mbmp));
+
+   if (environ_cb(RETRO_ENVIRONMENT_GET_INPUT_BITMASKS, NULL))
+      libretro_supports_bitmasks = true;
+
    vkb_configure_virtual_keyboard(mbmp, EMUWIDTH, EMUHEIGHT, TEX_WIDTH);
-   check_variables();
-   RLOOP=1;
+   check_variables(true);
 }
 
 void retro_deinit(void)
@@ -770,6 +1269,12 @@ void retro_deinit(void)
    close_voice();
    close_display();
    retro_destroybmp();
+
+   if (mbmp_prev)
+   {
+      free(mbmp_prev);
+      mbmp_prev = NULL;
+   }
 }
 
 void retro_reset(void)
@@ -782,32 +1287,29 @@ void retro_reset(void)
 
 void retro_run(void)
 {
-   int i, length;
-   bool var_updated;
+   bool var_updated = false;
+
+   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE_UPDATE, &var_updated) && var_updated)
+     check_variables(false);
 
    update_input();
 
    cpu_exec();
    RLOOP=1;
 
+   if (blend_frames)
+      blend_frames();
+
    if (vkb_show)
-   {
      vkb_show_virtual_keyboard();
-   }
-   video_cb(mbmp, EMUWIDTH, EMUHEIGHT, TEX_WIDTH << 1);
-   
-   length = (evblclk == EVBLCLK_NTSC) ? 44100 / 60 : 44100 / 50;
 
-   /* Convert 8u to 16s */
-   for(i = 0; i < length; i++)
+   if (crop_overscan)
    {
-      int16_t sample16 = (soundBuffer[i]-128) << 8;
-      audio_cb(sample16, sample16);
+		uint16_t *mbmp_cropped = mbmp + (TEX_WIDTH * CROPPED_OFFSET_Y) + CROPPED_OFFSET_X;
+		video_cb(mbmp_cropped, CROPPED_WIDTH, CROPPED_HEIGHT, TEX_WIDTH << 1);
    }
+   else
+      video_cb(mbmp, EMUWIDTH, EMUHEIGHT, TEX_WIDTH << 1);
 
-   var_updated = false;
-   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE_UPDATE, &var_updated) && var_updated)
-   {
-     check_variables();
-   }
+   upate_audio();
 }

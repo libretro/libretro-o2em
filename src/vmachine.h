@@ -4,9 +4,11 @@
 #include <stdint.h>
 
 #ifdef __LIBRETRO__
-#define STATE_SIZE sizeof(app_data.crc)+sizeof(app_data.bios)+256+256+64+sizeof(pc)+sizeof(sp)+sizeof(bs)+sizeof(p1)+sizeof(p2)+sizeof(ac)+sizeof(cy)+sizeof(f0)+sizeof(A11)+sizeof(A11ff)+sizeof(timer_on)+sizeof(timer_on)+sizeof(reg_pnt)+sizeof(tirq_en)+sizeof(xirq_en)+sizeof(xirq_pend)+sizeof(tirq_pend)
-void savestate_to_mem(uint8_t *data);
-void loadstate_from_mem(const uint8_t *data);
+#include <stddef.h>
+#include <stdbool.h>
+size_t savestate_size(void);
+bool savestate_to_mem(uint8_t *data, size_t size);
+bool loadstate_from_mem(const uint8_t *data, size_t size);
 #endif
 
 #define LINECNT 21

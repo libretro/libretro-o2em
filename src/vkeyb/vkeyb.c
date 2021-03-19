@@ -33,16 +33,11 @@ void vkb_configure_virtual_keyboard(uint16_t *video_buffer, int width, int heigh
   current_key = ODYSSEY2_DEFAULT_KEY;
 }
 
-void vkb_set_virtual_keyboard_transparency(unsigned int alpha)
+
+// Set the virtual keyboard transparency
+void vkb_set_virtual_keyboard_transparency(enum VkbAlpha alpha)
 {
-  if (alpha > 255)
-  {
-    vkb_alpha = 255;
-  }
-  else
-  {
-    vkb_alpha = alpha;
-  }
+  vkb_alpha = alpha;
 }
 
 void vkb_set_virtual_keyboard_position(enum VkbPosition position)

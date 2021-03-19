@@ -27,8 +27,6 @@
 #define PERIOD1 11
 #define PERIOD2 44
 
-#define SOUND_BUFFER_LEN 1056
-
 #define AUD_CTRL  0xAA
 #define AUD_D0	  0xA7
 #define AUD_D1	  0xA8

@@ -34,8 +34,13 @@ BITMAP *create_bitmap(int w,int h)
 
 int destroy_bitmap(BITMAP *buff)
 {
-   if (buff && buff->line)
-      free(buff->line);
+   if (buff)
+   {
+      if (buff->line)
+         free(buff->line);
+
+      free(buff);
+   }
 
    return 0;
 }

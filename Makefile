@@ -248,6 +248,7 @@ else ifeq ($(platform), gcw0)
    AR = /opt/gcw0-toolchain/usr/bin/mipsel-linux-ar
    SHARED := -shared -Wl,--no-undefined -Wl,--version-script=link.T
    FLAGS += -fomit-frame-pointer -ffast-math -march=mips32 -mtune=mips32r2 -mhard-float
+   FLAGS += -DDINGUX
    fpic := -fPIC
 
 # Classic Platforms ####################

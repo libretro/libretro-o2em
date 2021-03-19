@@ -99,9 +99,24 @@ struct retro_core_option_definition option_defs_us[] = {
       "0"
    },
    {
+      "o2em_crop_overscan",
+      "Crop Overscan",
+      "Remove the border around the edges of the screen, typically unused by games and hidden by the bezel of a standard-definition television.",
+      {
+         { "disabled", NULL },
+         { "enabled",  NULL },
+         { NULL, NULL },
+      },
+#if defined(_3DS) || defined(DINGUX)
+      "enabled"
+#else
+      "disabled"
+#endif
+   },
+   {
       "o2em_mix_frames",
       "Interframe Blending",
-      "Simulates CRT phosphor ghosting effects. 'Simple' performs a 50:50 mix of the current and previous frames. 'Ghosting' accumulates pixels from multiple successive frames. May be used to alleviate screen flicker.",
+      "Simulate CRT phosphor ghosting effects. 'Simple' performs a 50:50 mix of the current and previous frames. 'Ghosting' accumulates pixels from multiple successive frames. May be used to alleviate screen flicker.",
       {
          { "disabled", NULL },
          { "mix",      "Simple" },
@@ -147,7 +162,7 @@ struct retro_core_option_definition option_defs_us[] = {
    {
       "o2em_low_pass_range",
       "Audio Filter Level",
-      "Specifies the cut-off frequency of the low pass audio filter. A higher value increases the perceived 'strength' of the filter, since a wider range of the high frequency spectrum is attenuated.",
+      "Specify the cut-off frequency of the low pass audio filter. A higher value increases the perceived 'strength' of the filter, since a wider range of the high frequency spectrum is attenuated.",
       {
          { "5",  "5%" },
          { "10", "10%" },

@@ -52,6 +52,28 @@ char bios_file[16] = {0};
 
 uint16_t mbmp[TEX_WIDTH * TEX_HEIGHT];
 uint16_t *mbmp_prev = NULL;
+static bool crop_overscan = false;
+/* Note: 320x240 is not really correct,
+ * since the actual overscan region varies
+ * per system and is not strictly defined.
+ * Cropping to 320x240 does however remove
+ * any glitchy border content in most games,
+ * and it optimises the display for devices
+ * with a native 320x240 resolution (this can
+ * have a significant beneficial performance
+ * impact) */
+#define CROPPED_WIDTH  320
+#define CROPPED_HEIGHT 240
+/* 9 is not a typo. The emulated display
+ * is offset by 1 pixel, so we only crop
+ * 9 pixels from the left, not 10.
+ * (This means we lose one row of pixels
+ * from the active area of the virtual
+ * keyboard when cropping is enabled,
+ * but it does not affect usability
+ * in any meaningful way) */
+#define CROPPED_OFFSET_X 9
+#define CROPPED_OFFSET_Y 5
 
 uint8_t soundBuffer[SOUND_BUFFER_LEN];
 static int16_t audioOutBuffer[SOUND_BUFFER_LEN * 2 * sizeof(int16_t)];
@@ -343,8 +365,16 @@ void update_joy(void)
 
 static void pointerToScreenCoordinates(int *x, int *y)
 {
-  *x = (*x + 0x7FFF) * EMUWIDTH / 0xFFFF;
-  *y = (*y + 0x7FFF) * EMUHEIGHT / 0xFFFF;
+   if (crop_overscan)
+   {
+      *x = ((*x + 0x7FFF) * CROPPED_WIDTH / 0xFFFF)  + CROPPED_OFFSET_X;
+      *y = ((*y + 0x7FFF) * CROPPED_HEIGHT / 0xFFFF) + CROPPED_OFFSET_Y;
+   }
+   else
+   {
+      *x = (*x + 0x7FFF) * EMUWIDTH / 0xFFFF;
+      *y = (*y + 0x7FFF) * EMUHEIGHT / 0xFFFF;
+   }
 }
 
 static void update_input_virtual_keyboard(unsigned joypad_bits)
@@ -357,7 +387,7 @@ static void update_input_virtual_keyboard(unsigned joypad_bits)
   bool left   = (joypad_bits & (1 << RETRO_DEVICE_ID_JOYPAD_LEFT)) >> RETRO_DEVICE_ID_JOYPAD_LEFT;
   bool right  = (joypad_bits & (1 << RETRO_DEVICE_ID_JOYPAD_RIGHT)) >> RETRO_DEVICE_ID_JOYPAD_RIGHT;
   bool b      = (joypad_bits & (1 << RETRO_DEVICE_ID_JOYPAD_B)) >> RETRO_DEVICE_ID_JOYPAD_B;
-  bool click  = input_state_cb(0, RETRO_DEVICE_POINTER, 0, RETRO_DEVICE_ID_POINTER_PRESSED);
+  bool click  = input_state_cb(2, RETRO_DEVICE_POINTER, 0, RETRO_DEVICE_ID_POINTER_PRESSED);
 
   // Show the virtual keyboard?
   if (select && !last_btn_state.select)
@@ -813,13 +843,23 @@ void retro_get_system_av_info(struct retro_system_av_info *info)
 {
    memset(info, 0, sizeof(*info));
 
-   info->timing.fps            = (evblclk == EVBLCLK_NTSC) ? 60 : 50;
-   info->timing.sample_rate    = 44100;
-   info->geometry.base_width   = EMUWIDTH;
-   info->geometry.base_height  = EMUHEIGHT;
-   info->geometry.max_width    = EMUWIDTH;
-   info->geometry.max_height   = EMUHEIGHT;
-   info->geometry.aspect_ratio = 4.0 / 3.0;
+   info->timing.fps               = (evblclk == EVBLCLK_NTSC) ? 60 : 50;
+   info->timing.sample_rate       = 44100;
+
+   if (crop_overscan)
+   {
+      info->geometry.base_width   = CROPPED_WIDTH;
+      info->geometry.base_height  = CROPPED_HEIGHT;
+   }
+   else
+   {
+      info->geometry.base_width   = EMUWIDTH;
+      info->geometry.base_height  = EMUHEIGHT;
+   }
+
+   info->geometry.max_width       = EMUWIDTH;
+   info->geometry.max_height      = EMUHEIGHT;
+   info->geometry.aspect_ratio    = 4.0f / 3.0f;
 }
 
 void retro_set_controller_port_device(unsigned port, unsigned device)
@@ -1036,6 +1076,7 @@ static void check_variables(bool startup)
    struct retro_variable var;
    enum VkbAlpha keyboard_alpha;
    enum frame_blend_method blend_method;
+   bool last_crop_overscan;
 
    if (startup)
    {
@@ -1122,6 +1163,23 @@ static void check_variables(bool startup)
 
    vkb_set_virtual_keyboard_transparency(keyboard_alpha);
 
+   /* Crop Overscan */
+   var.key            = "o2em_crop_overscan";
+   var.value          = NULL;
+   last_crop_overscan = crop_overscan;
+   crop_overscan      = false;
+
+   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+      if (!strcmp(var.value, "enabled"))
+         crop_overscan = true;
+
+   if (!startup && (crop_overscan != last_crop_overscan))
+   {
+      struct retro_system_av_info av_info;
+      retro_get_system_av_info(&av_info);
+      environ_cb(RETRO_ENVIRONMENT_SET_GEOMETRY, &av_info);
+   }
+
    /* Interframe Blending */
    var.key      = "o2em_mix_frames";
    var.value    = NULL;
@@ -1183,6 +1241,14 @@ void retro_init(void)
    struct retro_log_callback log;
    unsigned level = 5;
 
+   libretro_supports_bitmasks = false;
+   crop_overscan              = false;
+   vkb_show                   = false;
+   low_pass_prev              = 0;
+   RLOOP                      = 1;
+
+   memset(mbmp, 0, sizeof(mbmp));
+
    if (environ_cb(RETRO_ENVIRONMENT_GET_LOG_INTERFACE, &log))
       log_cb = log.log;
    else
@@ -1190,18 +1256,11 @@ void retro_init(void)
 
    environ_cb(RETRO_ENVIRONMENT_SET_PERFORMANCE_LEVEL, &level);
 
-   libretro_supports_bitmasks = false;
    if (environ_cb(RETRO_ENVIRONMENT_GET_INPUT_BITMASKS, NULL))
       libretro_supports_bitmasks = true;
 
-   memset(mbmp, 0, sizeof(mbmp));
    vkb_configure_virtual_keyboard(mbmp, EMUWIDTH, EMUHEIGHT, TEX_WIDTH);
-
    check_variables(true);
-
-   vkb_show      = false;
-   low_pass_prev = 0;
-   RLOOP         = 1;
 }
 
 void retro_deinit(void)
@@ -1244,7 +1303,13 @@ void retro_run(void)
    if (vkb_show)
      vkb_show_virtual_keyboard();
 
-   video_cb(mbmp, EMUWIDTH, EMUHEIGHT, TEX_WIDTH << 1);
+   if (crop_overscan)
+   {
+		uint16_t *mbmp_cropped = mbmp + (TEX_WIDTH * CROPPED_OFFSET_Y) + CROPPED_OFFSET_X;
+		video_cb(mbmp_cropped, CROPPED_WIDTH, CROPPED_HEIGHT, TEX_WIDTH << 1);
+   }
+   else
+      video_cb(mbmp, EMUWIDTH, EMUHEIGHT, TEX_WIDTH << 1);
 
    upate_audio();
 }

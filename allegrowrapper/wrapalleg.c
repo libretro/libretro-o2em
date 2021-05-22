@@ -15,9 +15,9 @@ void alleg_downcase(char *p)
 	}
 }
 
-BITMAP *create_bitmap(int w,int h)
+ALLEGRO_BITMAP *create_bitmap(int w,int h)
 {
-   BITMAP *buff = malloc(sizeof (BITMAP));
+   ALLEGRO_BITMAP *buff = malloc(sizeof (ALLEGRO_BITMAP));
 
    if (!buff)
       return NULL;
@@ -32,7 +32,7 @@ BITMAP *create_bitmap(int w,int h)
    return buff;
 }
 
-int destroy_bitmap(BITMAP *buff)
+int destroy_bitmap(ALLEGRO_BITMAP *buff)
 {
    if (buff)
    {
@@ -46,8 +46,8 @@ int destroy_bitmap(BITMAP *buff)
 }
 
 
-void rect(BITMAP  *buff,int x,int y,int x2,int y2,unsigned  char color)       { }
-void rectfill(BITMAP  *buff,int x,int y,int x2,int y2,unsigned  char color)   { }
-void DrawHline(BITMAP  *buff,int x,int y,int dx,int dy,unsigned  char  color) { }
-void DrawVline(BITMAP *buff,int x,int y,int dx,int dy,unsigned  char  color)  { }
-void line(BITMAP  *buff,int x1,int y1,int x2,int y2,unsigned  char  color)    { }
+void rect(ALLEGRO_BITMAP  *buff,int x,int y,int x2,int y2,unsigned  char color)       { }
+void rectfill(ALLEGRO_BITMAP  *buff,int x,int y,int x2,int y2,unsigned  char color)   { }
+void DrawHline(ALLEGRO_BITMAP  *buff,int x,int y,int dx,int dy,unsigned  char  color) { }
+void DrawVline(ALLEGRO_BITMAP *buff,int x,int y,int dx,int dy,unsigned  char  color)  { }
+void line(ALLEGRO_BITMAP  *buff,int x1,int y1,int x2,int y2,unsigned  char  color)    { }

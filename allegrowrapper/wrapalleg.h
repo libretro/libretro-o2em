@@ -20,7 +20,7 @@ typedef struct
    int h;
    int pitch;
    int depth;   
-}BITMAP;
+}ALLEGRO_BITMAP;
 
 typedef struct
 {
@@ -30,11 +30,11 @@ typedef struct
 }APALETTE;
 
 
-extern BITMAP *create_bitmap(int w,int h);
-extern int destroy_bitmap(BITMAP *buff);
-extern void line(BITMAP  *buff,int x1,int y1,int x2,int y2,unsigned  char  color);
-extern void rect(BITMAP  *buff,int x,int y,int x2,int y2,unsigned  char color);
-extern void rectfill(BITMAP  *buff,int x,int y,int x2,int y2,unsigned  char color);
+extern ALLEGRO_BITMAP *create_bitmap(int w,int h);
+extern int destroy_bitmap(ALLEGRO_BITMAP *buff);
+extern void line(ALLEGRO_BITMAP  *buff,int x1,int y1,int x2,int y2,unsigned  char  color);
+extern void rect(ALLEGRO_BITMAP  *buff,int x,int y,int x2,int y2,unsigned  char color);
+extern void rectfill(ALLEGRO_BITMAP  *buff,int x,int y,int x2,int y2,unsigned  char color);
 extern void alleg_upcase(char *p);
 extern void alleg_downcase(char *p);
 

@@ -66,8 +66,8 @@ static PALETTE colors,oldcol;
 /* The pointer to the graphics buffer */
 static uint8_t *vscreen           = NULL;
 
-static BITMAP *bmp                = NULL;
-static BITMAP *bmpcache           = NULL;
+static ALLEGRO_BITMAP *bmp                = NULL;
+static ALLEGRO_BITMAP *bmpcache           = NULL;
 static int cached_lines[MAXLINES];
 
 uint8_t coltab[256];

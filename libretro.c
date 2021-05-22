@@ -30,6 +30,11 @@
 
 #include "wrapalleg.h"
 
+#include <audio/audio_mixer.h>
+#include <audio/conversion/float_to_s16.h>
+#include <file/file_path.h>
+#include <retro_miscellaneous.h>
+
 static retro_log_printf_t log_cb;
 static retro_video_refresh_t video_cb;
 static retro_input_poll_t input_poll_cb;
@@ -613,6 +618,22 @@ static void upate_audio(void)
       }
    }
 
+   if (get_voice_status())
+   {
+      float fbuf[SOUND_BUFFER_LEN * 2 * sizeof(float)];
+      int16_t ibuf[SOUND_BUFFER_LEN * 2 * sizeof(int16_t)];
+
+      memset(fbuf, 0, length * 2 * sizeof(float));
+      audio_mixer_mix(fbuf, length, audio_volume / 100.0, true);
+      convert_float_to_s16(ibuf, fbuf, length * 2);
+
+      for (int i = 0; i < length; i++)
+      {
+         audioOutBuffer[i*2] += ibuf[i*2];
+         audioOutBuffer[i*2 + 1] += ibuf[i*2 + 1];
+      }
+   }
+
    audio_batch_cb(audioOutBuffer, length);
 }
 
@@ -895,7 +916,7 @@ void retro_cheat_set(unsigned index, bool enabled, const char *code)
 
 bool retro_load_game(const struct retro_game_info *info)
 {
-    char bios_file_path[256];
+    char bios_file_path[PATH_MAX_LENGTH];
     const char *full_path, *system_directory_c;
     enum retro_pixel_format fmt = RETRO_PIXEL_FORMAT_RGB565;
     struct retro_input_descriptor desc[] = {
@@ -952,14 +973,7 @@ bool retro_load_game(const struct retro_game_info *info)
     }
     else
     {
-#ifdef _WIN32
-      char slash = '\\';
-#else
-      char slash = '/';
-#endif
-
-       snprintf(bios_file_path, sizeof(bios_file_path), "%s%c%s", system_directory_c, slash, bios_file);
-
+       fill_pathname_join(bios_file_path, system_directory_c, bios_file, PATH_MAX_LENGTH);
        if (!does_file_exist(bios_file_path))
        {
           if (log_cb)
@@ -1022,7 +1036,14 @@ bool retro_load_game(const struct retro_game_info *info)
     if (!load_cart(full_path))
        return false;
 
-    //if (app_data.voice) load_voice_samples(path2);
+    if (app_data.voice)
+    {
+       audio_mixer_init(44100);
+
+       char voice_path[PATH_MAX_LENGTH];
+       fill_pathname_join(voice_path, system_directory_c, "voice", PATH_MAX_LENGTH);
+       init_voice(voice_path);
+    }
 
     init_display();
 
@@ -1275,6 +1296,8 @@ void retro_deinit(void)
       free(mbmp_prev);
       mbmp_prev = NULL;
    }
+
+   audio_mixer_done();
 }
 
 void retro_reset(void)

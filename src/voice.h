@@ -1,7 +1,7 @@
 #ifndef __VOICE_H
 #define __VOICE_H
 
-void load_voice_samples(char *path);
+void init_voice(const char *path);
 void update_voice(void);
 void trigger_voice(int addr);
 void reset_voice(void);

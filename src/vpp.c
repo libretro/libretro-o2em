@@ -25,7 +25,7 @@
 #include "wrapalleg.h"
 
 static uint8_t LumReg = 0xff, TraReg = 0xff;
-static BITMAP *vppbmp = NULL;
+static ALLEGRO_BITMAP *vppbmp = NULL;
 static uint8_t *colplus = NULL;
 static int vppon = 1;
 static int vpp_cx = 0;

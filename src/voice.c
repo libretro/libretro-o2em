@@ -19,152 +19,157 @@
 #include "cpu.h"
 #include "voice.h"
 
-static int16_t *voices[9][128];
-static int voice_bank=0;
-static int voice_num=-1;
-static int voice_addr=0;
-static int voice_ok=0;
-static int voice_st=0;
-static unsigned long clk_voice_start=0;
+#include <audio/audio_mixer.h>
+#include <file/file_path.h>
+#include <retro_miscellaneous.h>
+#include <streams/file_stream.h>
 
-void load_voice_samples(char *path)
+static audio_mixer_sound_t *voices[9][128];
+static int voice_bank = 0;
+static audio_mixer_voice_t *voice = NULL;
+static bool voice_finished = true;
+static int voice_addr = 0;
+static int voice_st = 0;
+static unsigned long clk_voice_start = 0;
+static bool voice_ok = false;
+
+void init_voice(const char *voice_path)
 {
-#ifndef __LIBRETRO__
-   int bank, sam, i, ld=0;
-   char name[MAXC];
-   int16_t *sp=NULL;
+   int n_loaded = 0;
+   for (int i = 0; i < 9; i++) {
+      for (int sam = 0; sam < 128; sam++) {
+         int bank = i ? (0xE8 + i - 1) : 0xE4;
 
-   printf("Loading voice samples...  ");
-   fflush(stdout);
+         char file_name[32];
+         snprintf(file_name, 32, "%02X%02X.WAV", bank, sam + 0x80);
 
-   for (i=0; i<9; i++) {
-      for (sam=0; sam<128; sam++) {
+         char file_path[PATH_MAX_LENGTH];
+         fill_pathname_join(file_path, voice_path, file_name, PATH_MAX_LENGTH);
 
-         if (i)
-            bank = 0xE8+i-1;
-         else
-            bank = 0xE4;
-
-         sprintf(name,"%svoice/%02x%02x.wav",path,bank,sam+0x80);
-
-         voices[i][sam] = load_sample(name);
-
-         if (!voices[i][sam]) {
-            sprintf(name,"%svoice/%02X%02X.WAV",path,bank,sam+0x80);
-            voices[i][sam] = load_sample(name);
+         int64_t file_len = 0;
+         void *file_contents = NULL;
+         if (filestream_read_file(file_path, &file_contents, &file_len)) {
+            voices[i][sam] = audio_mixer_load_wav(file_contents, file_len);
+            if (voices[i][sam])
+               n_loaded++;
          }
-
-         if (voices[i][sam]) {
-            ld++;
-            if (!sp) sp = voices[i][sam];
-         }
-
       }
    }
 
-   printf("%d samples loaded\n",ld);
+   voice_bank = 0;
+   voice = NULL;
+   voice_finished = true;
+   voice_addr = 0;
+   voice_st = 0;
+   clk_voice_start = 0;
 
-   if (ld>0){
-      voice_num = allocate_voice(sp);
-      if (voice_num != -1)
-         voice_ok=1;
-      else {
-         printf("  ERROR: could not allocate sound card voice\n");
-         voice_ok=0;
-      }
-   }
-#endif
-
+   voice_ok = (n_loaded > 0);
 }
 
+void voice_stop_callback(audio_mixer_sound_t *sound, unsigned reason)
+{
+   voice_finished = true;
+}
 
 void update_voice(void)
 {
-#ifndef __LIBRETRO__
-   if (!voice_ok) return;
-   if (voice_st==2) {
-      if (voice_get_position(voice_num) < 0){
-         if ((voice_bank>=0) && (voice_bank<9) && (voice_addr>=0x80) && (voice_addr<=0xff)) {
-            if (voices[voice_bank][voice_addr-0x80]) {
-               reallocate_voice(voice_num, voices[voice_bank][voice_addr-0x80]);
-               voice_set_volume(voice_num, (255*app_data.vvolume)/100);
-               voice_start(voice_num);
+   if (!voice_ok)
+      return;
+
+   if (voice_st == 2) {
+      if (voice_finished) {
+         if (voice_bank >= 0 && voice_bank <= 8
+               && voice_addr >= 0x80 && voice_addr <= 0xff) {
+            if (voices[voice_bank][voice_addr - 0x80]) {
+               voice = audio_mixer_play(voices[voice_bank][voice_addr - 0x80],
+                                        false, 0, voice_stop_callback);
+               voice_finished = false;
                clk_voice_start = clk_counter;
-               voice_st=1;				
+               voice_st = 1;
             } else {
-               voice_st=0;
+               voice_st = 0;
             }
          }
       }
-   } else if (voice_st==1) {
-      if ((voice_get_position(voice_num) < 0) || (clk_counter-clk_voice_start>20) ) {
-         voice_st=0;
+   } else if (voice_st == 1) {
+      if (voice_finished || (clk_counter - clk_voice_start) > 20) {
+         voice_st = 0;
       }
    }
-#endif
 }
 
 
 void trigger_voice(int addr)
 {
-#ifndef __LIBRETRO__
-   if (voice_ok){
-      if (voice_st) update_voice();
-      if ((voice_st==0) && (voice_bank>=0) && (voice_bank<9) && (addr>=0x80) && (addr<=0xff)){
-         voice_addr = addr;
-         voice_st = 2;
-         update_voice();
+   if (!voice_ok)
+      return;
+
+   if (voice_st)
+      update_voice();
+
+   if (voice_st == 0
+         && voice_bank >=0 && voice_bank <= 8
+         && addr >= 0x80 && addr <= 0xff) {
+      voice_addr = addr;
+      voice_st = 2;
+      update_voice();
+   }
+}
+
+
+void set_voice_bank(int bank)
+{
+   if (!voice_ok)
+      return;
+
+   if (bank >= 0 && bank <= 8)
+      voice_bank = bank;
+}
+
+
+int get_voice_status(void)
+{
+   if (!voice_ok)
+      return 0;
+
+   update_voice();
+   return voice_st ? 1 : 0;
+}
+
+
+void reset_voice(void)
+{
+   if (!voice_ok)
+      return;
+
+   audio_mixer_stop(voice);
+   voice = NULL;
+   voice_bank = 0;
+   voice_addr = 0;
+   voice_st = 0;
+}
+
+
+void mute_voice(void)
+{
+   if (!voice_ok)
+      return;
+
+   audio_mixer_stop(voice);
+   voice = NULL;
+}
+
+
+void close_voice(void)
+{
+   reset_voice();
+
+   for (int i = 0; i < 9; i++) {
+      for (int sam = 0; sam < 128; sam++) {
+         audio_mixer_destroy(voices[i][sam]);
+         voices[i][sam] = NULL;
       }
    }
-#endif
+
+   voice_ok = false;
 }
-
-
-void set_voice_bank(int bank){
-#ifndef __LIBRETRO__
-	if (!voice_ok) return;
-	if ((bank>=0) && (bank<=8)) voice_bank = bank;
-#endif
-}
-
-
-int get_voice_status(void){
-#ifndef __LIBRETRO__
-	if (voice_ok){
-		update_voice();
-		if (voice_st) return 1;
-	}
-#endif
-	return 0;
-}
-
-
-void reset_voice(void){
-#ifndef __LIBRETRO__
-	if (voice_ok) {
-		voice_stop(voice_num);
-		voice_bank=0;
-		voice_addr=0;
-		voice_st=0;
-	}
-#endif
-}
-
-
-void mute_voice(void){
-#ifndef __LIBRETRO__
-	if (voice_ok) {
-		voice_stop(voice_num);
-	}
-#endif
-}
-	
-
-void close_voice(void){
-#ifndef __LIBRETRO__
-	reset_voice();
-#endif
-	voice_ok=0;
-}
-
-

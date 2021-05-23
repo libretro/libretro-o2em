@@ -623,6 +623,7 @@ static void upate_audio(void)
 #ifdef HAVE_VOICE
    if (get_voice_status())
    {
+      unsigned i;
       float fbuf[SOUND_BUFFER_LEN * 2 * sizeof(float)];
       int16_t ibuf[SOUND_BUFFER_LEN * 2 * sizeof(int16_t)];
 
@@ -630,7 +631,7 @@ static void upate_audio(void)
       audio_mixer_mix(fbuf, length, audio_volume / 100.0, true);
       convert_float_to_s16(ibuf, fbuf, length * 2);
 
-      for (int i = 0; i < length; i++)
+      for (i = 0; i < length; i++)
       {
          audioOutBuffer[i*2]     += ibuf[i*2];
          audioOutBuffer[i*2 + 1] += ibuf[i*2 + 1];

@@ -187,6 +187,7 @@ else ifeq ($(platform), psp1)
 	CC = psp-gcc$(EXE_EXT)
 	AR = psp-ar$(EXE_EXT)
    STATIC_LINKING = 1
+	HAVE_VOICE = 0
 	FLAGS += -G0 
 
 # Vita

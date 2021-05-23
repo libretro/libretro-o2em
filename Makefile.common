@@ -10,46 +10,52 @@ INCFLAGS += -I$(LIBRETRO_COMM_DIR)/include/compat/msvc
 endif
 
 SOURCES_C := \
-	$(CORE_DIR)/src/audio.c \
-	$(CORE_DIR)/src/cpu.c \
-	$(CORE_DIR)/src/crc32.c \
-	$(CORE_DIR)/src/cset.c \
-	$(CORE_DIR)/src/keyboard.c \
-	$(CORE_DIR)/src/score.c \
-	$(CORE_DIR)/src/table.c \
-	$(CORE_DIR)/src/vdc.c \
-	$(CORE_DIR)/src/vmachine.c \
-	$(CORE_DIR)/src/voice.c \
-	$(CORE_DIR)/src/vpp.c \
-	$(CORE_DIR)/src/vpp_cset.c \
-	$(CORE_DIR)/libretro.c \
-	$(CORE_DIR)/allegrowrapper/wrapalleg.c \
-	$(CORE_DIR)/src/vkeyb/ui.c \
-	$(CORE_DIR)/src/vkeyb/vkeyb.c \
-	$(CORE_DIR)/src/vkeyb/vkeyb_config.c \
-	$(CORE_DIR)/src/vkeyb/vkeyb_layout.c \
-	$(LIBRETRO_COMM_DIR)/audio/audio_mixer.c \
-	$(LIBRETRO_COMM_DIR)/audio/conversion/float_to_s16.c \
-	$(LIBRETRO_COMM_DIR)/audio/resampler/audio_resampler.c \
-	$(LIBRETRO_COMM_DIR)/audio/resampler/drivers/sinc_resampler.c \
-	$(LIBRETRO_COMM_DIR)/compat/compat_posix_string.c \
-	$(LIBRETRO_COMM_DIR)/compat/compat_strl.c \
-	$(LIBRETRO_COMM_DIR)/compat/compat_strcasestr.c \
-	$(LIBRETRO_COMM_DIR)/compat/fopen_utf8.c \
-	$(LIBRETRO_COMM_DIR)/encodings/encoding_utf.c \
-	$(LIBRETRO_COMM_DIR)/features/features_cpu.c \
-	$(LIBRETRO_COMM_DIR)/file/config_file.c \
-	$(LIBRETRO_COMM_DIR)/file/config_file_userdata.c \
-	$(LIBRETRO_COMM_DIR)/file/file_path.c \
-	$(LIBRETRO_COMM_DIR)/file/file_path_io.c \
-	$(LIBRETRO_COMM_DIR)/formats/wav/rwav.c \
-	$(LIBRETRO_COMM_DIR)/lists/string_list.c \
-	$(LIBRETRO_COMM_DIR)/memmap/memalign.c \
-	$(LIBRETRO_COMM_DIR)/memmap/memmap.c \
-	$(LIBRETRO_COMM_DIR)/streams/file_stream.c \
-	$(LIBRETRO_COMM_DIR)/string/stdstring.c \
-	$(LIBRETRO_COMM_DIR)/time/rtime.c \
-	$(LIBRETRO_COMM_DIR)/vfs/vfs_implementation.c
+				 $(CORE_DIR)/src/audio.c \
+				 $(CORE_DIR)/src/cpu.c \
+				 $(CORE_DIR)/src/crc32.c \
+				 $(CORE_DIR)/src/cset.c \
+				 $(CORE_DIR)/src/keyboard.c \
+				 $(CORE_DIR)/src/score.c \
+				 $(CORE_DIR)/src/table.c \
+				 $(CORE_DIR)/src/vdc.c \
+				 $(CORE_DIR)/src/vmachine.c \
+				 $(CORE_DIR)/src/voice.c \
+				 $(CORE_DIR)/src/vpp.c \
+				 $(CORE_DIR)/src/vpp_cset.c \
+				 $(CORE_DIR)/libretro.c \
+				 $(CORE_DIR)/allegrowrapper/wrapalleg.c \
+				 $(CORE_DIR)/src/vkeyb/ui.c \
+				 $(CORE_DIR)/src/vkeyb/vkeyb.c \
+				 $(CORE_DIR)/src/vkeyb/vkeyb_config.c \
+				 $(CORE_DIR)/src/vkeyb/vkeyb_layout.c
+
+SOURCES_C += \
+				 $(LIBRETRO_COMM_DIR)/compat/compat_posix_string.c \
+				 $(LIBRETRO_COMM_DIR)/compat/compat_strl.c \
+				 $(LIBRETRO_COMM_DIR)/time/rtime.c \
+				 $(LIBRETRO_COMM_DIR)/string/stdstring.c \
+				 $(LIBRETRO_COMM_DIR)/compat/fopen_utf8.c \
+				 $(LIBRETRO_COMM_DIR)/encodings/encoding_utf.c \
+				 $(LIBRETRO_COMM_DIR)/file/file_path.c
+
+ifeq ($(HAVE_VOICE), 1)
+SOURCES_C += \
+				 $(LIBRETRO_COMM_DIR)/audio/audio_mixer.c \
+				 $(LIBRETRO_COMM_DIR)/audio/conversion/float_to_s16.c \
+				 $(LIBRETRO_COMM_DIR)/audio/resampler/audio_resampler.c \
+				 $(LIBRETRO_COMM_DIR)/audio/resampler/drivers/sinc_resampler.c \
+				 $(LIBRETRO_COMM_DIR)/compat/compat_strcasestr.c \
+				 $(LIBRETRO_COMM_DIR)/features/features_cpu.c \
+				 $(LIBRETRO_COMM_DIR)/file/config_file.c \
+				 $(LIBRETRO_COMM_DIR)/file/config_file_userdata.c \
+				 $(LIBRETRO_COMM_DIR)/file/file_path_io.c \
+				 $(LIBRETRO_COMM_DIR)/formats/wav/rwav.c \
+				 $(LIBRETRO_COMM_DIR)/lists/string_list.c \
+				 $(LIBRETRO_COMM_DIR)/memmap/memalign.c \
+				 $(LIBRETRO_COMM_DIR)/memmap/memmap.c \
+				 $(LIBRETRO_COMM_DIR)/streams/file_stream.c \
+				 $(LIBRETRO_COMM_DIR)/vfs/vfs_implementation.c
+endif
 
 ifeq ($(DEBUG),1)
 SOURCES_C += $(CORE_DIR)/src/debug.c

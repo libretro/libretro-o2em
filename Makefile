@@ -1,4 +1,5 @@
 DEBUG = 0
+HAVE_VOICE = 1
 
 ifeq ($(platform),)
 platform = unix
@@ -177,6 +178,7 @@ else ifeq ($(platform), ps2)
 	CXX = mips64r5900el-ps2-elf-g++$(EXE_EXT)
 	AR = mips64r5900el-ps2-elf-ar$(EXE_EXT)
 	STATIC_LINKING = 1
+	HAVE_VOICE = 0
 	FLAGS += -DMSB_FIRST -DPS2 -G0 -DSUPPORT_ABGR1555
 
 # PSP1
@@ -207,6 +209,7 @@ else ifneq (,$(filter $(platform), ngc wii wiiu))
 	CC = $(DEVKITPPC)/bin/powerpc-eabi-gcc$(EXE_EXT)
 	AR = $(DEVKITPPC)/bin/powerpc-eabi-ar$(EXE_EXT)
 	STATIC_LINKING=1
+	HAVE_VOICE = 0
 
 # Nintendo Switch (libtransistor)
 else ifeq ($(platform), switch)
@@ -214,6 +217,7 @@ else ifeq ($(platform), switch)
 	TARGET := $(TARGET_NAME)_libretro_$(platform).$(EXT)
 	include $(LIBTRANSISTOR_HOME)/libtransistor.mk
 	STATIC_LINKING=1
+	HAVE_VOICE = 0
 	
 # Nintendo Switch (libnx)
 else ifeq ($(platform), libnx)
@@ -226,7 +230,8 @@ else ifeq ($(platform), libnx)
     CFLAGS	+=	$(INCLUDE)  -D__SWITCH__
     CXXFLAGS := $(ASFLAGS) $(CFLAGS) -fno-rtti -fno-exceptions -std=gnu++11
     CFLAGS += -std=gnu11
-	STATIC_LINKING=1
+	 STATIC_LINKING=1
+	 HAVE_VOICE = 0
 
 # CTR (3DS)
 else ifeq ($(platform), ctr)
@@ -239,6 +244,7 @@ else ifeq ($(platform), ctr)
    FLAGS += -fomit-frame-pointer -ffast-math
    FLAGS += -DARM11 -D_3DS
    STATIC_LINKING = 1
+	HAVE_VOICE = 0
 
 # GCW0
 else ifeq ($(platform), gcw0)
@@ -589,9 +595,15 @@ WARNINGS := -Wall \
 	-fno-strict-overflow
 endif
 
-FLAGS += -D__LIBRETRO__ -DDONT_WANT_ARM_OPTIMIZATIONS -DHAVE_RWAV $(WARNINGS)
+ifeq ($(HAVE_VOICE), 1)
+FLAGS += -DHAVE_VOICE -DHAVE_RWAV -DDONT_WANT_ARM_OPTIMIZATIONS
+endif
+
+FLAGS += -D__LIBRETRO__ $(WARNINGS)
 
 CFLAGS += $(FLAGS)
+
+LIBS    += -lm
 
 OBJOUT   = -o
 LINKOUT  = -o 

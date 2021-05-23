@@ -30,8 +30,10 @@
 
 #include "wrapalleg.h"
 
+#ifdef HAVE_VOICE
 #include <audio/audio_mixer.h>
 #include <audio/conversion/float_to_s16.h>
+#endif
 #include <file/file_path.h>
 #include <retro_miscellaneous.h>
 
@@ -618,6 +620,7 @@ static void upate_audio(void)
       }
    }
 
+#ifdef HAVE_VOICE
    if (get_voice_status())
    {
       float fbuf[SOUND_BUFFER_LEN * 2 * sizeof(float)];
@@ -629,10 +632,11 @@ static void upate_audio(void)
 
       for (int i = 0; i < length; i++)
       {
-         audioOutBuffer[i*2] += ibuf[i*2];
+         audioOutBuffer[i*2]     += ibuf[i*2];
          audioOutBuffer[i*2 + 1] += ibuf[i*2 + 1];
       }
    }
+#endif
 
    audio_batch_cb(audioOutBuffer, length);
 }
@@ -1036,6 +1040,7 @@ bool retro_load_game(const struct retro_game_info *info)
     if (!load_cart(full_path))
        return false;
 
+#ifdef HAVE_VOICE
     if (app_data.voice)
     {
        audio_mixer_init(44100);
@@ -1044,6 +1049,7 @@ bool retro_load_game(const struct retro_game_info *info)
        fill_pathname_join(voice_path, system_directory_c, "voice", PATH_MAX_LENGTH);
        init_voice(voice_path);
     }
+#endif
 
     init_display();
 
@@ -1297,7 +1303,9 @@ void retro_deinit(void)
       mbmp_prev = NULL;
    }
 
+#ifdef HAVE_VOICE
    audio_mixer_done();
+#endif
 }
 
 void retro_reset(void)

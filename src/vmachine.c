@@ -66,8 +66,9 @@ int tweakedaudio=0;
 
 uint8_t rom_table[8][4096];
 
-uint8_t intRAM[64];
-uint8_t extRAM[256];
+uint8_t ram[64 + 256];
+uint8_t *intRAM = ram;
+uint8_t *extRAM = &ram[64];
 uint8_t extROM[1024];
 uint8_t VDCwrite[256];
 uint8_t ColorVector[MAXLINES];

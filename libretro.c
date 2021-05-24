@@ -103,7 +103,7 @@ static char scshot[MAXC],
 odyssey2[MAXC],
 file_v[MAXC],scorefile[MAXC], statefile[MAXC];
 
-extern uint8_t intRAM[];
+extern uint8_t ram[];
 
 // True if the virtual keyboard must be showed
 static bool vkb_show = false;
@@ -1088,14 +1088,14 @@ unsigned retro_api_version(void)
 void *retro_get_memory_data(unsigned id)
 {
     if ( id == RETRO_MEMORY_SYSTEM_RAM )
-        return intRAM;
+        return ram;
     return NULL;
 }
 
 size_t retro_get_memory_size(unsigned id)
 {
     if ( id == RETRO_MEMORY_SYSTEM_RAM )
-        return 64;
+        return 64 + 256;
     return 0;
 }
 

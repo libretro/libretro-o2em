@@ -34,8 +34,8 @@ extern uint8_t coltab[256];
 extern int mstate;
 
 extern uint8_t rom_table[8][4096];
-extern uint8_t intRAM[];
-extern uint8_t extRAM[];
+extern uint8_t *intRAM;
+extern uint8_t *extRAM;
 extern uint8_t extROM[];
 extern uint8_t VDCwrite[256];
 extern uint8_t ColorVector[MAXLINES];

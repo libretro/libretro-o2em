@@ -231,13 +231,13 @@ static bool load_bios(const char *biosname)
    return true;
 }
 
-static bool load_cart(const char *file)
+static bool load_cart(const char *file, unsigned long crc_file)
 {
    FILE *fn;
    long l;
    int i, nb;
 
-   app_data.crc = crc32_file(file);
+   app_data.crc = crc_file;
    if (app_data.crc == 0xAFB23F89)
       app_data.exrom = 1;  /* Musician */
    if (app_data.crc == 0x3BFEF56B)
@@ -921,146 +921,146 @@ void retro_cheat_set(unsigned index, bool enabled, const char *code)
 
 bool retro_load_game(const struct retro_game_info *info)
 {
-    char bios_file_path[PATH_MAX_LENGTH];
-    const char *full_path, *system_directory_c;
-    enum retro_pixel_format fmt = RETRO_PIXEL_FORMAT_RGB565;
-    struct retro_input_descriptor desc[] = {
-       { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_LEFT,  "Left" },
-       { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP,    "Up" },
-       { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_DOWN,  "Down" },
-       { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_RIGHT, "Right" },
-       { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_B,     "Action" },
-       { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_Y,     "Move Virtual Keyboard" },
-       { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_SELECT,"Show/Hide Virtual Keyboard" },
-       { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_X,     "Numeric Key 0" },
-       { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_L,     "Numeric Key 1" },
-       { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R,     "Numeric Key 2" },
-       { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_L2,    "Numeric Key 3" },
-       { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R2,    "Numeric Key 4" },
-       { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_L3,    "Numeric Key 5" },
-       { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R3,    "Numeric Key 6" },
+   char bios_file_path[PATH_MAX_LENGTH];
+   const char *full_path, *system_directory_c;
+   enum retro_pixel_format fmt = RETRO_PIXEL_FORMAT_RGB565;
+   struct retro_input_descriptor desc[] = {
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_LEFT,  "Left" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP,    "Up" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_DOWN,  "Down" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_RIGHT, "Right" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_B,     "Action" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_Y,     "Move Virtual Keyboard" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_SELECT,"Show/Hide Virtual Keyboard" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_X,     "Numeric Key 0" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_L,     "Numeric Key 1" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R,     "Numeric Key 2" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_L2,    "Numeric Key 3" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R2,    "Numeric Key 4" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_L3,    "Numeric Key 5" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R3,    "Numeric Key 6" },
 
-       { 1, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_LEFT,  "Left" },
-       { 1, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP,    "Up" },
-       { 1, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_DOWN,  "Down" },
-       { 1, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_RIGHT, "Right" },
-       { 1, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_B,     "Action" },
+      { 1, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_LEFT,  "Left" },
+      { 1, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP,    "Up" },
+      { 1, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_DOWN,  "Down" },
+      { 1, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_RIGHT, "Right" },
+      { 1, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_B,     "Action" },
 
-       { 2, RETRO_DEVICE_POINTER, 0, RETRO_DEVICE_ID_POINTER_X, "Virtual Keyboard: Pointer X" },
-       { 2, RETRO_DEVICE_POINTER, 0, RETRO_DEVICE_ID_POINTER_Y, "Virtual Keyboard: Pointer Y" },
-       { 2, RETRO_DEVICE_POINTER, 0, RETRO_DEVICE_ID_POINTER_PRESSED, "Virtual Keyboard: Pointer Pressed" },
+      { 2, RETRO_DEVICE_POINTER, 0, RETRO_DEVICE_ID_POINTER_X, "Virtual Keyboard: Pointer X" },
+      { 2, RETRO_DEVICE_POINTER, 0, RETRO_DEVICE_ID_POINTER_Y, "Virtual Keyboard: Pointer Y" },
+      { 2, RETRO_DEVICE_POINTER, 0, RETRO_DEVICE_ID_POINTER_PRESSED, "Virtual Keyboard: Pointer Pressed" },
 
-       { 0 }
-    };
+      { 0 }
+   };
 
-    if (!info)
-       return false;
+   if (!info)
+      return false;
 
-    if (!environ_cb(RETRO_ENVIRONMENT_SET_PIXEL_FORMAT, &fmt))
-    {
-        if (log_cb)
-            log_cb(RETRO_LOG_INFO, "[O2EM]: RGB565 is not supported.\n");
-        return false;
-    }
+   if (!environ_cb(RETRO_ENVIRONMENT_SET_PIXEL_FORMAT, &fmt))
+   {
+      if (log_cb)
+         log_cb(RETRO_LOG_INFO, "[O2EM]: RGB565 is not supported.\n");
+      return false;
+   }
 
    environ_cb(RETRO_ENVIRONMENT_SET_INPUT_DESCRIPTORS, desc);
 
-    full_path = info->path;
-    system_directory_c = NULL;
+   full_path = info->path;
+   system_directory_c = NULL;
 
-    // BIOS is required
-    environ_cb(RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY, &system_directory_c);
-    if (!system_directory_c)
-    {
-       if (log_cb)
-          log_cb(RETRO_LOG_WARN, "[O2EM]: no system directory defined, unable to look for %s\n", bios_file);
-       return false;
-    }
-    else
-    {
-       fill_pathname_join(bios_file_path, system_directory_c, bios_file, PATH_MAX_LENGTH);
-       if (!does_file_exist(bios_file_path))
-       {
-          if (log_cb)
-             log_cb(RETRO_LOG_WARN, "[O2EM]: %s not found, cannot load BIOS\n", bios_file);
-          return false;
-       }
-    }
+   // BIOS is required
+   environ_cb(RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY, &system_directory_c);
+   if (!system_directory_c)
+   {
+      if (log_cb)
+         log_cb(RETRO_LOG_WARN, "[O2EM]: no system directory defined, unable to look for %s\n", bios_file);
+      return false;
+   }
+   else
+   {
+      fill_pathname_join(bios_file_path, system_directory_c, bios_file, PATH_MAX_LENGTH);
+      if (!does_file_exist(bios_file_path))
+      {
+         if (log_cb)
+            log_cb(RETRO_LOG_WARN, "[O2EM]: %s not found, cannot load BIOS\n", bios_file);
+         return false;
+      }
+   }
 
-    app_data.debug = 0;
-    app_data.stick[0] = app_data.stick[1] = 1;
-    app_data.sticknumber[0] = app_data.sticknumber[1] = 0;
-    set_defjoykeys(0,0);
-    set_defjoykeys(1,1);
-    set_defsystemkeys();
-    app_data.bank = 0;
-    app_data.limit = 1;
-    app_data.sound_en = 1;
-    app_data.speed = 100;
-    app_data.wsize = 2;
-    app_data.fullscreen = 0;
-    app_data.scanlines = 0;
-    app_data.voice = 1;
-    app_data.window_title = "O2EM v" O2EM_VERSION;
-    /* These volume settings have no effect
-     * (they are allegro-specific) */
-    app_data.svolume = 100;
-    app_data.vvolume = 100;
-    /* Internal audio filter is worthless,
-     * disable it and use our own */
-    app_data.filter = 0;
-    app_data.exrom = 0;
-    app_data.three_k = 0;
-    app_data.crc = 0;
-    app_data.scshot = scshot;
-    app_data.statefile = statefile;
-    app_data.openb = 0;
-    app_data.vpp = 0;
-    app_data.bios = 0;
-    app_data.scoretype = 0;
-    app_data.scoreaddress = 0;
-    app_data.default_highscore = 0;
-    app_data.breakpoint = 65535;
-    app_data.megaxrom = 0;
-    strcpy(scorefile,"highscore.txt");
-    //read_default_config();
+   app_data.debug = 0;
+   app_data.stick[0] = app_data.stick[1] = 1;
+   app_data.sticknumber[0] = app_data.sticknumber[1] = 0;
+   set_defjoykeys(0,0);
+   set_defjoykeys(1,1);
+   set_defsystemkeys();
+   app_data.bank = 0;
+   app_data.limit = 1;
+   app_data.sound_en = 1;
+   app_data.speed = 100;
+   app_data.wsize = 2;
+   app_data.fullscreen = 0;
+   app_data.scanlines = 0;
+   app_data.voice = 1;
+   app_data.window_title = "O2EM v" O2EM_VERSION;
+   /* These volume settings have no effect
+    * (they are allegro-specific) */
+   app_data.svolume = 100;
+   app_data.vvolume = 100;
+   /* Internal audio filter is worthless,
+    * disable it and use our own */
+   app_data.filter = 0;
+   app_data.exrom = 0;
+   app_data.three_k = 0;
+   app_data.crc = 0;
+   app_data.scshot = scshot;
+   app_data.statefile = statefile;
+   app_data.openb = 0;
+   app_data.vpp = 0;
+   app_data.bios = 0;
+   app_data.scoretype = 0;
+   app_data.scoreaddress = 0;
+   app_data.default_highscore = 0;
+   app_data.breakpoint = 65535;
+   app_data.megaxrom = 0;
+   strcpy(scorefile,"highscore.txt");
+   //read_default_config();
 
-    init_audio();
+   init_audio();
 
-    app_data.crc = crc32_file(full_path);
+   crcx          = crc32_file(full_path);
+   app_data.crc  = crcx;
 
-    //suck_bios();
-    o2flag = 1;
+   //suck_bios();
+   o2flag = 1;
 
-    crcx = app_data.crc;
-    //suck_roms();
+   //suck_roms();
 
-    if (!load_bios(bios_file_path))
-       return false;
+   if (!load_bios(bios_file_path))
+      return false;
 
-    if (!load_cart(full_path))
-       return false;
+   if (!load_cart(full_path, crcx))
+      return false;
 
 #ifdef HAVE_VOICE
-    if (app_data.voice)
-    {
-       audio_mixer_init(44100);
+   if (app_data.voice)
+   {
+      audio_mixer_init(44100);
 
-       char voice_path[PATH_MAX_LENGTH];
-       fill_pathname_join(voice_path, system_directory_c, "voice", PATH_MAX_LENGTH);
-       init_voice(voice_path);
-    }
+      char voice_path[PATH_MAX_LENGTH];
+      fill_pathname_join(voice_path, system_directory_c, "voice", PATH_MAX_LENGTH);
+      init_voice(voice_path);
+   }
 #endif
 
-    init_display();
+   init_display();
 
-    init_cpu();
+   init_cpu();
 
-    init_system();
+   init_system();
 
-    set_score(app_data.scoretype, app_data.scoreaddress, app_data.default_highscore);
+   set_score(app_data.scoretype, app_data.scoreaddress, app_data.default_highscore);
 
-    return true;
+   return true;
 }
 
 bool retro_load_game_special(unsigned game_type, const struct retro_game_info *info, size_t num_info)

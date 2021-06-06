@@ -105,7 +105,7 @@ file_v[MAXC],scorefile[MAXC], statefile[MAXC];
 
 extern uint8_t ram[];
 
-// True if the virtual keyboard must be showed
+/* True if the virtual keyboard must be showed */
 static bool vkb_show = false;
 
 struct ButtonsState
@@ -114,7 +114,8 @@ struct ButtonsState
   bool select, start;
   bool b, y;
 };
-// Last state of the buttons for joypad 1
+
+/* Last state of the buttons for joypad 1 */
 struct ButtonsState last_btn_state = { false, false, false, false,
                                        false, false,
                                        false, false };
@@ -396,77 +397,64 @@ static void update_input_virtual_keyboard(unsigned joypad_bits)
   bool b      = (joypad_bits & (1 << RETRO_DEVICE_ID_JOYPAD_B)) >> RETRO_DEVICE_ID_JOYPAD_B;
   bool click  = input_state_cb(2, RETRO_DEVICE_POINTER, 0, RETRO_DEVICE_ID_POINTER_PRESSED);
 
-  // Show the virtual keyboard?
+  /* Show the virtual keyboard? */
   if (select && !last_btn_state.select)
   {
-    vkb_show = !vkb_show;
-    // Release current key when virtual keyboard hidden
-    if (!vkb_show)
-    {
-      key[vkb_get_current_key_scancode()] = false;
-    }
+     vkb_show = !vkb_show;
+     /* Release current key when virtual keyboard hidden */
+     if (!vkb_show)
+        key[vkb_get_current_key_scancode()] = false;
   }
 
   if (vkb_show)
   {
-    // Move keyboard
-    if (y && !last_btn_state.y)
-    {
-      vkb_set_virtual_keyboard_position((vkb_get_virtual_keyboard_position() + 1) % 2);
-    }
-    // Direct click on the keyboard (touch screen)
-    if (click)
-    {
-      int xpointer, ypointer;
-      xpointer = input_state_cb(2, RETRO_DEVICE_POINTER, 0, RETRO_DEVICE_ID_POINTER_X);
-      ypointer = input_state_cb(2, RETRO_DEVICE_POINTER, 0, RETRO_DEVICE_ID_POINTER_Y);
-      pointerToScreenCoordinates(&xpointer, &ypointer);
-      if (vkb_move_at(xpointer, ypointer))
-      {
-        // A key was touched: act as if the "Action" button was pushed
-        b = true;
-      }
-    }
-    // Press key
-    if ((b && !last_btn_state.b) || (!b && last_btn_state.b))
-    {
-      key[vkb_get_current_key_scancode()] = b;
-    }
-    if (!b)
-    {
-      // Move current key
-      if (right && !last_btn_state.right)
-      {
-        vkb_move_key(VKB_MOVE_RIGHT);
-      }
-      else if (left && !last_btn_state.left)
-      {
-        vkb_move_key(VKB_MOVE_LEFT);
-      }
-      else if (down && !last_btn_state.down)
-      {
-        vkb_move_key(VKB_MOVE_DOWN);
-      }
-      else if (up && !last_btn_state.up)
-      {
-        vkb_move_key(VKB_MOVE_UP);
-      }
-      // If start is pressed than press the Enter key
-      if ((start && !last_btn_state.start) || (!start && last_btn_state.start))
-      {
-        key[RETROK_RETURN] = start;
-      }
-    }
+     /* Move keyboard */
+     if (y && !last_btn_state.y)
+        vkb_set_virtual_keyboard_position((vkb_get_virtual_keyboard_position() + 1) % 2);
+
+     /* Direct click on the keyboard (touch screen) */
+     if (click)
+     {
+        int xpointer, ypointer;
+        xpointer = input_state_cb(2, RETRO_DEVICE_POINTER, 0, RETRO_DEVICE_ID_POINTER_X);
+        ypointer = input_state_cb(2, RETRO_DEVICE_POINTER, 0, RETRO_DEVICE_ID_POINTER_Y);
+        pointerToScreenCoordinates(&xpointer, &ypointer);
+
+        /* A key was touched: act as if the "Action" button was pushed */
+        if (vkb_move_at(xpointer, ypointer))
+           b = true;
+     }
+
+     /* Press key */
+     if ((b && !last_btn_state.b) || (!b && last_btn_state.b))
+        key[vkb_get_current_key_scancode()] = b;
+
+     if (!b)
+     {
+        /* Move current key */
+        if (right && !last_btn_state.right)
+           vkb_move_key(VKB_MOVE_RIGHT);
+        else if (left && !last_btn_state.left)
+           vkb_move_key(VKB_MOVE_LEFT);
+        else if (down && !last_btn_state.down)
+           vkb_move_key(VKB_MOVE_DOWN);
+        else if (up && !last_btn_state.up)
+           vkb_move_key(VKB_MOVE_UP);
+
+        /* If start is pressed than press the Enter key */
+        if ((start && !last_btn_state.start) || (!start && last_btn_state.start))
+           key[RETROK_RETURN] = start;
+     }
   }
 
   last_btn_state.select = select;
-  last_btn_state.start = start;
-  last_btn_state.y = y;
-  last_btn_state.b = b;
-  last_btn_state.left = left;
-  last_btn_state.right = right;
-  last_btn_state.up = up;
-  last_btn_state.down = down;
+  last_btn_state.start  = start;
+  last_btn_state.y      = y;
+  last_btn_state.b      = b;
+  last_btn_state.left   = left;
+  last_btn_state.right  = right;
+  last_btn_state.up     = up;
+  last_btn_state.down   = down;
 }
 
 static void update_input(void)
@@ -479,94 +467,107 @@ static void update_input(void)
 
    input_poll_cb();
 
-   for (i = 0; i < 2; i++)
+   if (libretro_supports_bitmasks)
    {
-      if (libretro_supports_bitmasks)
+      for (i = 0; i < 2; i++)
+      {
          joypad_bits[i] = input_state_cb(i, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_MASK);
-      else
+
+         /* If virtual KBD is shown, only need input
+          * from port 1 */
+         if (vkb_show)
+            goto done;
+      }
+   }
+   else
+   {
+      for (i = 0; i < 2; i++)
+      {
          for (j = 0; j < (RETRO_DEVICE_ID_JOYPAD_R3+1); j++)
             joypad_bits[i] |= input_state_cb(i, RETRO_DEVICE_JOYPAD, 0, j) ? (1 << j) : 0;
 
-      /* If virtual KBD is shown, only need input
-       * from port 1 */
-      if (vkb_show)
-         break;
+         /* If virtual KBD is shown, only need input
+          * from port 1 */
+         if (vkb_show)
+            goto done;
+      }
    }
 
    if (!vkb_show)
    {
-     // Joystick
-     // Player 1
-     joystick_data[p1_index][0]= (joypad_bits[0] & (1 << RETRO_DEVICE_ID_JOYPAD_UP)) >> RETRO_DEVICE_ID_JOYPAD_UP;
-     joystick_data[p1_index][1]= (joypad_bits[0] & (1 << RETRO_DEVICE_ID_JOYPAD_DOWN)) >> RETRO_DEVICE_ID_JOYPAD_DOWN;
-     joystick_data[p1_index][2]= (joypad_bits[0] & (1 << RETRO_DEVICE_ID_JOYPAD_LEFT)) >> RETRO_DEVICE_ID_JOYPAD_LEFT;
-     joystick_data[p1_index][3]= (joypad_bits[0] & (1 << RETRO_DEVICE_ID_JOYPAD_RIGHT)) >> RETRO_DEVICE_ID_JOYPAD_RIGHT;
-     joystick_data[p1_index][4]= (joypad_bits[0] & (1 << RETRO_DEVICE_ID_JOYPAD_B)) >> RETRO_DEVICE_ID_JOYPAD_B; /* "Action" button on the joystick */
-     // Player 2
-     joystick_data[p2_index][0]= (joypad_bits[1] & (1 << RETRO_DEVICE_ID_JOYPAD_UP)) >> RETRO_DEVICE_ID_JOYPAD_UP;
-     joystick_data[p2_index][1]= (joypad_bits[1] & (1 << RETRO_DEVICE_ID_JOYPAD_DOWN)) >> RETRO_DEVICE_ID_JOYPAD_DOWN;
-     joystick_data[p2_index][2]= (joypad_bits[1] & (1 << RETRO_DEVICE_ID_JOYPAD_LEFT)) >> RETRO_DEVICE_ID_JOYPAD_LEFT;
-     joystick_data[p2_index][3]= (joypad_bits[1] & (1 << RETRO_DEVICE_ID_JOYPAD_RIGHT)) >> RETRO_DEVICE_ID_JOYPAD_RIGHT;
-     joystick_data[p2_index][4]= (joypad_bits[1] & (1 << RETRO_DEVICE_ID_JOYPAD_B)) >> RETRO_DEVICE_ID_JOYPAD_B; /* "Action" button on the joystick */
+      /* Joystick
+       * Player 1 */
+      joystick_data[p1_index][0]= (joypad_bits[0] & (1 << RETRO_DEVICE_ID_JOYPAD_UP)) >> RETRO_DEVICE_ID_JOYPAD_UP;
+      joystick_data[p1_index][1]= (joypad_bits[0] & (1 << RETRO_DEVICE_ID_JOYPAD_DOWN)) >> RETRO_DEVICE_ID_JOYPAD_DOWN;
+      joystick_data[p1_index][2]= (joypad_bits[0] & (1 << RETRO_DEVICE_ID_JOYPAD_LEFT)) >> RETRO_DEVICE_ID_JOYPAD_LEFT;
+      joystick_data[p1_index][3]= (joypad_bits[0] & (1 << RETRO_DEVICE_ID_JOYPAD_RIGHT)) >> RETRO_DEVICE_ID_JOYPAD_RIGHT;
+      joystick_data[p1_index][4]= (joypad_bits[0] & (1 << RETRO_DEVICE_ID_JOYPAD_B)) >> RETRO_DEVICE_ID_JOYPAD_B; /* "Action" button on the joystick */
+      /* Player 2 */
+      joystick_data[p2_index][0]= (joypad_bits[1] & (1 << RETRO_DEVICE_ID_JOYPAD_UP)) >> RETRO_DEVICE_ID_JOYPAD_UP;
+      joystick_data[p2_index][1]= (joypad_bits[1] & (1 << RETRO_DEVICE_ID_JOYPAD_DOWN)) >> RETRO_DEVICE_ID_JOYPAD_DOWN;
+      joystick_data[p2_index][2]= (joypad_bits[1] & (1 << RETRO_DEVICE_ID_JOYPAD_LEFT)) >> RETRO_DEVICE_ID_JOYPAD_LEFT;
+      joystick_data[p2_index][3]= (joypad_bits[1] & (1 << RETRO_DEVICE_ID_JOYPAD_RIGHT)) >> RETRO_DEVICE_ID_JOYPAD_RIGHT;
+      joystick_data[p2_index][4]= (joypad_bits[1] & (1 << RETRO_DEVICE_ID_JOYPAD_B)) >> RETRO_DEVICE_ID_JOYPAD_B; /* "Action" button on the joystick */
 
-     // Numeric and Alpha
-     key[RETROK_0] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_0) |
+      /* Numeric and Alpha */
+      key[RETROK_0] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_0) |
          ((joypad_bits[0] & (1 << RETRO_DEVICE_ID_JOYPAD_X)) >> RETRO_DEVICE_ID_JOYPAD_X);
-     key[RETROK_1] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_1) |
+      key[RETROK_1] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_1) |
          ((joypad_bits[0] & (1 << RETRO_DEVICE_ID_JOYPAD_L)) >> RETRO_DEVICE_ID_JOYPAD_L);
-     key[RETROK_2] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_2) |
+      key[RETROK_2] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_2) |
          ((joypad_bits[0] & (1 << RETRO_DEVICE_ID_JOYPAD_R)) >> RETRO_DEVICE_ID_JOYPAD_R);
-     key[RETROK_3] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_3) |
+      key[RETROK_3] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_3) |
          ((joypad_bits[0] & (1 << RETRO_DEVICE_ID_JOYPAD_L2)) >> RETRO_DEVICE_ID_JOYPAD_L2);
-     key[RETROK_4] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_4) |
+      key[RETROK_4] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_4) |
          ((joypad_bits[0] & (1 << RETRO_DEVICE_ID_JOYPAD_R2)) >> RETRO_DEVICE_ID_JOYPAD_R2);
-     key[RETROK_5] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_5) |
+      key[RETROK_5] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_5) |
          ((joypad_bits[0] & (1 << RETRO_DEVICE_ID_JOYPAD_L3)) >> RETRO_DEVICE_ID_JOYPAD_L3);
-     key[RETROK_6] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_6) |
+      key[RETROK_6] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_6) |
          ((joypad_bits[0] & (1 << RETRO_DEVICE_ID_JOYPAD_R3)) >> RETRO_DEVICE_ID_JOYPAD_R3);
 
-     key[RETROK_7] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_7);
-     key[RETROK_8] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_8);
-     key[RETROK_9] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_9);
-     key[RETROK_a] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_a);
-     key[RETROK_b] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_b);
-     key[RETROK_c] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_c);
-     key[RETROK_d] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_d);
-     key[RETROK_e] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_e);
-     key[RETROK_f] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_f);
-     key[RETROK_g] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_g);
-     key[RETROK_h] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_h);
-     key[RETROK_i] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_i);
-     key[RETROK_j] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_j);
-     key[RETROK_k] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_k);
-     key[RETROK_l] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_l);
-     key[RETROK_m] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_m);
-     key[RETROK_n] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_n);
-     key[RETROK_o] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_o);
-     key[RETROK_p] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_p);
-     key[RETROK_q] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_q);
-     key[RETROK_r] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_r);
-     key[RETROK_s] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_s);
-     key[RETROK_t] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_t);
-     key[RETROK_u] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_u);
-     key[RETROK_v] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_v);
-     key[RETROK_w] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_w);
-     key[RETROK_x] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_x);
-     key[RETROK_y] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_y);
-     key[RETROK_z] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_z);
-     key[RETROK_SPACE] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_SPACE);       // Space
-     key[RETROK_QUESTION] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_QUESTION); // ?
-     key[RETROK_PERIOD] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_PERIOD);     // .
-     key[RETROK_END] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_END);           // "Clear"
-     key[RETROK_RETURN] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_RETURN);     // "Enter"
-     key[RETROK_MINUS] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_MINUS);       // -
-     key[RETROK_ASTERISK] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_ASTERISK); // Multiply sign
-     key[RETROK_SLASH] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_SLASH);       // Divide sign
-     key[RETROK_EQUALS] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_EQUALS);     // =
-     key[RETROK_PLUS] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_PLUS);         // +
+      key[RETROK_7] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_7);
+      key[RETROK_8] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_8);
+      key[RETROK_9] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_9);
+      key[RETROK_a] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_a);
+      key[RETROK_b] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_b);
+      key[RETROK_c] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_c);
+      key[RETROK_d] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_d);
+      key[RETROK_e] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_e);
+      key[RETROK_f] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_f);
+      key[RETROK_g] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_g);
+      key[RETROK_h] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_h);
+      key[RETROK_i] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_i);
+      key[RETROK_j] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_j);
+      key[RETROK_k] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_k);
+      key[RETROK_l] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_l);
+      key[RETROK_m] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_m);
+      key[RETROK_n] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_n);
+      key[RETROK_o] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_o);
+      key[RETROK_p] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_p);
+      key[RETROK_q] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_q);
+      key[RETROK_r] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_r);
+      key[RETROK_s] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_s);
+      key[RETROK_t] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_t);
+      key[RETROK_u] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_u);
+      key[RETROK_v] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_v);
+      key[RETROK_w] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_w);
+      key[RETROK_x] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_x);
+      key[RETROK_y] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_y);
+      key[RETROK_z] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_z);
+      key[RETROK_SPACE]    = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_SPACE);       /* Space */
+      key[RETROK_QUESTION] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_QUESTION); /* ? */
+      key[RETROK_PERIOD]   = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_PERIOD);     /* . */
+      key[RETROK_END]      = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_END);           /* "Clear" */
+      key[RETROK_RETURN]   = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_RETURN);     /* "Enter" */
+      key[RETROK_MINUS]    = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_MINUS);       /* - */
+      key[RETROK_ASTERISK] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_ASTERISK); /* Multiply sign */
+      key[RETROK_SLASH]    = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_SLASH);       /* Divide sign */
+      key[RETROK_EQUALS]   = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_EQUALS);     /* = */
+      key[RETROK_PLUS]     = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_PLUS);         /* + */
    }
 
-   // Virtual keyboard management
+done:
+   /* Virtual keyboard management */
    update_input_virtual_keyboard(joypad_bits[0]);
 }
 
@@ -579,11 +580,9 @@ static void upate_audio(void)
    /* Convert 8u mono to 16s stereo */
    if (low_pass_enabled)
    {
-      int samples = length;
-
+      int samples      = length;
       /* Restore previous sample */
       int32_t low_pass = low_pass_prev;
-
       /* Single-pole low-pass filter (6 dB/octave) */
       int32_t factor_a = low_pass_range;
       int32_t factor_b = 0x10000 - factor_a;
@@ -591,7 +590,8 @@ static void upate_audio(void)
       do
       {
          /* Get current sample */
-         int16_t sample16 = (((*(audio_samples_ptr++) - 128) << 8) * audio_volume) / 100;
+         int16_t sample16 = (((*(audio_samples_ptr++) - 128) << 8) 
+               * audio_volume) / 100;
 
          /* Apply low-pass filter */
          low_pass = (low_pass * factor_a) + (sample16 * factor_b);
@@ -602,8 +602,7 @@ static void upate_audio(void)
          /* Update output buffer */
          *(audio_out_ptr++) = (int16_t)low_pass;
          *(audio_out_ptr++) = (int16_t)low_pass;
-      }
-      while (--samples);
+      }while (--samples);
 
       /* Save last sample for next frame */
       low_pass_prev = low_pass;
@@ -614,7 +613,8 @@ static void upate_audio(void)
 
       for(i = 0; i < length; i++)
       {
-         int16_t sample16   = (((*(audio_samples_ptr++) - 128) << 8) * audio_volume) / 100;
+         int16_t sample16   = (((*(audio_samples_ptr++) - 128) << 8) 
+               * audio_volume) / 100;
          *(audio_out_ptr++) = sample16;
          *(audio_out_ptr++) = sample16;
       }
@@ -968,7 +968,7 @@ bool retro_load_game(const struct retro_game_info *info)
    full_path = info->path;
    system_directory_c = NULL;
 
-   // BIOS is required
+   /* BIOS is required */
    environ_cb(RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY, &system_directory_c);
    if (!system_directory_c)
    {
@@ -1023,21 +1023,19 @@ bool retro_load_game(const struct retro_game_info *info)
    app_data.breakpoint = 65535;
    app_data.megaxrom = 0;
    strcpy(scorefile,"highscore.txt");
-   //read_default_config();
+#if 0
+   read_default_config();
+#endif
 
    init_audio();
 
    crcx          = crc32_file(full_path);
    app_data.crc  = crcx;
 
-   //suck_bios();
-   o2flag = 1;
-
-   //suck_roms();
+   o2flag        = 1;
 
    if (!load_bios(bios_file_path))
       return false;
-
    if (!load_cart(full_path, crcx))
       return false;
 
@@ -1053,9 +1051,7 @@ bool retro_load_game(const struct retro_game_info *info)
 #endif
 
    init_display();
-
    init_cpu();
-
    init_system();
 
    set_score(app_data.scoretype, app_data.scoreaddress, app_data.default_highscore);

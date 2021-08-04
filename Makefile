@@ -258,6 +258,18 @@ else ifeq ($(platform), gcw0)
    FLAGS += -DDINGUX
    fpic := -fPIC
 
+
+# MIYOO
+else ifeq ($(platform), miyoo)
+	TARGET := $(TARGET_NAME)_libretro.so
+	CC = /opt/miyoo/usr/bin/arm-linux-gcc
+	CXX = /opt/miyoo/usr/bin/arm-linux-g++
+	AR = /opt/miyoo/usr/bin/arm-linux-ar
+   SHARED := -shared -Wl,--no-undefined -Wl,--version-script=link.T
+   FLAGS += -fomit-frame-pointer -march=armv5te -mtune=arm926ej-s	
+   FLAGS += -DDINGUX
+   fpic := -fPIC
+
 # Classic Platforms ####################
 # Platform affix = classic_<ISA>_<µARCH>
 # Help at https://modmyclassic.com/comp

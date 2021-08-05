@@ -258,6 +258,17 @@ else ifeq ($(platform), gcw0)
    FLAGS += -DDINGUX
    fpic := -fPIC
 
+# RETROFW
+else ifeq ($(platform), retrofw)
+   TARGET := $(TARGET_NAME)_libretro.so
+   CC = /opt/retrofw-toolchain/usr/bin/mipsel-linux-gcc
+   CXX = /opt/retrofw-toolchain/usr/bin/mipsel-linux-g++
+   AR = /opt/retrofw-toolchain/usr/bin/mipsel-linux-ar
+   SHARED := -shared -Wl,--no-undefined -Wl,--version-script=link.T
+   FLAGS += -fomit-frame-pointer -ffast-math -march=mips32 -mtune=mips32 -mhard-float
+   FLAGS += -DDINGUX
+   fpic := -fPIC
+
 # Classic Platforms ####################
 # Platform affix = classic_<ISA>_<µARCH>
 # Help at https://modmyclassic.com/comp

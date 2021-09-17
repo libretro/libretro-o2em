@@ -217,11 +217,6 @@ void set_systemkeys(int k_quit,int k_pause,int k_debug,int k_reset,int k_screenc
 
 #ifdef __LIBRETRO__
 unsigned char key[256*2];
-
-void rscore()
-{
-	set_score(app_data.scoretype, app_data.scoreaddress, app_data.default_highscore);
-}
 #endif
 
 extern int joystick_data[2][5]; //Up, Down, Left, Right, "Action"

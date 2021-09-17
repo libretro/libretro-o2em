@@ -3,13 +3,12 @@
 
 #include <stdint.h>
 
-#ifdef __LIBRETRO__
 #include <stddef.h>
 #include <stdbool.h>
 size_t savestate_size(void);
 bool savestate_to_mem(uint8_t *data, size_t size);
 bool loadstate_from_mem(const uint8_t *data, size_t size);
-#endif
+
 
 #define LINECNT 21
 #define MAXLINES 500
@@ -68,8 +67,6 @@ uint8_t read_t1(void);
 void init_system(void);
 void init_roms(void);
 void run(void);
-int savestate(char* filename);
-int loadstate(char* filename);
 
 
 extern struct resource {

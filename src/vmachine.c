@@ -14,10 +14,11 @@
  *   Main O2 machine emulation
  */
 
-
+#include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <stdio.h>
+#include <errno.h>
+#include <string.h>
 #include <time.h>
 #include "audio.h"
 #include "cpu.h"
@@ -698,10 +699,6 @@ static void setvideomode(int t){
 }
 
 
-#ifdef __LIBRETRO__
-#include <errno.h>
-#include <string.h>
-
 size_t savestate_size(void)
 {
    return sizeof(app_data.crc) +
@@ -857,103 +854,4 @@ bool loadstate_from_mem(const uint8_t *data, size_t size)
   memcpy(&tirq_pend, data+offset, sizeof(tirq_pend));
 
   return true;
-}
-#endif 
-
-int savestate(char* filename)
-{
-	FILE *fn;
-
-        fn = fopen(filename,"wb");
-	if (fn==NULL) {
-		fprintf(stderr,"Error opening state-file %s: %i\n",filename,errno);
-		return(errno);
-	}
-
-	fwrite (&app_data.crc,sizeof(app_data.crc),1,fn);
-	fwrite (&app_data.bios,sizeof(app_data.bios),1,fn);
-
-	fwrite (VDCwrite,256,1,fn);
-	fwrite (extRAM,256,1,fn); 
-	fwrite (intRAM,64,1,fn); 
-
-	fwrite(&pc, sizeof(pc),1,fn);
-	fwrite(&sp, sizeof(sp),1,fn);
-	fwrite(&bs, sizeof(bs),1,fn);
-	fwrite(&p1, sizeof(p1),1,fn);
-	fwrite(&p2, sizeof(p2),1,fn);
-
-	fwrite(&ac, sizeof(ac),1,fn);
-	fwrite(&cy, sizeof(cy),1,fn);
-	fwrite(&f0, sizeof(f0),1,fn);
-	fwrite(&A11, sizeof(A11),1,fn);
-	fwrite(&A11ff, sizeof(A11ff),1,fn);
-
-	fwrite(&timer_on, sizeof(timer_on),1,fn);
-	fwrite(&count_on, sizeof(count_on),1,fn);
-	fwrite(&reg_pnt, sizeof(reg_pnt),1,fn);
-	
-	fwrite(&tirq_en, sizeof(tirq_en),1,fn);
-	fwrite(&xirq_en, sizeof(xirq_en),1,fn);
-	fwrite(&irq_ex, sizeof(irq_ex),1,fn);
-	fwrite(&xirq_pend, sizeof(xirq_pend),1,fn);
-	fwrite(&tirq_pend, sizeof(tirq_pend),1,fn);
-
-	fclose(fn);
-	return(0);
-
-}
-
-int loadstate(char* filename)
-{
-   int bios;
-   unsigned long crc;
-   FILE *fn = fopen(filename,"rb");
-   if (fn==NULL) 					// no savefile yet
-      return(errno);
-
-   fread (&crc,sizeof(crc),1,fn);
-   if (crc!=app_data.crc)				// wrong cart
-   {
-      fclose(fn);
-      return(199);
-   }
-
-   fread (&bios,sizeof(bios),1,fn);
-   if (bios!=app_data.bios)			// wrong bios
-   {
-      fclose(fn);
-      return(200+bios);
-   }
-
-   fread (VDCwrite,256,1,fn);
-   fread (extRAM,256,1,fn);
-   fread (intRAM,64,1,fn);
-
-   fread(&pc, sizeof(pc),1,fn);
-   fread(&sp, sizeof(sp),1,fn);
-   fread(&bs, sizeof(bs),1,fn);
-   fread(&p1, sizeof(p1),1,fn);
-   fread(&p2, sizeof(p2),1,fn);
-
-   fread(&ac, sizeof(ac),1,fn);
-   fread(&cy, sizeof(cy),1,fn);
-   fread(&f0, sizeof(f0),1,fn);
-   fread(&A11, sizeof(A11),1,fn);
-   fread(&A11ff, sizeof(A11ff),1,fn);
-
-   fread(&timer_on, sizeof(timer_on),1,fn);
-   fread(&count_on, sizeof(count_on),1,fn);
-   fread(&reg_pnt, sizeof(reg_pnt),1,fn);
-
-   fread(&tirq_en, sizeof(tirq_en),1,fn);
-   fread(&xirq_en, sizeof(xirq_en),1,fn);
-   fread(&irq_ex, sizeof(irq_ex),1,fn);
-   fread(&xirq_pend, sizeof(xirq_pend),1,fn);
-   fread(&tirq_pend, sizeof(tirq_pend),1,fn);
-
-   fclose(fn);
-
-   return(0);
-
 }

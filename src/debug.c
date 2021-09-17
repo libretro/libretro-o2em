@@ -780,29 +780,7 @@ void debug(void) {
 				nMemDump = ad+10*16;
 				printf("\n\n");
 			}
-		}else if (!strcmp(tok,"ss")) {
-			tok=strtok(NULL," ");
-			if (tok){
-				char file[80]="";
-				sscanf(tok,"%79s",file);
-				if (strlen(file)>0){
-					savestate(file);
-				}
-			}
-			printf("\n");
-
-		} else if (!strcmp(tok,"ls")) {
-			tok=strtok(NULL," ");
-			if (tok){
-				char file[80]="";
-				sscanf(tok,"%79s",file);
-				if (strlen(file)>0){
-					loadstate(file);
-				}
-			}
-			printf("\n");
-		}
-else if (!strcmp(tok,"c"))
+		} else if (!strcmp(tok,"c"))
 		{
 			int t;
 			tok=strtok(NULL," ");

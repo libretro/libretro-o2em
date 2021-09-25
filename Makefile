@@ -615,7 +615,9 @@ FLAGS += -D__LIBRETRO__ $(WARNINGS)
 
 CFLAGS += $(FLAGS)
 
+ifeq (,$(findstring msvc,$(platform)))
 LIBS    += -lm
+endif
 
 OBJOUT   = -o
 LINKOUT  = -o 

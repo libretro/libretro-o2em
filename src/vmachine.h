@@ -4,11 +4,7 @@
 #include <stdint.h>
 
 #include <stddef.h>
-#include <stdbool.h>
-size_t savestate_size(void);
-bool savestate_to_mem(uint8_t *data, size_t size);
-bool loadstate_from_mem(const uint8_t *data, size_t size);
-
+#include <boolean.h>
 
 #define LINECNT 21
 #define MAXLINES 500
@@ -54,21 +50,6 @@ extern long regionoff;
 extern int sproff;
 extern int tweakedaudio;
 
-uint8_t read_P2(void);
-int snapline(int pos, uint8_t reg, int t);
-void ext_write(uint8_t dat, uint16_t adr);
-uint8_t ext_read(uint16_t adr);
-void handle_vbl(void);
-void handle_evbl(void);
-void handle_evbll(void);
-uint8_t in_bus(void);
-void write_p1(uint8_t d);
-uint8_t read_t1(void);
-void init_system(void);
-void init_roms(void);
-void run(void);
-
-
 extern struct resource {
 	int bank;
 	int debug;
@@ -101,6 +82,27 @@ extern struct resource {
 	char *statefile;
 } app_data;
 
+uint8_t read_P2(void);
+int snapline(int pos, uint8_t reg, int t);
+void ext_write(uint8_t dat, uint16_t adr);
+uint8_t ext_read(uint16_t adr);
+void handle_vbl(void);
+void handle_evbl(void);
+void handle_evbll(void);
+uint8_t in_bus(void);
+void write_p1(uint8_t d);
+uint8_t read_t1(void);
+void init_system(void);
+void init_roms(void);
+void run(void);
+
+
+
+size_t savestate_size(void);
+
+bool savestate_to_mem(uint8_t *data, size_t size);
+
+bool loadstate_from_mem(const uint8_t *data, size_t size);
 
 #endif  /* VMACHINE_H */
 

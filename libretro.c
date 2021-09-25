@@ -922,7 +922,8 @@ void retro_cheat_set(unsigned index, bool enabled, const char *code)
 bool retro_load_game(const struct retro_game_info *info)
 {
    char bios_file_path[PATH_MAX_LENGTH];
-   const char *full_path, *system_directory_c;
+   const char *full_path       = NULL;
+   char *system_directory_c    = NULL;
    enum retro_pixel_format fmt = RETRO_PIXEL_FORMAT_RGB565;
    struct retro_input_descriptor desc[] = {
       { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_LEFT,  "Left" },
@@ -1042,9 +1043,10 @@ bool retro_load_game(const struct retro_game_info *info)
 #ifdef HAVE_VOICE
    if (app_data.voice)
    {
+      char voice_path[PATH_MAX_LENGTH];
+
       audio_mixer_init(44100);
 
-      char voice_path[PATH_MAX_LENGTH];
       fill_pathname_join(voice_path, system_directory_c, "voice", PATH_MAX_LENGTH);
       init_voice(voice_path);
    }

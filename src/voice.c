@@ -192,8 +192,9 @@ void mute_voice(void)
 void close_voice(void)
 {
 #ifdef HAVE_VOICE
-   reset_voice();
    unsigned i, sam;
+
+   reset_voice();
 
    for (i = 0; i < 9; i++)
    {

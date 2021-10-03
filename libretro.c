@@ -327,7 +327,7 @@ file);
             return false;
          }
       }
-      printf("%dK",nb*3);
+      log_cb(RETRO_LOG_INFO, "%dK\n",nb*3);
   
    } else {
 

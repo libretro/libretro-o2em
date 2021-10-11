@@ -498,3 +498,13 @@ void init_vpp(void)
 		for (j=0; j<32; j++)
 			for (k=0; k<4; k++) vpp_mem[i][j][k] = 0;
 }
+
+void close_vpp(void)
+{
+	destroy_bitmap(vppbmp);
+	vppbmp = NULL;
+
+	if (colplus)
+		free(colplus);
+	colplus = NULL;
+}

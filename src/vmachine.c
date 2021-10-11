@@ -74,8 +74,8 @@ uint8_t extROM[1024];
 uint8_t VDCwrite[256];
 uint8_t ColorVector[MAXLINES];
 uint8_t AudioVector[MAXLINES];
-uint8_t *rom;
-uint8_t *megarom;
+uint8_t *rom     = NULL;
+uint8_t *megarom = NULL;
 
 int key2[128];
 
@@ -116,6 +116,7 @@ void run(void){
 	close_audio();
 	close_voice();
 	close_display();
+	close_vpp();
 }
 
 

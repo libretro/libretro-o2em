@@ -55,7 +55,12 @@ void init_voice(const char *voice_path)
 
          if (filestream_read_file(file_path, &file_contents, &file_len))
          {
-            voices[i][sam] = audio_mixer_load_wav(file_contents, file_len);
+            voices[i][sam] = audio_mixer_load_wav(file_contents, file_len,
+                  "sinc", RESAMPLER_QUALITY_NORMAL);
+
+            free(file_contents);
+            file_contents = NULL;
+
             if (voices[i][sam])
                n_loaded++;
          }
@@ -96,7 +101,8 @@ void update_voice(void)
             if (voices[voice_bank][voice_addr - 0x80])
             {
                voice = audio_mixer_play(voices[voice_bank][voice_addr - 0x80],
-                     false, 0, voice_stop_callback);
+                     false, 0, "sinc", RESAMPLER_QUALITY_NORMAL,
+                     voice_stop_callback);
                voice_finished = false;
                clk_voice_start = clk_counter;
                voice_st = 1;

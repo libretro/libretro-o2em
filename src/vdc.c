@@ -481,7 +481,7 @@ void retro_destroybmp(void)
 {
    destroy_bitmap(bmp);
    bmp = NULL;
-	destroy_bitmap(bmpcache);
+   destroy_bitmap(bmpcache);
    bmpcache = NULL;
 }
 
@@ -531,7 +531,9 @@ void clear_collision(void)
 
 
 void close_display(void) {
-	free(col);
+   if (col)
+      free(col);
+   col = NULL;
 }
 
 

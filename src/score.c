@@ -22,10 +22,6 @@
 #include "vmachine.h"
 #include "score.h"
 
-#ifdef __LIBRETRO__
-#include <errno.h>
-#endif 
-
 /*--------------------------------------------------
           Calculate Score from given Values 
              Scoretype = abcd:
@@ -93,8 +89,7 @@ void set_score(int scoretype, int scoreaddress, int score)
 	}
 }
 
-
-
+#ifndef __LIBRETRO__
 /*-----------------------------------------------------
 	Save Highscore to File
 -------------------------------------------------------*/
@@ -118,7 +113,7 @@ void save_highscore(int highscore, char *scorefile)
 
 	fclose(fn);
 }
-
+#endif
 
 /***********************************
    Integer-Implementation of pow 

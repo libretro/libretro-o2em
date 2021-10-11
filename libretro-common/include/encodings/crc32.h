@@ -1,7 +1,7 @@
 /* Copyright  (C) 2010-2020 The RetroArch team
  *
  * ---------------------------------------------------------------------------------------
- * The following license statement only applies to this file (retro_dirent.h).
+ * The following license statement only applies to this file (crc32.h).
  * ---------------------------------------------------------------------------------------
  *
  * Permission is hereby granted, free of charge,
@@ -20,57 +20,18 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef __RETRO_DIRENT_H
-#define __RETRO_DIRENT_H
+#ifndef _LIBRETRO_ENCODINGS_CRC32_H
+#define _LIBRETRO_ENCODINGS_CRC32_H
 
-#include <libretro.h>
+#include <stdint.h>
+#include <stddef.h>
+
 #include <retro_common_api.h>
-
-#include <boolean.h>
 
 RETRO_BEGIN_DECLS
 
-#define DIRENT_REQUIRED_VFS_VERSION 3
-
-void dirent_vfs_init(const struct retro_vfs_interface_info* vfs_info);
-
-typedef struct RDIR RDIR;
-
-/**
- *
- * retro_opendir:
- * @name         : path to the directory to open.
- *
- * Opens a directory for reading. Tidy up with retro_closedir.
- *
- * Returns: RDIR pointer on success, NULL if name is not a
- * valid directory, null itself or the empty string.
- */
-struct RDIR *retro_opendir(const char *name);
-
-struct RDIR *retro_opendir_include_hidden(const char *name, bool include_hidden);
-
-int retro_readdir(struct RDIR *rdir);
-
-/* Deprecated, returns false, left for compatibility */
-bool retro_dirent_error(struct RDIR *rdir);
-
-const char *retro_dirent_get_name(struct RDIR *rdir);
-
-/**
- *
- * retro_dirent_is_dir:
- * @rdir         : pointer to the directory entry.
- * @unused       : deprecated, included for compatibility reasons, pass NULL
- *
- * Is the directory listing entry a directory?
- *
- * Returns: true if directory listing entry is
- * a directory, false if not.
- */
-bool retro_dirent_is_dir(struct RDIR *rdir, const char *unused);
-
-void retro_closedir(struct RDIR *rdir);
+uint32_t encoding_crc32(uint32_t crc, const uint8_t *buf, size_t len);
+uint32_t file_crc32(uint32_t crc, const char *path);
 
 RETRO_END_DECLS
 

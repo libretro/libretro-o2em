@@ -18,8 +18,6 @@
 #include "audio.h"
 #include "config.h"
 #include "cpu.h"
-#include "crc32.h"
-#include "debug.h"
 #include "keyboard.h"
 #include "score.h"
 #include "vdc.h"
@@ -35,6 +33,8 @@
 #include <audio/conversion/float_to_s16.h>
 #endif
 #include <file/file_path.h>
+#include <streams/file_stream.h>
+#include <encodings/crc32.h>
 #include <retro_miscellaneous.h>
 
 static retro_log_printf_t log_cb;
@@ -97,10 +97,7 @@ static uint8_t p2_index = 1;
 
 int contax, o2flag, g74flag, c52flag, jopflag, helpflag;
 
-unsigned long crcx = ~0;
-
 static char scshot[MAXC],
-odyssey2[MAXC],
 file_v[MAXC],scorefile[MAXC], statefile[MAXC];
 
 extern uint8_t ram[];
@@ -126,113 +123,66 @@ void retro_set_environment(retro_environment_t cb)
    libretro_set_core_options(environ_cb);
 }
 
-static int does_file_exist(const char *filename)
-{
-   struct stat st;
-   int result = stat(filename, &st);
-   return result == 0;
-}
-
-static long filesize(FILE *stream)
-{
-   long curpos, length;
-   curpos = ftell(stream);
-   fseek(stream, 0L, SEEK_END);
-   length = ftell(stream);
-   fseek(stream, curpos, SEEK_SET);
-   return length;
-}
-
 static bool load_bios(const char *biosname)
 {
-   FILE *fn;
-   static char s[MAXC+10];
-   unsigned long crc;
-   int i;
+   RFILE *bios_file = NULL;
+   int64_t bytes_read;
+   uint32_t crc;
+   size_t i;
 
-   if ((biosname[strlen(biosname)-1]=='/') || (biosname[strlen(biosname)-1]=='\\') || (biosname[strlen(biosname)-1]==':'))
-   {
-      strcpy(s,biosname);
-      strcat(s,odyssey2);
-      fn = fopen(s,"rb");
+   if (!biosname)
+      return false;
 
-      if (!fn)
-      {
-         strcpy(s,biosname);
-         strcat(s,odyssey2);
-         fn = fopen(s,"rb");
-      }
-   }
-   else
-   {
-      strcpy(s,biosname);
-      fn = fopen(biosname,"rb");
-   }
+   bios_file = filestream_open(biosname,
+         RETRO_VFS_FILE_ACCESS_READ,
+         RETRO_VFS_FILE_ACCESS_HINT_NONE);
 
-   if (!fn)
+   if (!bios_file)
    {
-      log_cb(RETRO_LOG_ERROR, "[O2EM]: Error loading BIOS ROM (%s).\n", s);
+      log_cb(RETRO_LOG_ERROR, "[O2EM]: Error loading BIOS ROM (%s).\n", biosname);
       return false;
    }
 
-   if (!fn || fread(rom_table[0],1024,1,fn) != 1)
+   bytes_read = filestream_read(bios_file, rom_table[0], 1024);
+   filestream_close(bios_file);
+
+   if (bytes_read != 1024)
    {
-      fclose(fn);
-      log_cb(RETRO_LOG_ERROR, "[O2EM]: Error loading BIOS ROM (%s).\n", odyssey2);
+      log_cb(RETRO_LOG_ERROR, "[O2EM]: Error loading BIOS ROM (%s).\n", biosname);
       return false;
    }
-
-   fclose(fn);
-
-   strcpy(s,biosname);
-   fn = fopen(biosname,"rb");
-
-   if (!fn)
-   {
-      log_cb(RETRO_LOG_ERROR, "[O2EM]: Error loading BIOS ROM (%s).\n", s);
-      return false;
-   }
-
-   if (fread(rom_table[0],1024,1,fn) != 1)
-   {
-      fclose(fn);
-      log_cb(RETRO_LOG_ERROR, "[O2EM]: Error loading BIOS ROM (%s).\n", odyssey2);
-      return false;
-   }
-
-   fclose(fn);
 
    for (i=1; i<8; i++)
       memcpy(rom_table[i],rom_table[0],1024);
 
-   crc = crc32_buf(rom_table[0],1024);
+   crc = encoding_crc32(0, rom_table[0], 1024);
 
    switch (crc)
    {
       case 0x8016A315:
-         log_cb(RETRO_LOG_INFO, "Magnavox Odyssey2 BIOS ROM loaded (G7000 model)\n");
+         log_cb(RETRO_LOG_INFO, "[O2EM]: Magnavox Odyssey2 BIOS ROM loaded (G7000 model)\n");
          app_data.vpp  = 0;
          app_data.bios = ROM_O2;
          break;
       case 0xE20A9F41:
-         log_cb(RETRO_LOG_INFO, "Philips Videopac+ European BIOS ROM loaded (G7400 model)\n");
+         log_cb(RETRO_LOG_INFO, "[O2EM]: Philips Videopac+ European BIOS ROM loaded (G7400 model)\n");
          app_data.vpp  = 1;
          app_data.bios = ROM_G7400;
          break;
       case 0xA318E8D6:
          if (!((!o2flag)&&(c52flag)))
-            log_cb(RETRO_LOG_INFO, "Philips Videopac+ French BIOS ROM loaded (G7000 model)\n");
+            log_cb(RETRO_LOG_INFO, "[O2EM]: Philips Videopac+ French BIOS ROM loaded (G7000 model)\n");
          app_data.vpp  = 0;
          app_data.bios = ROM_C52;
          break;
       case 0x11647CA5:
          if (g74flag)
-            log_cb(RETRO_LOG_INFO, "Philips Videopac+ French BIOS ROM loaded (G7400 model)\n");
+            log_cb(RETRO_LOG_INFO, "[O2EM]: Philips Videopac+ French BIOS ROM loaded (G7400 model)\n");
          app_data.vpp  = 1;
          app_data.bios = ROM_JOPAC;
          break;
       default:
-         log_cb(RETRO_LOG_INFO, "BIOS ROM loaded (unknown version)\n");
+         log_cb(RETRO_LOG_INFO, "[O2EM]: BIOS ROM loaded (unknown version)\n");
          app_data.vpp  = 0;
          app_data.bios = ROM_UNKNOWN;
          break;
@@ -241,13 +191,13 @@ static bool load_bios(const char *biosname)
    return true;
 }
 
-static bool load_cart(const char *file, unsigned long crc_file)
+static bool load_cart(const uint8_t *data, size_t size)
 {
-   FILE *fn;
-   long l;
    int i, nb;
 
-   app_data.crc = crc_file;
+   /* Get ROM CRC */
+   app_data.crc = encoding_crc32(0, data, size);
+
    if (app_data.crc == 0xAFB23F89)
       app_data.exrom = 1;  /* Musician */
    if (app_data.crc == 0x3BFEF56B)
@@ -257,124 +207,110 @@ static bool load_cart(const char *file, unsigned long crc_file)
 
    if (((app_data.crc == 0x975AB8DA) || (app_data.crc == 0xE246A812)) && (!app_data.debug))
    {
-      log_cb(RETRO_LOG_ERROR, "[O2EM]: File %s is an incomplete ROM dump.\n",
-file);
+      log_cb(RETRO_LOG_ERROR, "[O2EM]: Loaded content is an incomplete ROM dump.\n");
       return false;
    }
 
-   fn=fopen(file,"rb");
-   if (!fn)
+   if ((size % 1024) != 0)
    {
-      log_cb(RETRO_LOG_ERROR, "[O2EM]: Error loading %s.\n", file);
-      return false;
-   }
-
-   log_cb(RETRO_LOG_INFO, "Loading: \"%s\" Size: \n", file);
-
-   l = filesize(fn);
-
-   if ((l % 1024) != 0)
-   {
-      log_cb(RETRO_LOG_ERROR, "[O2EM]: Error: file %s is an invalid ROM dump.\n", file);
+      log_cb(RETRO_LOG_ERROR, "[O2EM]: Error: Loaded content is an invalid ROM dump.\n");
       return false;
    }
 
    /* special MegaCART design by Soeren Gust */
-   if ((l == 32768) || (l == 65536) || (l == 131072) || (l == 262144) || (l == 524288) || (l == 1048576))
+   if ((size ==   32768) ||
+       (size ==   65536) ||
+       (size ==  131072) ||
+       (size ==  262144) ||
+       (size ==  524288) ||
+       (size == 1048576))
    {
       app_data.megaxrom = 1;
-      app_data.bank = 1;
-      megarom = malloc(1048576);
+      app_data.bank     = 1;
+      megarom           = malloc(1048576);
 
-      if (megarom == NULL)
+      if (!megarom)
       {
-         log_cb(RETRO_LOG_ERROR, "[O2EM]: Out of memory loading %s.\n", file);
+         log_cb(RETRO_LOG_ERROR, "[O2EM]: Out of memory while processing loaded content.\n");
          return false;
       }
-      if (fread(megarom, l, 1, fn) != 1)
-      {
-         log_cb(RETRO_LOG_ERROR, "[O2EM]: Error loading %s.\n", file);
-         return false;
-      }
+
+      memcpy(megarom, data, size);
 
       /* mirror shorter files into full megabyte */
-      if (l < 65536)
-         memcpy(megarom+32768,megarom,32768);
-      if (l < 131072)
-         memcpy(megarom+65536,megarom,65536);
-      if (l < 262144)
-         memcpy(megarom+131072,megarom,131072);
-      if (l < 524288)
-         memcpy(megarom+262144,megarom,262144);
-      if (l < 1048576)
-         memcpy(megarom+524288,megarom,524288);
+      if (size <   65536)
+         memcpy(megarom +  32768, megarom,  32768);
+      if (size <  131072)
+         memcpy(megarom +  65536, megarom,  65536);
+      if (size <  262144)
+         memcpy(megarom + 131072, megarom, 131072);
+      if (size <  524288)
+         memcpy(megarom + 262144, megarom, 262144);
+      if (size < 1048576)
+         memcpy(megarom + 524288, megarom, 524288);
+
       /* start in bank 0xff */
       memcpy(&rom_table[0][1024], megarom + 4096*255 + 1024, 3072);
 
-      log_cb(RETRO_LOG_INFO, "MegaCart %ldK\n", l / 1024);
+      log_cb(RETRO_LOG_INFO, "[O2EM]: MegaCart %luK\n", (unsigned long)(size / 1024));
       nb = 1;
    }
-   else if (((l % 3072) == 0))
+   else if (((size % 3072) == 0))
    {
       app_data.three_k = 1;
-      nb = l/3072;
+      nb               = size / 3072;
 
-      for (i=nb-1; i>=0; i--)
+      for (i = (nb - 1); i >= 0; i--)
       {
-         if (fread(&rom_table[i][1024],3072,1,fn) != 1)
-         {
-            log_cb(RETRO_LOG_ERROR, "[O2EM]: Error loading %s.\n", file);
-            return false;
-         }
+         memcpy(&rom_table[i][1024], data, 3072);
+         data += 3072;
       }
-      log_cb(RETRO_LOG_INFO, "%dK\n",nb*3);
-  
-   } else {
 
-      nb = l/2048;
+      log_cb(RETRO_LOG_INFO, "[O2EM]: %uK\n", (unsigned)(nb * 3));
+   }
+   else
+   {
+      nb = size / 2048;
 
       if ((nb == 2) && (app_data.exrom))
       {
+         memcpy(&extROM[0], data, 1024);
+         data += 1024;
 
-         if (fread(&extROM[0], 1024,1,fn) != 1)
-         {
-            log_cb(RETRO_LOG_ERROR, "[O2EM]: Error loading %s.\n", file);
-            return false;
-         }
-         if (fread(&rom_table[0][1024],3072,1,fn) != 1)
-         {
-            log_cb(RETRO_LOG_ERROR, "[O2EM]: Error loading %s.\n", file);
-            return false;
-         }
-         log_cb(RETRO_LOG_INFO, "3K EXROM\n");
+         memcpy(&rom_table[0][1024], data, 3072);
+         data += 3072;
 
+         log_cb(RETRO_LOG_INFO, "[O2EM]: 3K EXROM\n");
       }
       else
       {
-         for (i=nb-1; i>=0; i--)
+         for (i = (nb - 1); i >= 0; i--)
          {
-            if (fread(&rom_table[i][1024],2048,1,fn) != 1)
-            {
-               log_cb(RETRO_LOG_ERROR, "[O2EM]: Error loading %s.\n", file);
-               return false;
-            }
-            memcpy(&rom_table[i][3072],&rom_table[i][2048],1024); /* simulate missing A10 */
+            memcpy(&rom_table[i][1024], data, 2048);
+            data += 2048;
+
+            /* simulate missing A10 */
+            memcpy(&rom_table[i][3072], &rom_table[i][2048], 1024);
          }
-         log_cb(RETRO_LOG_INFO, "%dK\n",nb*2);
+
+         log_cb(RETRO_LOG_INFO, "[O2EM]: %uK\n", (unsigned)(nb * 2));
       }
    }
-   fclose(fn);
+
    rom = rom_table[0];
-   if (nb==1)
+   if (nb == 1)
       app_data.bank = 1;
-   else if (nb==2)
+   else if (nb == 2)
       app_data.bank = app_data.exrom ? 1 : 2;
-   else if (nb==4)
+   else if (nb == 4)
       app_data.bank = 3;
    else
       app_data.bank = 4;
 
-   if ((rom_table[nb-1][1024+12]=='O') && (rom_table[nb-1][1024+13]=='P') && (rom_table[nb-1][1024+14]=='N') && (rom_table[nb-1][1024+15]=='B'))
+   if ((rom_table[nb-1][1024+12]=='O') &&
+       (rom_table[nb-1][1024+13]=='P') &&
+       (rom_table[nb-1][1024+14]=='N') &&
+       (rom_table[nb-1][1024+15]=='B'))
       app_data.openb=1;
 
    return true;
@@ -874,7 +810,7 @@ void retro_get_system_info(struct retro_system_info *info)
 #define GIT_VERSION ""
 #endif
 	info->library_version = "1.18" GIT_VERSION;
-	info->need_fullpath = true;
+	info->need_fullpath = false;
 	info->valid_extensions = "bin";
 }
 
@@ -935,9 +871,10 @@ void retro_cheat_set(unsigned index, bool enabled, const char *code)
 bool retro_load_game(const struct retro_game_info *info)
 {
    char bios_file_path[PATH_MAX_LENGTH];
-   const char *full_path       = NULL;
-   char *system_directory_c    = NULL;
-   enum retro_pixel_format fmt = RETRO_PIXEL_FORMAT_RGB565;
+   const uint8_t *rom_data              = NULL;
+   size_t rom_size                      = 0;
+   const char *system_directory_c       = NULL;
+   enum retro_pixel_format fmt          = RETRO_PIXEL_FORMAT_RGB565;
    struct retro_input_descriptor desc[] = {
       { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_LEFT,  "Left" },
       { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP,    "Up" },
@@ -967,8 +904,11 @@ bool retro_load_game(const struct retro_game_info *info)
       { 0 }
    };
 
-   if (!info)
+   if (!info || !info->data || (info->size < 1))
       return false;
+
+   rom_data = (const uint8_t *)info->data;
+   rom_size = info->size;
 
    if (!environ_cb(RETRO_ENVIRONMENT_SET_PIXEL_FORMAT, &fmt))
    {
@@ -978,9 +918,6 @@ bool retro_load_game(const struct retro_game_info *info)
 
    environ_cb(RETRO_ENVIRONMENT_SET_INPUT_DESCRIPTORS, desc);
 
-   full_path = info->path;
-   system_directory_c = NULL;
-
    /* BIOS is required */
    environ_cb(RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY, &system_directory_c);
    if (!system_directory_c)
@@ -988,14 +925,12 @@ bool retro_load_game(const struct retro_game_info *info)
       log_cb(RETRO_LOG_WARN, "[O2EM]: no system directory defined, unable to look for %s\n", bios_file);
       return false;
    }
-   else
+
+   fill_pathname_join(bios_file_path, system_directory_c, bios_file, PATH_MAX_LENGTH);
+   if (!path_is_valid(bios_file_path))
    {
-      fill_pathname_join(bios_file_path, system_directory_c, bios_file, PATH_MAX_LENGTH);
-      if (!does_file_exist(bios_file_path))
-      {
-         log_cb(RETRO_LOG_WARN, "[O2EM]: %s not found, cannot load BIOS\n", bios_file);
-         return false;
-      }
+      log_cb(RETRO_LOG_WARN, "[O2EM]: %s not found, cannot load BIOS\n", bios_file);
+      return false;
    }
 
    app_data.debug = 0;
@@ -1040,14 +975,11 @@ bool retro_load_game(const struct retro_game_info *info)
 
    init_audio();
 
-   crcx          = crc32_file(full_path);
-   app_data.crc  = crcx;
-
-   o2flag        = 1;
+   o2flag = 1;
 
    if (!load_bios(bios_file_path))
       return false;
-   if (!load_cart(full_path, crcx))
+   if (!load_cart(rom_data, rom_size))
       return false;
 
 #ifdef HAVE_VOICE
@@ -1307,6 +1239,7 @@ void retro_deinit(void)
    close_audio();
    close_voice();
    close_display();
+   close_vpp();
    retro_destroybmp();
 
    if (mbmp_prev)
@@ -1318,6 +1251,10 @@ void retro_deinit(void)
 #ifdef HAVE_VOICE
    audio_mixer_done();
 #endif
+
+   if (megarom)
+      free(megarom);
+   megarom = NULL;
 }
 
 void retro_reset(void)

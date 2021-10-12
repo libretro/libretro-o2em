@@ -26,7 +26,7 @@
 #include "vpp.h"
 #include "vdc.h"
 
-#include "libretro.h"
+#include <libretro.h>
 #include "wrapalleg.h"
 
 #include "audio.h"

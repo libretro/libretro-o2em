@@ -28,7 +28,7 @@
 #include "vpp.h"
 #include "keyboard.h"
 
-#include "libretro.h"
+#include <libretro.h>
 #include "wrapalleg.h"
 
 #include "score.h"

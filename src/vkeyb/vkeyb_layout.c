@@ -1,7 +1,7 @@
 /* Virtual keyboard layout */
 
 #include "vkeyb_layout.h"
-#include "../../libretro.h"
+#include <libretro.h>
 
 const struct VKey *ODYSSEY2_DEFAULT_KEY = &o2_kb[0];
 

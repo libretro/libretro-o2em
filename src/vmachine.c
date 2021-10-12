@@ -33,7 +33,7 @@
 #include "vmachine.h"
 
 #include "wrapalleg.h"
-#include "libretro.h"
+#include <libretro.h>
 extern unsigned char key[512];
 
 static uint8_t x_latch,y_latch;

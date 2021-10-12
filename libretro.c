@@ -12,7 +12,7 @@
 #pragma pack(1)
 #endif
 
-#include "libretro.h"
+#include <libretro.h>
 #include "libretro_core_options.h"
 
 #include "audio.h"
@@ -55,7 +55,7 @@ void retro_set_input_state(retro_input_state_t cb) { input_state_cb = cb; }
 
 void retro_destroybmp(void);
 
-char bios_file[16] = {0};
+char bios_file_name[16] = {0};
 
 uint16_t mbmp[TEX_WIDTH * TEX_HEIGHT];
 uint16_t *mbmp_prev = NULL;
@@ -119,8 +119,15 @@ struct ButtonsState last_btn_state = { false, false, false, false,
 
 void retro_set_environment(retro_environment_t cb)
 {
+   struct retro_vfs_interface_info vfs_iface_info;
+
    environ_cb = cb;
    libretro_set_core_options(environ_cb);
+
+   vfs_iface_info.required_interface_version = 1;
+   vfs_iface_info.iface                      = NULL;
+   if (environ_cb(RETRO_ENVIRONMENT_GET_VFS_INTERFACE, &vfs_iface_info))
+      filestream_vfs_init(&vfs_iface_info);
 }
 
 static bool load_bios(const char *biosname)
@@ -922,14 +929,14 @@ bool retro_load_game(const struct retro_game_info *info)
    environ_cb(RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY, &system_directory_c);
    if (!system_directory_c)
    {
-      log_cb(RETRO_LOG_WARN, "[O2EM]: no system directory defined, unable to look for %s\n", bios_file);
+      log_cb(RETRO_LOG_WARN, "[O2EM]: no system directory defined, unable to look for %s\n", bios_file_name);
       return false;
    }
 
-   fill_pathname_join(bios_file_path, system_directory_c, bios_file, PATH_MAX_LENGTH);
+   fill_pathname_join(bios_file_path, system_directory_c, bios_file_name, sizeof(bios_file_path));
    if (!path_is_valid(bios_file_path))
    {
-      log_cb(RETRO_LOG_WARN, "[O2EM]: %s not found, cannot load BIOS\n", bios_file);
+      log_cb(RETRO_LOG_WARN, "[O2EM]: %s not found, cannot load BIOS\n", bios_file_name);
       return false;
    }
 
@@ -989,7 +996,7 @@ bool retro_load_game(const struct retro_game_info *info)
 
       audio_mixer_init(44100);
 
-      fill_pathname_join(voice_path, system_directory_c, "voice", PATH_MAX_LENGTH);
+      fill_pathname_join(voice_path, system_directory_c, "voice", sizeof(voice_path));
       init_voice(voice_path);
    }
 #endif
@@ -1072,7 +1079,7 @@ static void check_variables(bool startup)
       /* Emulated Hardware */
       var.key   = "o2em_bios";
       var.value = NULL;
-      strcpy(bios_file, "o2rom.bin");
+      strcpy(bios_file_name, "o2rom.bin");
 
       if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
       {
@@ -1080,19 +1087,19 @@ static void check_variables(bool startup)
           * copy an invalid value */
          if (!strcmp(var.value, "c52.bin"))
          {
-            strcpy(bios_file, "c52.bin");
+            strcpy(bios_file_name, "c52.bin");
             if (auto_region)
                app_data.euro = 1;
          }
          else if (!strcmp(var.value, "g7400.bin"))
          {
-            strcpy(bios_file, "g7400.bin");
+            strcpy(bios_file_name, "g7400.bin");
             if (auto_region)
                app_data.euro = 1;
          }
          else if (!strcmp(var.value, "jopac.bin"))
          {
-            strcpy(bios_file, "jopac.bin");
+            strcpy(bios_file_name, "jopac.bin");
             if (auto_region)
                app_data.euro = 1;
          }

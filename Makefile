@@ -258,7 +258,6 @@ else ifeq ($(platform), gcw0)
    FLAGS += -DDINGUX
    fpic := -fPIC
 
-
 # MIYOO
 else ifeq ($(platform), miyoo)
 	TARGET := $(TARGET_NAME)_libretro.so
@@ -267,6 +266,17 @@ else ifeq ($(platform), miyoo)
 	AR = /opt/miyoo/usr/bin/arm-linux-ar
    SHARED := -shared -Wl,--no-undefined -Wl,--version-script=link.T
    FLAGS += -fomit-frame-pointer -march=armv5te -mtune=arm926ej-s	
+   FLAGS += -DDINGUX
+   fpic := -fPIC
+
+# RETROFW
+else ifeq ($(platform), retrofw)
+   TARGET := $(TARGET_NAME)_libretro.so
+   CC = /opt/retrofw-toolchain/usr/bin/mipsel-linux-gcc
+   CXX = /opt/retrofw-toolchain/usr/bin/mipsel-linux-g++
+   AR = /opt/retrofw-toolchain/usr/bin/mipsel-linux-ar
+   SHARED := -shared -Wl,--no-undefined -Wl,--version-script=link.T
+   FLAGS += -fomit-frame-pointer -ffast-math -march=mips32 -mtune=mips32 -mhard-float
    FLAGS += -DDINGUX
    fpic := -fPIC
 
@@ -616,7 +626,9 @@ FLAGS += -D__LIBRETRO__ $(WARNINGS)
 
 CFLAGS += $(FLAGS)
 
+ifeq (,$(findstring msvc,$(platform)))
 LIBS    += -lm
+endif
 
 OBJOUT   = -o
 LINKOUT  = -o 

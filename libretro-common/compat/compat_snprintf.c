@@ -1,7 +1,7 @@
 /* Copyright  (C) 2010-2020 The RetroArch team
  *
  * ---------------------------------------------------------------------------------------
- * The following license statement only applies to this file (utf.h).
+ * The following license statement only applies to this file (compat_snprintf.c).
  * ---------------------------------------------------------------------------------------
  *
  * Permission is hereby granted, free of charge,
@@ -20,44 +20,64 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef _LIBRETRO_ENCODINGS_WIN32_H
-#define _LIBRETRO_ENCODINGS_WIN32_H
+/* THIS FILE HAS NOT BEEN VALIDATED ON PLATFORMS BESIDES MSVC */
+#ifdef _MSC_VER
 
-#ifndef _XBOX
-#ifdef _WIN32
-/*#define UNICODE
-#include <tchar.h>
-#include <wchar.h>*/
+#include <stdio.h>
+#include <stdarg.h>
 
-#ifdef __cplusplus
-extern "C" {
+#if _MSC_VER < 1800
+#define va_copy(dst, src) ((dst) = (src))
 #endif
 
-#include <encodings/utf.h>
+#if _MSC_VER < 1300
+#define _vscprintf c89_vscprintf_retro__
 
-#ifdef __cplusplus
+static int c89_vscprintf_retro__(const char *fmt, va_list pargs)
+{
+   int retval;
+   va_list argcopy;
+   va_copy(argcopy, pargs);
+   retval = vsnprintf(NULL, 0, fmt, argcopy);
+   va_end(argcopy);
+   return retval;
 }
 #endif
 
-#endif
-#endif
+/* http://stackoverflow.com/questions/2915672/snprintf-and-visual-studio-2010 */
 
-#ifdef UNICODE
-#define CHAR_TO_WCHAR_ALLOC(s, ws) \
-   size_t ws##_size = (NULL != s && s[0] ? strlen(s) : 0) + 1; \
-   wchar_t *ws = (wchar_t*)calloc(ws##_size, 2); \
-   if (NULL != s && s[0]) \
-      MultiByteToWideChar(CP_UTF8, 0, s, -1, ws, ws##_size / sizeof(wchar_t));
+int c99_vsnprintf_retro__(char *s, size_t len, const char *fmt, va_list ap)
+{
+   int count = -1;
 
-#define WCHAR_TO_CHAR_ALLOC(ws, s) \
-   size_t s##_size = ((NULL != ws && ws[0] ? wcslen((const wchar_t*)ws) : 0) / 2) + 1; \
-   char *s = (char*)calloc(s##_size, 1); \
-   if (NULL != ws && ws[0]) \
-      utf16_to_char_string((const uint16_t*)ws, s, s##_size);
-
+   if (len != 0)
+   {
+#if (_MSC_VER <= 1310)
+      count = _vsnprintf(s, len - 1, fmt, ap);
 #else
-#define CHAR_TO_WCHAR_ALLOC(s, ws) char *ws = (NULL != s && s[0] ? strdup(s) : NULL);
-#define WCHAR_TO_CHAR_ALLOC(ws, s) char *s = (NULL != ws && ws[0] ? strdup(ws) : NULL);
+      count = _vsnprintf_s(s, len, len - 1, fmt, ap);
 #endif
+   }
 
+   if (count == -1)
+       count = _vscprintf(fmt, ap);
+
+   /* there was no room for a NULL, so truncate the last character */
+   if (count == len && len)
+      s[len - 1] = '\0';
+
+   return count;
+}
+
+int c99_snprintf_retro__(char *s, size_t len, const char *fmt, ...)
+{
+   int count;
+   va_list ap;
+
+   va_start(ap, fmt);
+   count = c99_vsnprintf_retro__(s, len, fmt, ap);
+   va_end(ap);
+
+   return count;
+}
 #endif

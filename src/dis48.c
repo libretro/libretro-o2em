@@ -10,7 +10,6 @@
 #include <string.h>
 #include "types.h"
 #include "table.h"
-#include "debug.h"
 
 #define BIOSLEN 1024
 #define MAXLEN 8192

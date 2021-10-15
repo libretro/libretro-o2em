@@ -28,7 +28,7 @@
 #include "vpp.h"
 #include "keyboard.h"
 
-#include "libretro.h"
+#include <libretro.h>
 #include "wrapalleg.h"
 
 #include "score.h"
@@ -217,37 +217,6 @@ void set_systemkeys(int k_quit,int k_pause,int k_debug,int k_reset,int k_screenc
 
 #ifdef __LIBRETRO__
 unsigned char key[256*2];
-
-void rloadstate()
-{
-   int stateError;
-   if ((stateError=loadstate(app_data.statefile))==0)
-   {
-      printf("Savefile loaded.\n");
-   }
-   else if (stateError>=199)
-   {
-      if (stateError==199) printf("Wrong ROM-File for Savefile.\n");
-      else if (stateError==200+ROM_O2) printf("Wrong BIOS for Savefile: O2ROM needed.\n");
-      else if (stateError==200+ROM_G7400) printf("Wrong BIOS for Savefile: G7400 ROM needed.\n");
-      else if (stateError==200+ROM_C52) printf("Wrong BIOS for Savefile: C52 ROM needed.\n");
-      else if (stateError==200+ROM_JOPAC) printf("Wrong BIOS for Savefile: JOPAC ROM needed.\n");
-      else printf("Wrong BIOS for Savefile: UNKNOWN ROM needed.\n");
-   }
-
-}
-
-void rsavestate()
-{
-   if (savestate(app_data.statefile)==0)
-      printf("Savefile saved.\n");
-}
-
-void rscore()
-{
-	set_score(app_data.scoretype, app_data.scoreaddress, app_data.default_highscore);
-}
-
 #endif
 
 extern int joystick_data[2][5]; //Up, Down, Left, Right, "Action"

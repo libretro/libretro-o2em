@@ -97,9 +97,8 @@ unsigned long crc32_buf(const void *buf, long len){
 
 unsigned long crc32_file(const char *filename){
 	unsigned /*long*/ crc = crc ^ 0xffffffffUL;//crc = ~0;
-	FILE *f;
 	int c;
-	f = fopen(filename,"rb");
+	FILE *f = fopen(filename,"rb");
 	if (f){
 		while ((c=fgetc(f)) != EOF) crc = (crc >> 8) ^ crc32tab[(crc ^ c) & 0xff];
                fclose(f);

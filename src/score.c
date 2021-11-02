@@ -36,22 +36,16 @@ int get_score(int scoretype, int scoreaddress)
 
 	if (scoretype!=0)
 	{
-		int position;
 		int i;
-		uint8_t *RAM;
-
-		int count = scoretype%10;
-		int direction = ((scoretype/10)%10)==1?1:-1;
+		int count       = scoretype%10;
+		int direction   = ((scoretype/10)%10)==1?1:-1;
 		float valuetype = (float) (3-((scoretype/100)%10))/2;
-		int ramtype = scoretype/1000;
-
-		position = scoreaddress+ (direction==1?0:(count*valuetype-1));
-		RAM = ramtype==1?extRAM:intRAM;
+		int ramtype     = scoretype/1000;
+		int position    = scoreaddress+ (direction==1?0:(count*valuetype-1));
+		uint8_t *RAM    = ramtype==1?extRAM:intRAM;
 
 		for(i=0;i<count;i++)
-		{
 			score = score*10+((RAM[position+(int)(valuetype*i*direction)]>>(((i+1)%2)*4)*(abs((int) ((valuetype-1)*2))))&15);
-		}
 	}
 
 	return(score);
@@ -68,7 +62,6 @@ int get_score(int scoretype, int scoreaddress)
 
 void set_score(int scoretype, int scoreaddress, int score)
 {
-
 	if (scoretype!=0 && score>0)
 	{
 		int i;
@@ -95,23 +88,15 @@ void set_score(int scoretype, int scoreaddress, int score)
 -------------------------------------------------------*/
 void save_highscore(int highscore, char *scorefile)
 {
-	FILE *fn;
+   FILE *fn;
 
-	highscore = highscore==app_data.default_highscore?0:highscore;
+   highscore = highscore==app_data.default_highscore?0:highscore;
 
-        fn = fopen(scorefile,"w");
-	if (fn==NULL) {
-		fprintf(stderr,"Error opening highscore-file %s: %i\n",scorefile,errno);
-		exit(EXIT_FAILURE);
-	}
-	
-	if (fprintf(fn,"%i",highscore)<=0)
-	{
-		fprintf(stderr,"Error writing to highscore-file %s: %i\n",scorefile,errno);
-		exit(EXIT_FAILURE);
-	}	
+   if (!(fn = fopen(scorefile,"w")))
+      return;
 
-	fclose(fn);
+   fprintf(fn,"%i",highscore);
+   fclose(fn);
 }
 #endif
 
@@ -120,23 +105,14 @@ void save_highscore(int highscore, char *scorefile)
  ***********************************/
 int power(int base, int higher)
 {
-	if (higher==0)
-	{
-		return(1);
-	}
-	else if (higher==1)
-	{
-		return(base);
-	}
-	else
-	{
-		int i;
-		int value=base;
+   int i;
+   int value=base;
+   if (higher==0)
+      return(1);
+   else if (higher==1)
+      return(base);
 
-		for (i=2;i<=higher;i++)
-		{
-			value = value*base;
-		}
-		return(value);
-	}
+   for (i=2;i<=higher;i++)
+      value = value*base;
+   return(value);
 }

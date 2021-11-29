@@ -24,10 +24,10 @@
 #ifdef HAVE_VOICE
 #include <file/file_path.h>
 #include <streams/file_stream.h>
-#include <audio/audio_mixer.h>
+#include <core_audio_mixer.h>
 
-static audio_mixer_sound_t *voices[9][128];
-static audio_mixer_voice_t *voice = NULL;
+static core_audio_mixer_sound_t *voices[9][128];
+static core_audio_mixer_voice_t *voice = NULL;
 static bool voice_finished = true;
 #endif
 static int voice_bank = 0;
@@ -50,12 +50,13 @@ void init_voice(const char *voice_path)
          int64_t file_len    = 0;
          void *file_contents = NULL;
          int            bank = i ? (0xE8 + i - 1) : 0xE4;
-         snprintf(file_name, 32, "%02X%02X.WAV", bank, sam + 0x80);
-         fill_pathname_join(file_path, voice_path, file_name, PATH_MAX_LENGTH);
+
+         snprintf(file_name, sizeof(file_name), "%02X%02X.WAV", bank, sam + 0x80);
+         fill_pathname_join(file_path, voice_path, file_name, sizeof(file_path));
 
          if (filestream_read_file(file_path, &file_contents, &file_len))
          {
-            voices[i][sam] = audio_mixer_load_wav(file_contents, file_len,
+            voices[i][sam] = core_audio_mixer_load_wav(file_contents, file_len,
                   "sinc", RESAMPLER_QUALITY_NORMAL);
 
             free(file_contents);
@@ -79,7 +80,7 @@ void init_voice(const char *voice_path)
 }
 
 #ifdef HAVE_VOICE
-void voice_stop_callback(audio_mixer_sound_t *sound, unsigned reason)
+void voice_stop_callback(core_audio_mixer_sound_t *sound, unsigned reason)
 {
    voice_finished = true;
 }
@@ -100,7 +101,7 @@ void update_voice(void)
          {
             if (voices[voice_bank][voice_addr - 0x80])
             {
-               voice = audio_mixer_play(voices[voice_bank][voice_addr - 0x80],
+               voice = core_audio_mixer_play(voices[voice_bank][voice_addr - 0x80],
                      false, 0, "sinc", RESAMPLER_QUALITY_NORMAL,
                      voice_stop_callback);
                voice_finished = false;
@@ -174,7 +175,7 @@ void reset_voice(void)
    if (!voice_ok)
       return;
 
-   audio_mixer_stop(voice);
+   core_audio_mixer_stop(voice);
    voice      = NULL;
    voice_bank = 0;
    voice_addr = 0;
@@ -189,7 +190,7 @@ void mute_voice(void)
    if (!voice_ok)
       return;
 
-   audio_mixer_stop(voice);
+   core_audio_mixer_stop(voice);
    voice = NULL;
 #endif
 }
@@ -206,7 +207,7 @@ void close_voice(void)
    {
       for (sam = 0; sam < 128; sam++)
       {
-         audio_mixer_destroy(voices[i][sam]);
+         core_audio_mixer_destroy(voices[i][sam]);
          voices[i][sam] = NULL;
       }
    }

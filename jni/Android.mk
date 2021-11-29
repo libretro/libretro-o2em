@@ -9,7 +9,7 @@ include $(CORE_DIR)/Makefile.common
 COREFLAGS := -D__LIBRETRO__ -DANDROID $(INCFLAGS)
 
 ifeq ($(HAVE_VOICE), 1)
-COREFLAGS += -DDONT_WANT_ARM_OPTIMIZATIONS -DHAVE_RWAV -DHAVE_VOICE
+COREFLAGS += -DHAVE_RWAV -DHAVE_VOICE
 endif
 
 GIT_VERSION := " $(shell git rev-parse --short HEAD || echo unknown)"

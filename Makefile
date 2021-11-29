@@ -1,4 +1,4 @@
-DEBUG = 0
+DEBUG ?= 0
 HAVE_VOICE = 1
 
 ifeq ($(platform),)
@@ -619,7 +619,7 @@ WARNINGS := -Wall \
 endif
 
 ifeq ($(HAVE_VOICE), 1)
-FLAGS += -DHAVE_VOICE -DHAVE_RWAV -DDONT_WANT_ARM_OPTIMIZATIONS
+FLAGS += -DHAVE_VOICE -DHAVE_RWAV
 endif
 
 FLAGS += -D__LIBRETRO__ $(WARNINGS)

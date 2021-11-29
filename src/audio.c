@@ -23,7 +23,6 @@
 #include "vmachine.h"
 #include "audio.h"
 
-#define SAMPLE_RATE 44100
 #define PERIOD1 11
 #define PERIOD2 44
 

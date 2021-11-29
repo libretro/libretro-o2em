@@ -1,12 +1,13 @@
 LIBRETRO_COMM_DIR = $(CORE_DIR)/libretro-common
 
-INCFLAGS := -I$(CORE_DIR) \
-				-I$(CORE_DIR)/src \
-				-I$(CORE_DIR)/allegrowrapper \
-				-I$(LIBRETRO_COMM_DIR)/include
+INCFLAGS := \
+	-I$(CORE_DIR) \
+	-I$(CORE_DIR)/src \
+	-I$(CORE_DIR)/allegrowrapper \
+	-I$(LIBRETRO_COMM_DIR)/include
 
 ifneq (,$(findstring msvc2003,$(platform)))
-INCFLAGS += -I$(LIBRETRO_COMM_DIR)/include/compat/msvc
+	INCFLAGS += -I$(LIBRETRO_COMM_DIR)/include/compat/msvc
 endif
 
 SOURCES_C := \
@@ -44,17 +45,21 @@ SOURCES_C += \
 	$(LIBRETRO_COMM_DIR)/string/stdstring.c \
 	$(LIBRETRO_COMM_DIR)/time/rtime.c \
 	$(LIBRETRO_COMM_DIR)/vfs/vfs_implementation.c
-ifeq ($(HAVE_VOICE), 1)
-	SOURCES_C += \
-		$(LIBRETRO_COMM_DIR)/audio/audio_mixer.c \
-		$(LIBRETRO_COMM_DIR)/audio/conversion/float_to_s16.c \
-		$(LIBRETRO_COMM_DIR)/audio/resampler/audio_resampler.c \
-		$(LIBRETRO_COMM_DIR)/audio/resampler/drivers/sinc_resampler.c \
-		$(LIBRETRO_COMM_DIR)/features/features_cpu.c \
-		$(LIBRETRO_COMM_DIR)/file/config_file.c \
-		$(LIBRETRO_COMM_DIR)/file/config_file_userdata.c \
-		$(LIBRETRO_COMM_DIR)/formats/wav/rwav.c \
-		$(LIBRETRO_COMM_DIR)/lists/string_list.c \
-		$(LIBRETRO_COMM_DIR)/memmap/memalign.c
+	ifeq ($(HAVE_VOICE), 1)
+		SOURCES_C += \
+			$(LIBRETRO_COMM_DIR)/audio/conversion/float_to_s16.c \
+			$(LIBRETRO_COMM_DIR)/audio/conversion/s16_to_float.c \
+			$(LIBRETRO_COMM_DIR)/audio/resampler/audio_resampler.c \
+			$(LIBRETRO_COMM_DIR)/audio/resampler/drivers/sinc_resampler.c \
+			$(LIBRETRO_COMM_DIR)/features/features_cpu.c \
+			$(LIBRETRO_COMM_DIR)/file/config_file.c \
+			$(LIBRETRO_COMM_DIR)/file/config_file_userdata.c \
+			$(LIBRETRO_COMM_DIR)/formats/wav/rwav.c \
+			$(LIBRETRO_COMM_DIR)/lists/string_list.c \
+			$(LIBRETRO_COMM_DIR)/memmap/memalign.c
+	endif
 endif
+
+ifeq ($(HAVE_VOICE), 1)
+	SOURCES_C += $(CORE_DIR)/core_audio_mixer.c
 endif

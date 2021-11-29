@@ -28,8 +28,9 @@
 #include "wrapalleg.h"
 
 #ifdef HAVE_VOICE
-#include <audio/audio_mixer.h>
+#include <core_audio_mixer.h>
 #include <audio/conversion/float_to_s16.h>
+#include <audio/conversion/s16_to_float.h>
 #endif
 #include <file/file_path.h>
 #include <streams/file_stream.h>
@@ -81,9 +82,26 @@ static bool crop_overscan = false;
 #define CROPPED_OFFSET_X 9
 #define CROPPED_OFFSET_Y 5
 
+/* The internal emulation code produces exactly
+ * 1056 samples per frame. This leads to sample
+ * rates of 63360 Hz for NTSC content and 52800 Hz
+ * for PAL content. Unfortunately, these rates are
+ * so high and so peculiar that the sinc resampler
+ * (used for The Voice, and for general resampling
+ * in the RetroArch frontend) performs abominably,
+ * creating unacceptable levels of noise and
+ * distortion. We therefore only use two thirds
+ * of the internally generated samples (704 per
+ * frame), which reduces NTSC/PAL sample rates to
+ * 42240/35200 Hz. This greatly improves resampling
+ * performance and final output sound quality. */
+#define AUDIO_SAMPLES_PER_FRAME ((SOUND_BUFFER_LEN * 2) / 3)
+#define AUDIO_SAMPLERATE ((evblclk == EVBLCLK_NTSC) ? (AUDIO_SAMPLES_PER_FRAME * 60) : (AUDIO_SAMPLES_PER_FRAME * 50))
+
 uint8_t soundBuffer[SOUND_BUFFER_LEN];
-static int16_t audioOutBuffer[SOUND_BUFFER_LEN * 2 * sizeof(int16_t)];
+static int16_t audioOutBuffer[AUDIO_SAMPLES_PER_FRAME * 2];
 static int16_t audio_volume   = 50;
+static float voice_volume     = 0.7f;
 static bool low_pass_enabled  = false;
 static int32_t low_pass_range = 0;
 static int32_t low_pass_prev  = 0;
@@ -530,23 +548,36 @@ static void upate_audio(void)
 {
    uint8_t *audio_samples_ptr = soundBuffer;
    int16_t *audio_out_ptr     = audioOutBuffer;
-   int length                 = (evblclk == EVBLCLK_NTSC) ? 44100 / 60 : 44100 / 50;
+   size_t i;
 
    /* Convert 8u mono to 16s stereo */
    if (low_pass_enabled)
    {
-      int samples      = length;
       /* Restore previous sample */
       int32_t low_pass = low_pass_prev;
       /* Single-pole low-pass filter (6 dB/octave) */
       int32_t factor_a = low_pass_range;
       int32_t factor_b = 0x10000 - factor_a;
 
-      do
+      for(i = 1; i <= SOUND_BUFFER_LEN; i++)
       {
+         int16_t sample16;
+
+         /* For improved resampler performance, we
+          * reduce the internal sample rate to 2/3
+          * of its original value. Odyssey2/Videopac
+          * audio is so primitive that we can simply
+          * skip every third sample with no perceivable
+          * reduction in sound quality. */
+         if ((i % 3) == 0)
+         {
+            audio_samples_ptr++;
+            continue;
+         }
+
          /* Get current sample */
-         int16_t sample16 = (((*(audio_samples_ptr++) - 128) << 8) 
-               * audio_volume) / 100;
+         sample16  = (((*(audio_samples_ptr++) * audio_volume) /
+               100) - 128) << 8;
 
          /* Apply low-pass filter */
          low_pass = (low_pass * factor_a) + (sample16 * factor_b);
@@ -557,44 +588,49 @@ static void upate_audio(void)
          /* Update output buffer */
          *(audio_out_ptr++) = (int16_t)low_pass;
          *(audio_out_ptr++) = (int16_t)low_pass;
-      }while (--samples);
+      }
 
       /* Save last sample for next frame */
       low_pass_prev = low_pass;
    }
    else
    {
-      int i;
-
-      for(i = 0; i < length; i++)
+      for(i = 1; i <= SOUND_BUFFER_LEN; i++)
       {
-         int16_t sample16   = (((*(audio_samples_ptr++) - 128) << 8) 
-               * audio_volume) / 100;
-         *(audio_out_ptr++) = sample16;
-         *(audio_out_ptr++) = sample16;
+         int16_t sample16;
+
+         if ((i % 3) == 0)
+         {
+            audio_samples_ptr++;
+            continue;
+         }
+
+         /* Get current sample */
+         sample16  = (((*(audio_samples_ptr++) * audio_volume) /
+               100) - 128) << 8;
+
+         *(audio_out_ptr++) = (int16_t)sample16;
+         *(audio_out_ptr++) = (int16_t)sample16;
       }
    }
 
 #ifdef HAVE_VOICE
    if (get_voice_status())
    {
-      unsigned i;
-      float fbuf[SOUND_BUFFER_LEN * 2 * sizeof(float)];
-      int16_t ibuf[SOUND_BUFFER_LEN * 2 * sizeof(int16_t)];
+      float fbuf[AUDIO_SAMPLES_PER_FRAME * 2];
 
-      memset(fbuf, 0, length * 2 * sizeof(float));
-      audio_mixer_mix(fbuf, length, audio_volume / 100.0, true);
-      convert_float_to_s16(ibuf, fbuf, length * 2);
+      /* Convert output audio buffer to float */
+      convert_s16_to_float(fbuf, audioOutBuffer, AUDIO_SAMPLES_PER_FRAME * 2, 1.0f);
 
-      for (i = 0; i < length; i++)
-      {
-         audioOutBuffer[i*2]     += ibuf[i*2];
-         audioOutBuffer[i*2 + 1] += ibuf[i*2 + 1];
-      }
+      /* Mix in voice */
+      core_audio_mixer_mix(fbuf, AUDIO_SAMPLES_PER_FRAME, voice_volume, true);
+
+      /* Convert back to signed integer */
+      convert_float_to_s16(audioOutBuffer, fbuf, AUDIO_SAMPLES_PER_FRAME * 2);
    }
 #endif
 
-   audio_batch_cb(audioOutBuffer, length);
+   audio_batch_cb(audioOutBuffer, AUDIO_SAMPLES_PER_FRAME);
 }
 
 /************************************
@@ -825,7 +861,7 @@ void retro_get_system_av_info(struct retro_system_av_info *info)
    memset(info, 0, sizeof(*info));
 
    info->timing.fps               = (evblclk == EVBLCLK_NTSC) ? 60 : 50;
-   info->timing.sample_rate       = 44100;
+   info->timing.sample_rate       = AUDIO_SAMPLERATE;
 
    if (crop_overscan)
    {
@@ -988,21 +1024,20 @@ bool retro_load_game(const struct retro_game_info *info)
    if (!load_cart(rom_data, rom_size))
       return false;
 
+   init_display();
+   init_cpu();
+   init_system();
+
 #ifdef HAVE_VOICE
    if (app_data.voice)
    {
       char voice_path[PATH_MAX_LENGTH];
-
-      audio_mixer_init(44100);
-
+      voice_path[0] = '\0';
+      core_audio_mixer_init(AUDIO_SAMPLERATE);
       fill_pathname_join(voice_path, system_directory_c, "voice", sizeof(voice_path));
       init_voice(voice_path);
    }
 #endif
-
-   init_display();
-   init_cpu();
-   init_system();
 
    set_score(app_data.scoretype, app_data.scoreaddress, app_data.default_highscore);
 
@@ -1192,6 +1227,19 @@ static void check_variables(bool startup)
     *   of two */
    audio_volume = audio_volume >> 1;
 
+   /* Voice Volume */
+   var.key      = "o2em_voice_volume";
+   var.value    = NULL;
+   voice_volume = 0.7f;
+
+   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+   {
+      int16_t volume_level = atoi(var.value);
+      volume_level = (volume_level > 100) ? 100 : volume_level;
+      volume_level = (volume_level < 0)   ? 0   : volume_level;
+      voice_volume = (float)volume_level / 100.0f;
+   }
+
    /* Audio Filter */
    var.key          = "o2em_low_pass_filter";
    var.value        = NULL;
@@ -1255,7 +1303,7 @@ void retro_deinit(void)
    }
 
 #ifdef HAVE_VOICE
-   audio_mixer_done();
+   core_audio_mixer_done();
 #endif
 
    if (megarom)

@@ -1,7 +1,7 @@
-/* Copyright  (C) 2010-2020 The RetroArch team
+/* Copyright  (C) 2010-2021 The RetroArch team
  *
  * ---------------------------------------------------------------------------------------
- * The following license statement only applies to this file (float_to_s16_neon.S).
+ * The following license statement only applies to this file (s16_to_float.h).
  * ---------------------------------------------------------------------------------------
  *
  * Permission is hereby granted, free of charge,
@@ -19,51 +19,37 @@
  * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-#if defined(__ARM_NEON__) && defined(HAVE_ARM_NEON_ASM_OPTIMIZATIONS)
+#ifndef __LIBRETRO_SDK_CONVERSION_S16_TO_FLOAT_H__
+#define __LIBRETRO_SDK_CONVERSION_S16_TO_FLOAT_H__
 
-#ifndef __MACH__
-.arm
-#endif
+#include <stdint.h>
+#include <stddef.h>
 
-.align 4
-.globl convert_float_s16_asm
-#ifndef __MACH__
-.type convert_float_s16_asm, %function
-#endif
-.globl _convert_float_s16_asm
-#ifndef __MACH__
-.type _convert_float_s16_asm, %function
-#endif
-# convert_float_s16_asm(int16_t *out, const float *in, size_t samples)
-convert_float_s16_asm:
-_convert_float_s16_asm:
-   # Hacky way to get a constant of 2^15.
-   # ((2^4)^2)^2 * 0.5 = 2^15
-   vmov.f32 q8, #16.0
-   vmov.f32 q9, #0.5
-   vmul.f32 q8, q8, q8
-   vmul.f32 q8, q8, q8
-   vmul.f32 q8, q8, q9
+#include <retro_common_api.h>
 
-1:
-   # Preload here?
-   vld1.f32 {q0-q1}, [r1]!
+RETRO_BEGIN_DECLS
 
-   vmul.f32 q0, q0, q8
-   vmul.f32 q1, q1, q8
+/**
+ * convert_s16_to_float:
+ * @out               : output buffer
+ * @in                : input buffer
+ * @samples           : size of samples to be converted
+ * @gain              : gain applied (.e.g. audio volume)
+ *
+ * Converts from signed integer 16-bit
+ * to floating point.
+ **/
+void convert_s16_to_float(float *out,
+      const int16_t *in, size_t samples, float gain);
 
-   vcvt.s32.f32 q0, q0
-   vcvt.s32.f32 q1, q1
+/**
+ * convert_s16_to_float_init_simd:
+ *
+ * Sets up function pointers for conversion
+ * functions based on CPU features.
+ **/
+void convert_s16_to_float_init_simd(void);
 
-   vqmovn.s32 d4, q0
-   vqmovn.s32 d5, q1
-
-   vst1.f32 {d4-d5}, [r0]!
-
-   # Guaranteed to get samples in multiples of 8.
-   subs r2, r2, #8
-   bne 1b
-
-   bx lr
+RETRO_END_DECLS
 
 #endif

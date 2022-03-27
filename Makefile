@@ -156,21 +156,21 @@ else ifeq ($(platform), qnx)
    fpic := -fPIC
    SHARED := -shared -Wl,--no-undefined -Wl,--version-script=link.T
 	CC = qcc -Vgcc_ntoarmv7le
-else ifeq ($(platform), ps3)
-   TARGET := $(TARGET_NAME)_libretro_$(platform).a
-   CC = $(CELL_SDK)/host-win32/ppu/bin/ppu-lv2-gcc.exe
-   AR = $(CELL_SDK)/host-win32/ppu/bin/ppu-lv2-ar.exe
-   STATIC_LINKING = 1
-	FLAGS += -DMSB_FIRST
-	OLD_GCC = 1
-else ifeq ($(platform), sncps3)
-   TARGET := $(TARGET_NAME)_libretro_ps3.a
-   CC = $(CELL_SDK)/host-win32/sn/bin/ps3ppusnc.exe
-   AR = $(CELL_SDK)/host-win32/sn/bin/ps3snarl.exe
-   STATIC_LINKING = 1
-	FLAGS += -DMSB_FIRST
-	NO_GCC = 1
 
+# Lightweight PS3 Homebrew SDK
+else ifneq (,$(filter $(platform), ps3 psl1ght))
+	TARGET := $(TARGET_NAME)_libretro_$(platform).a
+	CC = $(PS3DEV)/ppu/bin/ppu-$(COMMONLV)gcc$(EXE_EXT)
+	AR = $(PS3DEV)/ppu/bin/ppu-$(COMMONLV)ar$(EXE_EXT)
+	STATIC_LINKING = 0
+	STATIC_LINK = 1
+	FLAGS += -DMSB_FIRST -D__PS3__
+	OLD_GCC = 1
+	HAVE_VOICE = 1
+	ifeq ($(platform), psl1ght)
+		FLAGS += -D__PSL1GHT__
+	endif
+	
 # PS2
 else ifeq ($(platform), ps2)
 	TARGET := $(TARGET_NAME)_libretro_$(platform).a
@@ -656,6 +656,8 @@ else
 all: $(TARGET)
 $(TARGET): $(OBJECTS)
 ifeq ($(STATIC_LINKING), 1)
+	$(AR) rcs $@ $(OBJECTS)
+else ifeq ($(STATIC_LINK), 1)
 	$(AR) rcs $@ $(OBJECTS)
 else
 	$(LD) $(LINKOUT)$@ $^ $(LDFLAGS) $(LIBS)

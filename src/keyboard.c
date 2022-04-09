@@ -39,7 +39,6 @@ uint8_t last_key;
 uint8_t new_int=0;	/* Is new interrupt installed */
 
 uint8_t key_done=0;
-uint8_t key_debug=0;
 
 /* TODO/FIXME - we should find a way to do a non-timer based approach and get
  * rid of the sleeping here */
@@ -250,7 +249,6 @@ uint8_t keyjoy(int jn)
 void init_keyboard(void)
 {
 	key_done=0;
-	key_debug=0;  
 
 #ifndef __LIBRETRO__ 
 	install_keyboard();	

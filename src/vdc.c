@@ -538,7 +538,6 @@ void close_display(void) {
 
 
 void window_close_hook(void){
-	key_debug=0;
 	key_done=1;
 }
 

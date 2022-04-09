@@ -23,9 +23,6 @@
 #include "cpu.h"
 #include "keyboard.h"
 #include "config.h"
-#ifdef HAVE_DEBUG
-#include "debug.h" 
-#endif
 #include "vdc.h" 
 #include "vpp.h"
 #include "voice.h"
@@ -160,23 +157,7 @@ static void setvideomode(int t)
 void run(void)
 {
    while(!key_done)
-   {
-      if (key_debug)
-      {
-         set_textmode();
-         mute_audio();
-         mute_voice();
-#ifdef HAVE_DEBUG
-         debug();
-#endif
-         grmode();
-         init_keyboard();
-         init_sound_stream();
-      }			
-
       cpu_exec();
-
-   }
    close_audio();
    close_voice();
    close_display();

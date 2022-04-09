@@ -14,7 +14,6 @@ uint8_t keyjoy(int jn);
 extern	uint8_t new_int;
 extern int NeedsPoll;
 extern uint8_t key_done;
-extern uint8_t key_debug;
 extern int joykeys[2][5];
 extern int joykeystab[128];
 extern int syskeys[8];

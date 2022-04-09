@@ -152,19 +152,6 @@ static void setvideomode(int t)
    }
 }
 
-
-
-void run(void)
-{
-   while(!key_done)
-      cpu_exec();
-   close_audio();
-   close_voice();
-   close_display();
-   close_vpp();
-}
-
-
 void handle_vbl(void)
 {
 	update_joy();

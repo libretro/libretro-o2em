@@ -89,9 +89,6 @@ void write_p1(uint8_t d);
 uint8_t read_t1(void);
 void init_system(void);
 void init_roms(void);
-void run(void);
-
-
 
 size_t savestate_size(void);
 

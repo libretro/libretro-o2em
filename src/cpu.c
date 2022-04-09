@@ -1609,8 +1609,6 @@ void cpu_exec(void)
          break;
       }
 
-      if (app_data.debug)
-         break;
       if (pc==app_data.breakpoint)
          break;
    }

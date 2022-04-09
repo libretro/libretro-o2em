@@ -570,9 +570,6 @@ void init_display(void)
    }
    memset(col,0,BMPW*BMPH);
 
-   if (!app_data.debug)
-   {
-      grmode();
-      init_keyboard();
-   }
+   grmode();
+   init_keyboard();
 }

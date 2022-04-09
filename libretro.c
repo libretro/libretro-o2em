@@ -106,16 +106,12 @@ static bool low_pass_enabled  = false;
 static int32_t low_pass_range = 0;
 static int32_t low_pass_prev  = 0;
 
-int SND;
 int RLOOP=0;
 int joystick_data[2][5]={{0,0,0,0,0},{0,0,0,0,0}};
 static uint8_t p1_index = 0;
 static uint8_t p2_index = 1;
 
 int contax, o2flag, g74flag, c52flag, jopflag, helpflag;
-
-static char scshot[MAXC],
-file_v[MAXC],scorefile[MAXC], statefile[MAXC];
 
 extern uint8_t ram[];
 
@@ -229,7 +225,7 @@ static bool load_cart(const uint8_t *data, size_t size)
    if (app_data.crc == 0x9B5E9356)
       app_data.exrom = 1;  /* Four in 1 Row! (french) */
 
-   if (((app_data.crc == 0x975AB8DA) || (app_data.crc == 0xE246A812)) && (!app_data.debug))
+   if (((app_data.crc == 0x975AB8DA) || (app_data.crc == 0xE246A812)))
    {
       log_cb(RETRO_LOG_ERROR, "[O2EM]: Loaded content is an incomplete ROM dump.\n");
       return false;
@@ -975,7 +971,6 @@ bool retro_load_game(const struct retro_game_info *info)
       return false;
    }
 
-   app_data.debug = 0;
    app_data.stick[0] = app_data.stick[1] = 1;
    app_data.sticknumber[0] = app_data.sticknumber[1] = 0;
    set_defjoykeys(0,0);
@@ -986,10 +981,8 @@ bool retro_load_game(const struct retro_game_info *info)
    app_data.sound_en = 1;
    app_data.speed = 100;
    app_data.wsize = 2;
-   app_data.fullscreen = 0;
    app_data.scanlines = 0;
    app_data.voice = 1;
-   app_data.window_title = "O2EM v" O2EM_VERSION;
    /* These volume settings have no effect
     * (they are allegro-specific) */
    app_data.svolume = 100;
@@ -1000,8 +993,6 @@ bool retro_load_game(const struct retro_game_info *info)
    app_data.exrom = 0;
    app_data.three_k = 0;
    app_data.crc = 0;
-   app_data.scshot = scshot;
-   app_data.statefile = statefile;
    app_data.openb = 0;
    app_data.vpp = 0;
    app_data.bios = 0;
@@ -1010,10 +1001,6 @@ bool retro_load_game(const struct retro_game_info *info)
    app_data.default_highscore = 0;
    app_data.breakpoint = 65535;
    app_data.megaxrom = 0;
-   strcpy(scorefile,"highscore.txt");
-#if 0
-   read_default_config();
-#endif
 
    init_audio();
 

@@ -31,7 +31,6 @@
 #define AUD_D1	  0xA8
 #define AUD_D2	  0xA9
 
-extern int SND;
 extern uint8_t soundBuffer[SOUND_BUFFER_LEN];
 
 int sound_IRQ;
@@ -124,18 +123,16 @@ void init_audio(void)
 
 void init_sound_stream(void)
 {
-#if 0
-   int vol;
-#endif
    if (app_data.sound_en)
    {
 #if 0
+      int vol;
       if (app_data.filter)
          vol = (255*app_data.svolume)/100;
       else
          vol = (255*app_data.svolume)/200;
 #endif
-      flt_a = flt_b = 0.0;
+      flt_a   = flt_b = 0.0;
       flt_prv = 0;
    }
 }
@@ -143,7 +140,6 @@ void init_sound_stream(void)
 
 void mute_audio(void)
 {
-	SND=0;
 }
 
 void close_audio(void)

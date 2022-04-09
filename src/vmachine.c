@@ -163,7 +163,6 @@ void run(void)
    {
       if (key_debug)
       {
-         app_data.debug=1;
          set_textmode();
          mute_audio();
          mute_voice();
@@ -171,7 +170,6 @@ void run(void)
          debug();
 #endif
          grmode();
-         app_data.debug=0;
          init_keyboard();
          init_sound_stream();
       }			
@@ -188,12 +186,9 @@ void run(void)
 
 void handle_vbl(void)
 {
-	if (!app_data.debug)
-   {
-		update_joy();
-		update_audio();
-		update_voice();
-	}
+	update_joy();
+	update_audio();
+	update_voice();
 	draw_region();
 	ext_IRQ();
 	mstate = 1;
@@ -210,8 +205,7 @@ void handle_evbl(void)
    master_clk -= evblclk;
    frame++;
 
-   if (!app_data.debug)
-      finish_display();
+   finish_display();
 
    if (app_data.crc == 0xA7344D1F)
    {

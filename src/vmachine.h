@@ -52,14 +52,12 @@ extern int tweakedaudio;
 
 extern struct resource {
 	int bank;
-	int debug;
 	int stick[2];
 	int sticknumber[2];
 	int limit;
 	int sound_en;
 	int speed;
 	int wsize;
-	int fullscreen;
 	int scanlines;
 	int voice;
 	int svolume;
@@ -73,13 +71,10 @@ extern struct resource {
 	int vpp;
 	int bios;
 	unsigned long crc;
-	char *window_title;
-	char *scshot;
 	int scoretype;
 	int scoreaddress;
 	int default_highscore;
 	int breakpoint;
-	char *statefile;
 } app_data;
 
 uint8_t read_P2(void);

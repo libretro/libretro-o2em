@@ -170,7 +170,6 @@ else ifneq (,$(filter $(platform), ps3 psl1ght))
 	ifeq ($(platform), psl1ght)
 		FLAGS += -D__PSL1GHT__
 	endif
-	
 # PS2
 else ifeq ($(platform), ps2)
 	TARGET := $(TARGET_NAME)_libretro_$(platform).a

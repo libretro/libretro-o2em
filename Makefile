@@ -168,7 +168,7 @@ else ifneq (,$(filter $(platform), ps3 psl1ght))
 	OLD_GCC = 1
 	HAVE_VOICE = 1
 	ifeq ($(platform), psl1ght)
-		FLAGS += -D__PSL1GHT__
+		FLAGS += -D__PSL1GHT__ -I$(PS3DEV)/ppu/include
 	endif
 # PS2
 else ifeq ($(platform), ps2)

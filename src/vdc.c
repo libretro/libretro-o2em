@@ -61,7 +61,7 @@ static long colortable[2][16]={
 /* Collision buffer */
 static uint8_t *col = NULL;
 
-static PALETTE colors,oldcol;
+static PALETTE colors;
 
 /* The pointer to the graphics buffer */
 static uint8_t *vscreen           = NULL;

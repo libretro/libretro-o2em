@@ -16,7 +16,7 @@ static const struct VKey *current_keyboard_layout = o2_kb;
 static int current_keyboard_keys = ODYSSEY2_KB_KEYS;
 
 #if defined(SUPPORT_ABGR1555)
-// Hack for PS2 that expects ABGR1555 encoded pixels
+/* Hack for PS2 that expects ABGR1555 encoded pixels */
 static uint16_t color_select = 0x03FF;
 #else
 static uint16_t color_select = 0xFFC0;
@@ -26,15 +26,14 @@ static int box_thickness = 2;
 
 void vkb_configure_virtual_keyboard(uint16_t *video_buffer, int width, int height, int pitch)
 {
-  vkb_video_buffer = video_buffer;
-  vkb_screen_width = width;
+  vkb_video_buffer  = video_buffer;
+  vkb_screen_width  = width;
   vkb_screen_height = height;
-  vkb_screen_pitch = pitch;
-  current_key = ODYSSEY2_DEFAULT_KEY;
+  vkb_screen_pitch  = pitch;
+  current_key       = ODYSSEY2_DEFAULT_KEY;
 }
 
-
-// Set the virtual keyboard transparency
+/* Set the virtual keyboard transparency */
 void vkb_set_virtual_keyboard_transparency(enum VkbAlpha alpha)
 {
   vkb_alpha = alpha;
@@ -52,14 +51,12 @@ enum VkbPosition vkb_get_virtual_keyboard_position(void)
 
 void vkb_show_virtual_keyboard(void)
 {
-  int keyb_x, keyb_y;
-  int i;
-  // Draw keyboard
-  keyb_x = (vkb_screen_width - current_kb_width) / 2;
-  keyb_y = (vkb_position == VKB_POS_DOWN) ? vkb_screen_height - current_kb_height : 0;
+  /* Draw keyboard */
+  int keyb_x = (vkb_screen_width - current_kb_width) / 2;
+  int keyb_y = (vkb_position == VKB_POS_DOWN) ? vkb_screen_height - current_kb_height : 0;
   draw_bmp(keyb_x, keyb_y, current_kb_image_data, current_kb_width, current_kb_height);
 
-  // Drawn current position
+  /* Drawn current position */
   draw_box(keyb_x+current_key->x, keyb_y+current_key->y,
            current_key->width, current_key->height, box_thickness, color_select);
 }
@@ -96,7 +93,7 @@ bool vkb_move_at(int x, int y)
   for (i = 0; i < current_keyboard_keys; i++)
   {
     const struct VKey *key = &current_keyboard_layout[i];
-    if ((key->x <= x) && (x <= key->x + key->width)
+    if (   (key->x <= x) && (x <= key->x + key->width)
         && (key->y <= y) && (y <= key->y + key->height))
     {
       current_key = key;

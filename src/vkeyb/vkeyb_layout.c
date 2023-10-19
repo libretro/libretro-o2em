@@ -26,9 +26,9 @@ const struct VKey o2_kb[ODYSSEY2_KB_KEYS] =
   { RETROK_EQUALS, 138,  44, 31, 16, &o2_kb[13], &o2_kb[15], &o2_kb[4],  &o2_kb[24] }, /* 14: = */
   { RETROK_LALT, 170,  44, 31, 16, &o2_kb[14], &o2_kb[16], &o2_kb[5],  &o2_kb[25] }, /* 15: YES */
   { RETROK_RALT, 202,  44, 31, 16, &o2_kb[15], &o2_kb[17], &o2_kb[6],  &o2_kb[26] }, /* 16: NO */
-  { RETROK_END, 234,  44, 31, 16, &o2_kb[16], &o2_kb[18], &o2_kb[7],  &o2_kb[27] }, /* 17: CLEAR */
+  { RETROK_DELETE, 234,  44, 31, 16, &o2_kb[16], &o2_kb[18], &o2_kb[7],  &o2_kb[27] }, /* 17: CLEAR */
   { RETROK_RETURN, 266,  44, 31, 16, &o2_kb[17], &o2_kb[19], &o2_kb[8],  &o2_kb[28] }, /* 18: ENTER */
-  { RETROK_UNKNOWN, 299,  44, 31, 16, &o2_kb[18], &o2_kb[10], &o2_kb[9],  &o2_kb[29] }, /* 19: RESET */
+  { RETROK_F5, 299,  44, 31, 16, &o2_kb[18], &o2_kb[10], &o2_kb[9],  &o2_kb[29] }, /* 19: RESET */
   // 3rd row (keys 20 to 29)
   { RETROK_q,   8,  87, 32, 17, &o2_kb[29], &o2_kb[21], &o2_kb[10], &o2_kb[30] }, /* 20: Q */
   { RETROK_w,  41,  87, 32, 17, &o2_kb[20], &o2_kb[22], &o2_kb[11], &o2_kb[31] }, /* 21: W */

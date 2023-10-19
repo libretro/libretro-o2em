@@ -526,7 +526,7 @@ static void update_input(void)
       key[RETROK_SPACE]    = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_SPACE);       /* Space */
       key[RETROK_QUESTION] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_QUESTION); /* ? */
       key[RETROK_PERIOD]   = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_PERIOD);     /* . */
-      key[RETROK_END]      = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_END);           /* "Clear" */
+      key[RETROK_DELETE]   = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_END);           /* "Clear" */
       key[RETROK_RETURN]   = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_RETURN);     /* "Enter" */
       key[RETROK_MINUS]    = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_MINUS);       /* - */
       key[RETROK_ASTERISK] = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_ASTERISK); /* Multiply sign */
@@ -538,6 +538,13 @@ static void update_input(void)
 done:
    /* Virtual keyboard management */
    update_input_virtual_keyboard(joypad_bits[0]);
+
+   /* Take into account RESET being pressed (F5 is O2EM original setting )*/
+   if (key[RETROK_F5] || input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_F5))
+   {
+       retro_reset();
+       key[RETROK_F5] = 0;
+   }	
 }
 
 static void upate_audio(void)

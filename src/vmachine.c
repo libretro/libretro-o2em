@@ -485,7 +485,7 @@ uint8_t read_P2(void)
             int km = key_map[si][i];
             //FIXME
             if (km > 127 && key[km])
-                so = i & 0x07;
+                so = i ^ 0x07;
             else if ( key[km] && (!joykeystab[km]))
                 so = i ^ 0x07;
          }

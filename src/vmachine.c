@@ -133,7 +133,7 @@ static unsigned int key_map[6][8]= {
       RETROK_EQUALS,
       RETROK_y,
       RETROK_n,
-      RETROK_END,
+      RETROK_DELETE,
       RETROK_RETURN
    }
 };
@@ -484,8 +484,10 @@ uint8_t read_P2(void)
          {
             int km = key_map[si][i];
             //FIXME
-            if ( key[km] && (!joykeystab[km]))
-               so = i ^ 0x07;
+            if (km > 127 && key[km])
+                so = i ^ 0x07;
+            else if ( key[km] && (!joykeystab[km]))
+                so = i ^ 0x07;
          }
       }
       if (so != 0xff)

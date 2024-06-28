@@ -209,6 +209,7 @@ else ifneq (,$(filter $(platform), ngc wii wiiu))
 	TARGET := $(TARGET_NAME)_libretro_$(platform).$(EXT)
 	CC = $(DEVKITPPC)/bin/powerpc-eabi-gcc$(EXE_EXT)
 	AR = $(DEVKITPPC)/bin/powerpc-eabi-ar$(EXE_EXT)
+	DEFINES := -ffunction-sections -fdata-sections -D__wiiu__ -D__wut__
 	STATIC_LINKING=1
 	HAVE_VOICE = 0
 

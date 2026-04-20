@@ -61,48 +61,56 @@ static void filter(unsigned char *buffer, unsigned long len)
 	flt_prv = buf[len-1];
 }
 
-void audio_process(unsigned char *buffer)
-{
-   unsigned long aud_data = (VDCwrite[AUD_D2] | 
-         (VDCwrite[AUD_D1] << 8) | (VDCwrite[AUD_D0] << 16));
+void audio_process(unsigned char *buffer){
 
-   int intena = VDCwrite[0xA0] & 0x04;
-   int pnt    = 0;
-   int cnt    = 0;
+	unsigned long old_aud_data, aud_data;
+	int pos, pnt, cnt, period, noise, enabled, volume;
+	pnt = cnt = 0;
 
-   int noise = VDCwrite[AUD_CTRL] & 0x10;
-   int enabled = VDCwrite[AUD_CTRL] & 0x80;
-   int rndbit = (enabled && noise) ? (rand()%2) : 0;
+	noise = VDCwrite[AUD_CTRL] & 0x10;
+	enabled = VDCwrite[AUD_CTRL] & 0x80;
 
-   while (pnt < SOUND_BUFFER_LEN)
-   {
-      int period, re_circ;
+	/* Generate the aud_data */
+	old_aud_data = aud_data = VDCwrite[AUD_D2] | (VDCwrite[AUD_D1] << 8) | (VDCwrite[AUD_D0] << 16);
 
-      int pos = (tweakedaudio) ? (pnt/3) : (MAXLINES-1);
-      int volume = AudioVector[pos] & 0x0F;
-      enabled = AudioVector[pos] & 0x80;
-      period = (AudioVector[pos] & 0x20) ? PERIOD1 : PERIOD2;
-      re_circ = AudioVector[pos] & 0x40;
+	if(enabled)  /* Sound is enabled */
+	{
+		for( pnt = 0; pnt < SOUND_BUFFER_LEN; pnt++)
+		{
+			pos = (tweakedaudio) ? (pnt/3) : (MAXLINES-1);
+			volume = AudioVector[pos] & 0x0F;
+			buffer[pnt] = (aud_data & 0x01) * (0x10 * volume);
+			period = (AudioVector[pos] & 0x20) ? PERIOD1 : PERIOD2;
+			enabled = AudioVector[pos] & 0x80;
+			if( ++cnt >= period )
+			{
+				cnt = 0;
+				aud_data = ((aud_data >> 1) | ((aud_data & 1) << 23));
+				/* Check if noise should be applied */
+				if (noise)
+				{
+					/* Noise tap is on bits 0 and 5 and fed back to bits 15 (and 23!) */
+					unsigned long new_bit = ( ( old_aud_data ) ^ ( old_aud_data >> 5 ) ) & 0x01;
+					aud_data = ( old_aud_data & 0xFF0000 ) | ( ( old_aud_data & 0xFFFF ) >> 1 ) | ( new_bit << 15 ) | ( new_bit << 23 );
+				}
+				VDCwrite[AUD_D2] = aud_data & 0xFF;
+				VDCwrite[AUD_D1] = ( aud_data >> 8 ) & 0xFF;
+				VDCwrite[AUD_D0] = ( aud_data >> 16 ) & 0xFF;
+				old_aud_data = aud_data;
 
-      buffer[pnt++] = (enabled) ? ((aud_data & 0x01)^rndbit) * (0x10 * volume) : 0;
-      cnt++;
+			}
 
-      if (cnt >= period)
-      {
-         cnt=0;
-         aud_data = (re_circ) ? ((aud_data >> 1) | ((aud_data & 1) << 23)) : (aud_data >> 1);
-         rndbit = (enabled && noise) ? (rand()%2) : 0;
-
-         if (enabled && intena && (!sound_IRQ))
-         {
-            sound_IRQ = 1;
-            ext_IRQ();
-         }		
-      }
-   }
-
-   if (app_data.filter)
-      filter(buffer, SOUND_BUFFER_LEN);	
+		}
+	}
+	else
+	{
+		/* Sound disabled, so clear the buffer */
+		for( pnt = 0; pnt < SOUND_BUFFER_LEN; pnt++)
+		{
+			buffer[pnt] = 0;
+		}
+	}
+	if (app_data.filter) filter(buffer, SOUND_BUFFER_LEN);
 }
 
 
@@ -146,5 +154,6 @@ void close_audio(void)
 {
 	app_data.sound_en=0;
 }
+
 
 

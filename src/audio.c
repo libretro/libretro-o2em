@@ -35,6 +35,8 @@ extern uint8_t soundBuffer[SOUND_BUFFER_LEN];
 
 int sound_IRQ;
 
+static int snd_shift_count;
+
 static double flt_a=0.0, flt_b=0.0;
 static unsigned char flt_prv = 0;
 
@@ -70,39 +72,57 @@ void audio_process(unsigned char *buffer)
    int pnt    = 0;
    int cnt    = 0;
 
-   int noise = VDCwrite[AUD_CTRL] & 0x10;
-   int enabled = VDCwrite[AUD_CTRL] & 0x80;
-   int rndbit = (enabled && noise) ? (rand()%2) : 0;
-
    while (pnt < SOUND_BUFFER_LEN)
    {
-      int period, re_circ;
+      int pos     = (tweakedaudio) ? (pnt/3) : (MAXLINES-1);
+      int volume  = AudioVector[pos] & 0x0F;
+      int enabled = AudioVector[pos] & 0x80;
+      int period  = (AudioVector[pos] & 0x20) ? PERIOD1 : PERIOD2;
 
-      int pos = (tweakedaudio) ? (pnt/3) : (MAXLINES-1);
-      int volume = AudioVector[pos] & 0x0F;
-      enabled = AudioVector[pos] & 0x80;
-      period = (AudioVector[pos] & 0x20) ? PERIOD1 : PERIOD2;
-      re_circ = AudioVector[pos] & 0x40;
-
-      buffer[pnt++] = (enabled) ? ((aud_data & 0x01)^rndbit) * (0x10 * volume) : 0;
+      buffer[pnt++] = (enabled) ? (aud_data & 0x01) * (0x10 * volume) : 0;
       cnt++;
 
       if (cnt >= period)
       {
-         cnt=0;
-         aud_data = (re_circ) ? ((aud_data >> 1) | ((aud_data & 1) << 23)) : (aud_data >> 1);
-         rndbit = (enabled && noise) ? (rand()%2) : 0;
+         /* i8244 24-bit sound shift register, verified against MAME
+          * i8244.cpp: the output bit recirculates into bit 23
+          * unconditionally (control register bit 0x40 is not connected
+          * on real hardware); in noise mode the tap is on bits 0 and 5
+          * (pre-shift) and the feedback is also fed to bit 15. */
+         unsigned long feedback = aud_data & 0x01;
 
-         if (enabled && intena && (!sound_IRQ))
+         cnt = 0;
+         aud_data >>= 1;
+
+         if (AudioVector[pos] & 0x10)
          {
-            sound_IRQ = 1;
-            ext_IRQ();
-         }		
+            feedback ^= (aud_data >> 4) & 0x01; /* pre-shift bit 5 */
+            aud_data  = (aud_data & ~0x8000UL) | (feedback << 15);
+         }
+
+         aud_data |= feedback << 23;
+
+         /* the hardware raises the sound interrupt every 24 shift
+          * register clocks when enabled via control register bit 2 */
+         if (++snd_shift_count >= 24)
+         {
+            snd_shift_count = 0;
+            if (intena && (!sound_IRQ))
+            {
+               sound_IRQ = 1;
+               ext_IRQ();
+            }
+         }
       }
    }
 
+   /* shift register state persists in the VDC registers across frames */
+   VDCwrite[AUD_D2] = aud_data & 0xFF;
+   VDCwrite[AUD_D1] = (aud_data >> 8) & 0xFF;
+   VDCwrite[AUD_D0] = (aud_data >> 16) & 0xFF;
+
    if (app_data.filter)
-      filter(buffer, SOUND_BUFFER_LEN);	
+      filter(buffer, SOUND_BUFFER_LEN);
 }
 
 
@@ -115,7 +135,8 @@ void update_audio(void)
 
 void init_audio(void)
 {
-   sound_IRQ=0;		
+   sound_IRQ=0;
+   snd_shift_count=0;
    if ((app_data.sound_en) || (app_data.voice))
       init_sound_stream();
 }

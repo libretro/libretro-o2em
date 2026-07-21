@@ -557,10 +557,16 @@ uint8_t ext_read(uint16_t adr){
 					if (y_latch > 241) y_latch=0xFF;
 					return y_latch;
 				}
+			case 0x02:
+			case 0x06:
+			case 0x0A:
+			case 0x0E:
+			case 0xA3:
 			case 0xA7:
 			case 0xA8:
 			case 0xA9:
-				/* sound shift registers are write-only (MAME i8244) */
+				/* write-only registers: minor system color, VDC color
+				 * and sound shift registers read as 0 (MAME i8244) */
 				return 0;
 			default:
 				return VDCwrite[adr];

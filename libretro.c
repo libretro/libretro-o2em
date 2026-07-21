@@ -90,11 +90,12 @@ static bool crop_overscan = false;
  * (used for The Voice, and for general resampling
  * in the RetroArch frontend) performs abominably,
  * creating unacceptable levels of noise and
- * distortion. We therefore only use two thirds
- * of the internally generated samples (704 per
- * frame), which reduces NTSC/PAL sample rates to
- * 42240/35200 Hz. This greatly improves resampling
- * performance and final output sound quality. */
+ * distortion. We therefore decimate to two thirds
+ * of the internal rate (704 samples per frame,
+ * 42240/35200 Hz for NTSC/PAL) at uniform output
+ * positions; see upate_audio(). This greatly
+ * improves resampling performance and final
+ * output sound quality. */
 #define AUDIO_SAMPLES_PER_FRAME ((SOUND_BUFFER_LEN * 2) / 3)
 #define AUDIO_SAMPLERATE (AUDIO_SAMPLES_PER_FRAME * fps)
 
@@ -575,43 +576,34 @@ static void upate_audio(void)
       int32_t factor_a = low_pass_range;
       int32_t factor_b = 0x10000 - factor_a;
 
-      for(i = 1; i <= SOUND_BUFFER_LEN; i++)
+      for(i = 0; i < SOUND_BUFFER_LEN; i += 3)
       {
-         int16_t sample16;
+         /* 3:2 decimation to 2/3 of the internal rate for resampler
+          * performance, at uniform output positions: each triplet
+          * (a,b,c) emits a and (b+c)/2, the exact positions 0 and 1.5,
+          * so decimation adds no timing jitter. Samples are unipolar
+          * with 0 as silence (see audio_process()); scale from zero so
+          * silence stays at 0. Peak at 100% volume is +30720. */
+         int32_t s[2];
+         size_t k;
+         s[0] = audio_samples_ptr[0];
+         s[1] = (audio_samples_ptr[1] + audio_samples_ptr[2] + 1) >> 1;
+         audio_samples_ptr += 3;
 
-         /* For improved resampler performance, we
-          * reduce the internal sample rate to 2/3
-          * of its original value. Odyssey2/Videopac
-          * audio is so primitive that we can simply
-          * skip every third sample with no perceivable
-          * reduction in sound quality. */
-         if ((i % 3) == 0)
+         for (k = 0; k < 2; k++)
          {
-            audio_samples_ptr++;
-            continue;
+            int16_t sample16 = (int16_t)((s[k] * audio_volume * 128) / 100);
+
+            /* Apply low-pass filter */
+            low_pass = (low_pass * factor_a) + (sample16 * factor_b);
+
+            /* 16.16 fixed point */
+            low_pass >>= 16;
+
+            /* Update output buffer */
+            *(audio_out_ptr++) = (int16_t)low_pass;
+            *(audio_out_ptr++) = (int16_t)low_pass;
          }
-
-         /* Get current sample */
-         /* The o2em sound buffer is unipolar with 0 as the silence
-          * level (see audio_process()), not 128-centred unsigned PCM.
-          * Scale from zero so silence stays at 0: the old conversion
-          * parked silence on the -32768 rail with a large DC offset,
-          * which half-wave clipped The Voice at the mixer clamp and
-          * caused resampler clipping at 0 dB master volume. Peak
-          * amplitude at 100%% volume is +30720, matching the old
-          * peak-to-peak level. */
-         sample16  = (int16_t)((((int32_t)*(audio_samples_ptr++)) *
-               audio_volume * 128) / 100);
-
-         /* Apply low-pass filter */
-         low_pass = (low_pass * factor_a) + (sample16 * factor_b);
-
-         /* 16.16 fixed point */
-         low_pass >>= 16;
-
-         /* Update output buffer */
-         *(audio_out_ptr++) = (int16_t)low_pass;
-         *(audio_out_ptr++) = (int16_t)low_pass;
       }
 
       /* Save last sample for next frame */
@@ -619,30 +611,21 @@ static void upate_audio(void)
    }
    else
    {
-      for(i = 1; i <= SOUND_BUFFER_LEN; i++)
+      for(i = 0; i < SOUND_BUFFER_LEN; i += 3)
       {
-         int16_t sample16;
+         /* 3:2 decimation at uniform output positions, as above */
+         int32_t s[2];
+         size_t k;
+         s[0] = audio_samples_ptr[0];
+         s[1] = (audio_samples_ptr[1] + audio_samples_ptr[2] + 1) >> 1;
+         audio_samples_ptr += 3;
 
-         if ((i % 3) == 0)
+         for (k = 0; k < 2; k++)
          {
-            audio_samples_ptr++;
-            continue;
+            int16_t sample16 = (int16_t)((s[k] * audio_volume * 128) / 100);
+            *(audio_out_ptr++) = (int16_t)sample16;
+            *(audio_out_ptr++) = (int16_t)sample16;
          }
-
-         /* Get current sample */
-         /* The o2em sound buffer is unipolar with 0 as the silence
-          * level (see audio_process()), not 128-centred unsigned PCM.
-          * Scale from zero so silence stays at 0: the old conversion
-          * parked silence on the -32768 rail with a large DC offset,
-          * which half-wave clipped The Voice at the mixer clamp and
-          * caused resampler clipping at 0 dB master volume. Peak
-          * amplitude at 100%% volume is +30720, matching the old
-          * peak-to-peak level. */
-         sample16  = (int16_t)((((int32_t)*(audio_samples_ptr++)) *
-               audio_volume * 128) / 100);
-
-         *(audio_out_ptr++) = (int16_t)sample16;
-         *(audio_out_ptr++) = (int16_t)sample16;
       }
    }
 

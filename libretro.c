@@ -100,7 +100,7 @@ static bool crop_overscan = false;
 
 uint8_t soundBuffer[SOUND_BUFFER_LEN];
 static int16_t audioOutBuffer[AUDIO_SAMPLES_PER_FRAME * 2];
-static int16_t audio_volume   = 50;
+static int16_t audio_volume   = 100;
 static float voice_volume     = 0.7f;
 static bool low_pass_enabled  = false;
 static int32_t low_pass_range = 0;
@@ -592,8 +592,16 @@ static void upate_audio(void)
          }
 
          /* Get current sample */
-         sample16  = (((*(audio_samples_ptr++) * audio_volume) /
-               100) - 128) << 8;
+         /* The o2em sound buffer is unipolar with 0 as the silence
+          * level (see audio_process()), not 128-centred unsigned PCM.
+          * Scale from zero so silence stays at 0: the old conversion
+          * parked silence on the -32768 rail with a large DC offset,
+          * which half-wave clipped The Voice at the mixer clamp and
+          * caused resampler clipping at 0 dB master volume. Peak
+          * amplitude at 100%% volume is +30720, matching the old
+          * peak-to-peak level. */
+         sample16  = (int16_t)((((int32_t)*(audio_samples_ptr++)) *
+               audio_volume * 128) / 100);
 
          /* Apply low-pass filter */
          low_pass = (low_pass * factor_a) + (sample16 * factor_b);
@@ -622,8 +630,16 @@ static void upate_audio(void)
          }
 
          /* Get current sample */
-         sample16  = (((*(audio_samples_ptr++) * audio_volume) /
-               100) - 128) << 8;
+         /* The o2em sound buffer is unipolar with 0 as the silence
+          * level (see audio_process()), not 128-centred unsigned PCM.
+          * Scale from zero so silence stays at 0: the old conversion
+          * parked silence on the -32768 rail with a large DC offset,
+          * which half-wave clipped The Voice at the mixer clamp and
+          * caused resampler clipping at 0 dB master volume. Peak
+          * amplitude at 100%% volume is +30720, matching the old
+          * peak-to-peak level. */
+         sample16  = (int16_t)((((int32_t)*(audio_samples_ptr++)) *
+               audio_volume * 128) / 100);
 
          *(audio_out_ptr++) = (int16_t)sample16;
          *(audio_out_ptr++) = (int16_t)sample16;
@@ -1220,7 +1236,7 @@ static void check_variables(bool startup)
    /* Audio Volume */
    var.key      = "o2em_audio_volume";
    var.value    = NULL;
-   audio_volume = 50;
+   audio_volume = 100;
 
    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
    {
@@ -1232,7 +1248,6 @@ static void check_variables(bool startup)
    /* > Since we are not using the internal audio
     *   filter, volume must be divided by a factor
     *   of two */
-   audio_volume = audio_volume >> 1;
 
    /* Voice Volume */
    var.key      = "o2em_voice_volume";

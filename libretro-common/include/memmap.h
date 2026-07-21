@@ -1,7 +1,7 @@
 /* Copyright  (C) 2010-2020 The RetroArch team
  *
  * ---------------------------------------------------------------------------------------
- * The following license statement only applies to this file (intrinsics.h).
+ * The following license statement only applies to this file (memmap.h).
  * ---------------------------------------------------------------------------------------
  *
  * Permission is hereby granted, free of charge,
@@ -20,80 +20,33 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef __LIBRETRO_SDK_COMPAT_INTRINSICS_H
-#define __LIBRETRO_SDK_COMPAT_INTRINSICS_H
+#ifndef _LIBRETRO_MEMMAP_H
+#define _LIBRETRO_MEMMAP_H
 
+#include <stdio.h>
 #include <stdint.h>
-#include <stddef.h>
-#include <string.h>
 
-#include <retro_common_api.h>
-#include <retro_inline.h>
-
-#if defined(_MSC_VER) && !defined(_XBOX)
-#if (_MSC_VER > 1310)
-#include <intrin.h>
-#endif
-#endif
-
-RETRO_BEGIN_DECLS
-
-/* Count Leading Zero, unsigned 16bit input value */
-static INLINE unsigned compat_clz_u16(uint16_t val)
-{
-#if defined(__GNUC__)
-   return __builtin_clz(val << 16 | 0x8000);
+#if defined(PSP) || defined(PS2) || defined(GEKKO) || defined(VITA) || defined(_XBOX) || defined(_3DS) || defined(WIIU) || defined(SWITCH) || defined(HAVE_LIBNX) || defined(__PS3__) || defined(__PSL1GHT__)
+/* No mman available */
+#elif defined(_WIN32) && !defined(_XBOX)
+#include <windows.h>
+#include <errno.h>
+#include <io.h>
 #else
-   unsigned ret = 0;
-
-   while(!(val & 0x8000) && ret < 16)
-   {
-      val <<= 1;
-      ret++;
-   }
-
-   return ret;
+#define HAVE_MMAN
+#include <sys/mman.h>
 #endif
-}
 
-/* Count Trailing Zero */
-static INLINE int compat_ctz(unsigned x)
-{
-#if defined(__GNUC__) && !defined(RARCH_CONSOLE)
-   return __builtin_ctz(x);
-#elif _MSC_VER >= 1400 && !defined(_XBOX) && !defined(__WINRT__)
-   unsigned long r = 0;
-   _BitScanForward((unsigned long*)&r, x);
-   return (int)r;
-#else
-   int count = 0;
-   if (!(x & 0xffff))
-   {
-      x >>= 16;
-      count |= 16;
-   }
-   if (!(x & 0xff))
-   {
-      x >>= 8;
-      count |= 8;
-   }
-   if (!(x & 0xf))
-   {
-      x >>= 4;
-      count |= 4;
-   }
-   if (!(x & 0x3))
-   {
-      x >>= 2;
-      count |= 2;
-   }
-   if (!(x & 0x1))
-      count |= 1;
+#if !defined(HAVE_MMAN) || defined(_WIN32)
+void* mmap(void *addr, size_t len, int mmap_prot, int mmap_flags, int fildes, size_t off);
 
-   return count;
+int munmap(void *addr, size_t len);
+
+int mprotect(void *addr, size_t len, int prot);
 #endif
-}
 
-RETRO_END_DECLS
+int memsync(void *start, void *end);
+
+int memprotect(void *addr, size_t len);
 
 #endif

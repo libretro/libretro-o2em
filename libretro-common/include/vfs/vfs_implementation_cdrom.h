@@ -1,7 +1,7 @@
 /* Copyright  (C) 2010-2020 The RetroArch team
  *
  * ---------------------------------------------------------------------------------------
- * The following license statement only applies to this file (compat_snprintf.c).
+ * The following license statement only applies to this file (vfs_implementation_cdrom.h).
  * ---------------------------------------------------------------------------------------
  *
  * Permission is hereby granted, free of charge,
@@ -20,58 +20,33 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-/* THIS FILE HAS NOT BEEN VALIDATED ON PLATFORMS BESIDES MSVC */
-#ifdef _MSC_VER
+#ifndef __LIBRETRO_SDK_VFS_IMPLEMENTATION_CDROM_H
+#define __LIBRETRO_SDK_VFS_IMPLEMENTATION_CDROM_H
 
-#include <stdio.h>
-#include <stdarg.h>
+#include <vfs/vfs.h>
+#include <cdrom/cdrom.h>
 
-#if _MSC_VER < 1800
-#define va_copy(dst, src) ((dst) = (src))
-#endif
+RETRO_BEGIN_DECLS
 
-#if _MSC_VER < 1300
-#define _vscprintf c89_vscprintf_retro__
+int64_t retro_vfs_file_seek_cdrom(libretro_vfs_implementation_file *stream, int64_t offset, int whence);
 
-static int c89_vscprintf_retro__(const char *fmt, va_list pargs)
-{
-   int _len;
-   va_list argcopy;
-   va_copy(argcopy, pargs);
-   _len = vsnprintf(NULL, 0, fmt, argcopy);
-   va_end(argcopy);
-   return _len;
-}
-#endif
+void retro_vfs_file_open_cdrom(
+      libretro_vfs_implementation_file *stream,
+      const char *path, unsigned mode, unsigned hints);
 
-/* http://stackoverflow.com/questions/2915672/snprintf-and-visual-studio-2010 */
+int retro_vfs_file_close_cdrom(libretro_vfs_implementation_file *stream);
 
-int c99_vsnprintf_retro__(char *s, size_t len, const char *fmt, va_list ap)
-{
-   int _len = -1;
-   if (len != 0)
-   {
-#if (_MSC_VER <= 1310)
-      _len = _vsnprintf(s, len - 1, fmt, ap);
-#else
-      _len = _vsnprintf_s(s, len, len - 1, fmt, ap);
-#endif
-   }
-   if (_len == -1)
-       _len = _vscprintf(fmt, ap);
-   /* there was no room for a NULL, so truncate the last character */
-   if (_len == len && len)
-      s[len - 1] = '\0';
-   return _len;
-}
+int64_t retro_vfs_file_tell_cdrom(libretro_vfs_implementation_file *stream);
 
-int c99_snprintf_retro__(char *s, size_t len, const char *fmt, ...)
-{
-   int _len;
-   va_list ap;
-   va_start(ap, fmt);
-   _len = c99_vsnprintf_retro__(s, len, fmt, ap);
-   va_end(ap);
-   return _len;
-}
+int64_t retro_vfs_file_read_cdrom(libretro_vfs_implementation_file *stream,
+      void *s, uint64_t len);
+
+int retro_vfs_file_error_cdrom(libretro_vfs_implementation_file *stream);
+
+const cdrom_toc_t* retro_vfs_file_get_cdrom_toc(void);
+
+const vfs_cdrom_t* retro_vfs_file_get_cdrom_position(const libretro_vfs_implementation_file *stream);
+
+RETRO_END_DECLS
+
 #endif

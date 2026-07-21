@@ -514,6 +514,8 @@ uint8_t ext_read(uint16_t adr){
 
 	if (!(p1 & 0x08) && !(p1 & 0x40)) {
 		/* Handle VDC Read */
+		/* registers A0-AF are mirrored at B0-BF (MAME i8244) */
+		if ((adr & 0xE0) == 0xA0) adr &= ~0x10;
 		switch(adr) {
 			case 0xA1:
 				d = VDCwrite[0xA0] & 0x02;
@@ -647,6 +649,9 @@ void ext_write(uint8_t dat, uint16_t adr)
    if (!(p1 & 0x08))
    {
       /* Handle VDC Write */		
+      /* registers A0-AF are mirrored at B0-BF (MAME i8244) */
+      if ((adr & 0xE0) == 0xA0)
+         adr &= ~0x10;
       if (adr == 0xA0)
       {
          if ((VDCwrite[0xA0] & 0x02) && !(dat & 0x02))

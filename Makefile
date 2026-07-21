@@ -53,7 +53,13 @@ ifeq ($(platform), unix)
    TARGET := $(TARGET_NAME)_libretro.so
    fpic := -fPIC
    SHARED := -shared -Wl,--no-undefined -Wl,--version-script=link.T
+   # 64-bit off_t on 32-bit hosts: without this, stat() returns
+   # EOVERFLOW for files whose metadata does not fit 32 bits (seen on
+   # 32-bit ARM against rclone/FUSE mounts of the Internet Archive,
+   # #60) and ftello() truncates
+   FLAGS += -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE
 else ifeq ($(platform), linux-portable)
+   FLAGS += -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE
    TARGET := $(TARGET_NAME)_libretro.so
    fpic := -fPIC -nostdlib
    SHARED := -shared -Wl,--version-script=link.T

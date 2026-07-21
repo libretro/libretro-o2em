@@ -534,6 +534,11 @@ void close_display(void) {
    if (col)
       free(col);
    col = NULL;
+   destroy_bitmap(bmp);
+   destroy_bitmap(bmpcache);
+   bmp      = NULL;
+   bmpcache = NULL;
+   vscreen  = NULL;
 }
 
 
@@ -553,6 +558,14 @@ void display_bg(void)
 void init_display(void)
 {
    create_cmap();
+
+   /* idempotent: repeated retro_load_game calls re-init the display,
+    * so tear down any previous allocation first */
+   destroy_bitmap(bmp);
+   destroy_bitmap(bmpcache);
+   if (col)
+      free(col);
+
    bmp = create_bitmap(BMPW,BMPH);
    bmpcache = create_bitmap(BMPW,BMPH);
 
@@ -563,10 +576,7 @@ void init_display(void)
 
    col = (uint8_t *)malloc(BMPW*BMPH);
    if (!col)
-   {
-      free(vscreen);
       exit(EXIT_FAILURE);
-   }
    memset(col,0,BMPW*BMPH);
 
    grmode();

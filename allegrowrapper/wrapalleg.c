@@ -23,6 +23,11 @@ ALLEGRO_BITMAP *create_bitmap(int w,int h)
       return NULL;
 
    buff->line   = malloc(1*w*h);
+   if (!buff->line)
+   {
+      free(buff);
+      return NULL;
+   }
 
    buff->w      = w;
    buff->h      = h;

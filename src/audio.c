@@ -35,7 +35,7 @@ extern uint8_t soundBuffer[SOUND_BUFFER_LEN];
 
 int sound_IRQ;
 
-static int snd_shift_count;
+int snd_shift_count;
 
 static double flt_a=0.0, flt_b=0.0;
 static unsigned char flt_prv = 0;

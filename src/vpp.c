@@ -508,3 +508,42 @@ void close_vpp(void)
 		free(colplus);
 	colplus = NULL;
 }
+
+size_t vpp_state_size(void)
+{
+   return 2 + 3*4 + 1 + 3*4 + 1 + sizeof(dchars) + sizeof(vpp_mem) + 4*4;
+}
+
+#define VPP_S_I32(v) { int32_t tmp_ = (int32_t)(v); memcpy(data+offset, &tmp_, 4); offset += 4; }
+#define VPP_L_I32(v) { int32_t tmp_; memcpy(&tmp_, data+offset, 4); (v) = tmp_; offset += 4; }
+
+size_t vpp_state_save(uint8_t *data)
+{
+   size_t offset = 0;
+   data[offset++] = LumReg;
+   data[offset++] = TraReg;
+   VPP_S_I32(vppon); VPP_S_I32(vpp_cx); VPP_S_I32(vpp_cy);
+   data[offset++] = vpp_data;
+   VPP_S_I32(inc_curs); VPP_S_I32(slice); VPP_S_I32(vpp_y0);
+   data[offset++] = vpp_r;
+   memcpy(data+offset, dchars, sizeof(dchars));  offset += sizeof(dchars);
+   memcpy(data+offset, vpp_mem, sizeof(vpp_mem)); offset += sizeof(vpp_mem);
+   VPP_S_I32(frame_cnt); VPP_S_I32(blink_st); VPP_S_I32(slicemode); VPP_S_I32(need_update);
+   return offset;
+}
+
+size_t vpp_state_load(const uint8_t *data)
+{
+   size_t offset = 0;
+   LumReg = data[offset++];
+   TraReg = data[offset++];
+   VPP_L_I32(vppon); VPP_L_I32(vpp_cx); VPP_L_I32(vpp_cy);
+   vpp_data = data[offset++];
+   VPP_L_I32(inc_curs); VPP_L_I32(slice); VPP_L_I32(vpp_y0);
+   vpp_r = data[offset++];
+   memcpy(dchars, data+offset, sizeof(dchars));  offset += sizeof(dchars);
+   memcpy(vpp_mem, data+offset, sizeof(vpp_mem)); offset += sizeof(vpp_mem);
+   VPP_L_I32(frame_cnt); VPP_L_I32(blink_st); VPP_L_I32(slicemode); VPP_L_I32(need_update);
+   need_update = 1;
+   return offset;
+}

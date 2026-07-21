@@ -12,4 +12,8 @@ void init_vpp(void);
 void close_vpp(void);
 void load_colplus(uint8_t *col);
 
+size_t vpp_state_size(void);
+size_t vpp_state_save(uint8_t *data);
+size_t vpp_state_load(const uint8_t *data);
+
 #endif

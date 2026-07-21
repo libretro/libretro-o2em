@@ -11,6 +11,7 @@ void mute_audio(void);
 
 
 extern int sound_IRQ;
+extern int snd_shift_count;
 
 
 #endif

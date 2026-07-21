@@ -773,7 +773,7 @@ int snapline(int pos, uint8_t reg, int t)
 	return pos;
 }
 
-size_t savestate_size(void)
+static size_t savestate_legacy_size(void)
 {
    return sizeof(app_data.crc) +
       sizeof(app_data.bios) +
@@ -799,6 +799,28 @@ size_t savestate_size(void)
       sizeof(xirq_pend) +
       sizeof(tirq_pend);
 }
+
+size_t savestate_size(void)
+{
+   return savestate_legacy_size() +
+      /* extended state block (magic "O2S2") */
+      4 +                    /* magic */
+      4 +                    /* acc, itimer, t_flag, f1 */
+      8 * 4 +                /* clk, master_count, master_clk, h_clk,
+                                int_clk, mstate, last_line, frame */
+      4 +                    /* romlatch */
+      4 +                    /* clk_counter */
+      5 +                    /* line_count, x_latch, y_latch, dbstick1/2 */
+      2 * 4 +                /* sound_IRQ, snd_shift_count */
+      MAXLINES +             /* ColorVector */
+      MAXLINES +             /* AudioVector */
+      vpp_state_size();
+}
+
+#define ST_S_U8(v)  { data[offset++] = (uint8_t)(v); }
+#define ST_S_I32(v) { int32_t tmp_ = (int32_t)(v); memcpy(data+offset, &tmp_, 4); offset += 4; }
+#define ST_L_U8(v)  { (v) = data[offset++]; }
+#define ST_L_I32(v) { int32_t tmp_; memcpy(&tmp_, data+offset, 4); (v) = tmp_; offset += 4; }
 
 bool savestate_to_mem(uint8_t *data, size_t size)
 {
@@ -852,6 +874,23 @@ bool savestate_to_mem(uint8_t *data, size_t size)
    memcpy(data+offset, &xirq_pend, sizeof(xirq_pend));
    offset += sizeof(xirq_pend);
    memcpy(data+offset, &tirq_pend, sizeof(tirq_pend));
+   offset += sizeof(tirq_pend);
+
+   /* extended state block */
+   data[offset++] = 'O'; data[offset++] = '2';
+   data[offset++] = 'S'; data[offset++] = '2';
+   ST_S_U8(acc); ST_S_U8(itimer); ST_S_U8(t_flag); ST_S_U8(f1);
+   ST_S_I32(clk); ST_S_I32(master_count);
+   ST_S_I32(master_clk); ST_S_I32(h_clk); ST_S_I32(int_clk);
+   ST_S_I32(mstate); ST_S_I32(last_line); ST_S_I32(frame);
+   ST_S_I32(romlatch);
+   ST_S_I32(clk_counter);
+   ST_S_U8(line_count); ST_S_U8(x_latch); ST_S_U8(y_latch);
+   ST_S_U8(dbstick1); ST_S_U8(dbstick2);
+   ST_S_I32(sound_IRQ); ST_S_I32(snd_shift_count);
+   memcpy(data+offset, ColorVector, MAXLINES); offset += MAXLINES;
+   memcpy(data+offset, AudioVector, MAXLINES); offset += MAXLINES;
+   offset += vpp_state_save(data+offset);
 
    return true;
 }
@@ -862,7 +901,7 @@ bool loadstate_from_mem(const uint8_t *data, size_t size)
    int bios          = app_data.bios;
    unsigned long crc = app_data.crc;
 
-   if (size < savestate_size())
+   if (size < savestate_legacy_size())
       return false;
 
    memcpy(&app_data.crc, data+offset, sizeof(app_data.crc));
@@ -926,6 +965,37 @@ bool loadstate_from_mem(const uint8_t *data, size_t size)
    memcpy(&xirq_pend, data+offset, sizeof(xirq_pend));
    offset += sizeof(xirq_pend);
    memcpy(&tirq_pend, data+offset, sizeof(tirq_pend));
+   offset += sizeof(tirq_pend);
+
+   /* extended state block: absent in legacy states, which end here */
+   if ((size >= savestate_size())
+         && (data[offset]   == 'O') && (data[offset+1] == '2')
+         && (data[offset+2] == 'S') && (data[offset+3] == '2'))
+   {
+      offset += 4;
+      ST_L_U8(acc); ST_L_U8(itimer); ST_L_U8(t_flag); ST_L_U8(f1);
+      ST_L_I32(clk); ST_L_I32(master_count);
+      ST_L_I32(master_clk); ST_L_I32(h_clk); ST_L_I32(int_clk);
+      ST_L_I32(mstate); ST_L_I32(last_line); ST_L_I32(frame);
+      ST_L_I32(romlatch);
+      ST_L_I32(clk_counter);
+      ST_L_U8(line_count); ST_L_U8(x_latch); ST_L_U8(y_latch);
+      ST_L_U8(dbstick1); ST_L_U8(dbstick2);
+      ST_L_I32(sound_IRQ); ST_L_I32(snd_shift_count);
+      memcpy(ColorVector, data+offset, MAXLINES); offset += MAXLINES;
+      memcpy(AudioVector, data+offset, MAXLINES); offset += MAXLINES;
+      offset += vpp_state_load(data+offset);
+   }
+
+   /* re-derive the bank pointer from the restored p1/romlatch; this
+    * was previously never done, so bank-switched games resumed with a
+    * stale mapping regardless of format */
+   if (app_data.bank == 2)
+      rom = rom_table[~p1 & 0x01];
+   else if (app_data.bank == 3)
+      rom = rom_table[~p1 & 0x03];
+   else if (app_data.bank == 4)
+      rom = rom_table[(p1 & 1) ? 0 : romlatch];
 
    return true;
 }

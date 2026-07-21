@@ -41,6 +41,17 @@ void init_voice(const char *voice_path)
 #ifdef HAVE_VOICE
    int n_loaded = 0;
    unsigned i, sam;
+
+   /* idempotent: repeated retro_load_game calls re-init the voice
+    * samples, so release any previously loaded set first */
+   for (i = 0; i < 9; i++)
+   {
+      for (sam = 0; sam < 128; sam++)
+      {
+         core_audio_mixer_destroy(voices[i][sam]);
+         voices[i][sam] = NULL;
+      }
+   }
    for (i = 0; i < 9; i++)
    {
       for (sam = 0; sam < 128; sam++)

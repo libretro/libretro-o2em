@@ -1038,6 +1038,18 @@ bool retro_load_game(const struct retro_game_info *info)
    app_data.breakpoint = 65535;
    app_data.megaxrom = 0;
 
+   /* release a previous MegaCART mapping; load_cart reallocates it
+    * for MegaCART content and leaks otherwise on repeated loads */
+   if (megarom)
+   {
+      free(megarom);
+      megarom = NULL;
+   }
+
+   /* per-session output state */
+   low_pass_prev = 0;
+   vkb_show      = false;
+
    init_audio();
 
    o2flag = 1;

@@ -395,6 +395,11 @@ void init_system(void)
    dbstick1       = 0x00;
    dbstick2       = 0x00;
    mstate         = 0;
+   int_clk        = 0;
+   frame          = 0;
+   x_latch        = 0;
+   y_latch        = 0;
+   key2vcnt       = 0;
    master_clk     = 0;
    h_clk          = 0;
    line_count     = 0;

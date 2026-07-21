@@ -65,6 +65,13 @@ void init_cpu(void){
 	pc=0;
 	sp=8;
 	bs=0;
+	acc=0;
+	psw=0;
+	lastpc=0;
+	clk=0;
+	master_count=0;
+	t_flag=0;
+	f1=0;
 	p1=p2=0xFF;
 	ac=cy=f0=0;
 	A11=A11ff=0;

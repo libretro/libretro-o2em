@@ -141,7 +141,10 @@ void retro_set_environment(retro_environment_t cb)
    vfs_iface_info.required_interface_version = 1;
    vfs_iface_info.iface                      = NULL;
    if (environ_cb(RETRO_ENVIRONMENT_GET_VFS_INTERFACE, &vfs_iface_info))
+   {
       filestream_vfs_init(&vfs_iface_info);
+      path_vfs_init(&vfs_iface_info);
+   }
 }
 
 static bool load_bios(const char *biosname)
@@ -984,11 +987,11 @@ bool retro_load_game(const struct retro_game_info *info)
    }
 
    fill_pathname_join(bios_file_path, system_directory_c, bios_file_name, sizeof(bios_file_path));
-   if (!path_is_valid(bios_file_path))
-   {
-      log_cb(RETRO_LOG_WARN, "[O2EM]: %s not found, cannot load BIOS\n", bios_file_name);
-      return false;
-   }
+   /* no stat-based existence pre-check here: network and FUSE mounts
+    * (e.g. rclone against the Internet Archive, #60) can fail stat
+    * while reads work, and it bypassed the frontend VFS anyway.
+    * filestream_open in load_bios is the authoritative test and
+    * reports its own error. */
 
    app_data.stick[0] = app_data.stick[1] = 1;
    app_data.sticknumber[0] = app_data.sticknumber[1] = 0;

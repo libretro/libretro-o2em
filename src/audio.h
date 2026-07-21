@@ -10,8 +10,11 @@ void init_sound_stream(void);
 void mute_audio(void);
 
 
+#include <stdint.h>
+
 extern int sound_IRQ;
 extern int snd_shift_count;
+extern uint32_t snd_period_acc;
 
 
 #endif

@@ -818,7 +818,7 @@ size_t savestate_size(void)
       4 +                    /* romlatch */
       4 +                    /* clk_counter */
       5 +                    /* line_count, x_latch, y_latch, dbstick1/2 */
-      2 * 4 +                /* sound_IRQ, snd_shift_count */
+      3 * 4 +                /* sound_IRQ, snd_shift_count, snd_period_acc */
       MAXLINES +             /* ColorVector */
       MAXLINES +             /* AudioVector */
       vpp_state_size();
@@ -885,7 +885,7 @@ bool savestate_to_mem(uint8_t *data, size_t size)
 
    /* extended state block */
    data[offset++] = 'O'; data[offset++] = '2';
-   data[offset++] = 'S'; data[offset++] = '2';
+   data[offset++] = 'S'; data[offset++] = '3';
    ST_S_U8(acc); ST_S_U8(itimer); ST_S_U8(t_flag); ST_S_U8(f1);
    ST_S_I32(clk); ST_S_I32(master_count);
    ST_S_I32(master_clk); ST_S_I32(h_clk); ST_S_I32(int_clk);
@@ -895,6 +895,7 @@ bool savestate_to_mem(uint8_t *data, size_t size)
    ST_S_U8(line_count); ST_S_U8(x_latch); ST_S_U8(y_latch);
    ST_S_U8(dbstick1); ST_S_U8(dbstick2);
    ST_S_I32(sound_IRQ); ST_S_I32(snd_shift_count);
+   ST_S_I32(snd_period_acc);
    memcpy(data+offset, ColorVector, MAXLINES); offset += MAXLINES;
    memcpy(data+offset, AudioVector, MAXLINES); offset += MAXLINES;
    offset += vpp_state_save(data+offset);
@@ -975,10 +976,12 @@ bool loadstate_from_mem(const uint8_t *data, size_t size)
    offset += sizeof(tirq_pend);
 
    /* extended state block: absent in legacy states, which end here */
-   if ((size >= savestate_size())
+   if ((size > (size_t)(offset + 4))
          && (data[offset]   == 'O') && (data[offset+1] == '2')
-         && (data[offset+2] == 'S') && (data[offset+3] == '2'))
+         && (data[offset+2] == 'S')
+         && ((data[offset+3] == '2') || (data[offset+3] == '3')))
    {
+      int have_acc = (data[offset+3] == '3');
       offset += 4;
       ST_L_U8(acc); ST_L_U8(itimer); ST_L_U8(t_flag); ST_L_U8(f1);
       ST_L_I32(clk); ST_L_I32(master_count);
@@ -989,6 +992,12 @@ bool loadstate_from_mem(const uint8_t *data, size_t size)
       ST_L_U8(line_count); ST_L_U8(x_latch); ST_L_U8(y_latch);
       ST_L_U8(dbstick1); ST_L_U8(dbstick2);
       ST_L_I32(sound_IRQ); ST_L_I32(snd_shift_count);
+      if (have_acc)
+      {
+         ST_L_I32(snd_period_acc);
+      }
+      else
+         snd_period_acc = 0;
       memcpy(ColorVector, data+offset, MAXLINES); offset += MAXLINES;
       memcpy(AudioVector, data+offset, MAXLINES); offset += MAXLINES;
       offset += vpp_state_load(data+offset);

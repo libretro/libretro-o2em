@@ -23,8 +23,18 @@
 #include "vmachine.h"
 #include "audio.h"
 
-#define PERIOD1 11
-#define PERIOD2 44
+/* i8244 sound shift clock: one shift every 4 scanlines when control
+ * bit 0x20 is set, every 16 when clear (MAME i8244). Expressed in
+ * 16.16 fixed-point sample intervals at 1056 samples per frame:
+ *   NTSC (15734.264 Hz line rate): 16.1075 / 64.4301 samples
+ *   PAL  (15625 Hz line rate):     13.5168 / 54.0672 samples
+ * The previous integer periods 11/44 ran the shift clock 46%
+ * (NTSC) / 23% (PAL) too fast, raising every tone by 6.6 / 3.6
+ * semitones against hardware. */
+#define PERIOD_FAST_NTSC 1055623UL
+#define PERIOD_SLOW_NTSC 4222490UL
+#define PERIOD_FAST_PAL  885837UL
+#define PERIOD_SLOW_PAL  3543348UL
 
 #define AUD_CTRL  0xAA
 #define AUD_D0	  0xA7
@@ -34,6 +44,7 @@
 extern uint8_t soundBuffer[SOUND_BUFFER_LEN];
 
 int sound_IRQ;
+uint32_t snd_period_acc;
 
 int snd_shift_count;
 
@@ -70,19 +81,20 @@ void audio_process(unsigned char *buffer)
 
    int intena = VDCwrite[0xA0] & 0x04;
    int pnt    = 0;
-   int cnt    = 0;
+   uint32_t period_fast = (fps == FPS_NTSC) ? PERIOD_FAST_NTSC : PERIOD_FAST_PAL;
+   uint32_t period_slow = (fps == FPS_NTSC) ? PERIOD_SLOW_NTSC : PERIOD_SLOW_PAL;
 
    while (pnt < SOUND_BUFFER_LEN)
    {
       int pos     = (tweakedaudio) ? (pnt/3) : (MAXLINES-1);
       int volume  = AudioVector[pos] & 0x0F;
       int enabled = AudioVector[pos] & 0x80;
-      int period  = (AudioVector[pos] & 0x20) ? PERIOD1 : PERIOD2;
+      uint32_t period = (AudioVector[pos] & 0x20) ? period_fast : period_slow;
 
       buffer[pnt++] = (enabled) ? (aud_data & 0x01) * (0x10 * volume) : 0;
-      cnt++;
+      snd_period_acc += 0x10000;
 
-      if (cnt >= period)
+      if (snd_period_acc >= period)
       {
          /* i8244 24-bit sound shift register, verified against MAME
           * i8244.cpp: the output bit recirculates into bit 23
@@ -91,7 +103,7 @@ void audio_process(unsigned char *buffer)
           * (pre-shift) and the feedback is also fed to bit 15. */
          unsigned long feedback = aud_data & 0x01;
 
-         cnt = 0;
+         snd_period_acc -= period;
          aud_data >>= 1;
 
          if (AudioVector[pos] & 0x10)
@@ -137,6 +149,7 @@ void init_audio(void)
 {
    sound_IRQ=0;
    snd_shift_count=0;
+   snd_period_acc=0;
    if ((app_data.sound_en) || (app_data.voice))
       init_sound_stream();
 }

@@ -1042,9 +1042,17 @@ bool retro_load_game(const struct retro_game_info *info)
    if (!load_cart(rom_data, rom_size))
       return false;
 
-   init_display();
+   if (!init_display())
+   {
+      log_cb(RETRO_LOG_ERROR, "[O2EM]: display allocation failed.\n");
+      return false;
+   }
    init_cpu();
-   init_system();
+   if (!init_system())
+   {
+      log_cb(RETRO_LOG_ERROR, "[O2EM]: machine allocation failed.\n");
+      return false;
+   }
 
 #ifdef HAVE_VOICE
    if (app_data.voice)
@@ -1332,7 +1340,8 @@ void retro_reset(void)
 {
    init_cpu();
    init_roms();
-   init_vpp();
+   /* cannot fail here: the VP+ buffers already exist from load */
+   (void)init_vpp();
    clearscr();
 }
 

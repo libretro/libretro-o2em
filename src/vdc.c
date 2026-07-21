@@ -562,7 +562,7 @@ void display_bg(void)
 	line(bmp,311,172,311,72,1+32);
 }
 
-void init_display(void)
+int init_display(void)
 {
    create_cmap();
 
@@ -572,20 +572,35 @@ void init_display(void)
    destroy_bitmap(bmpcache);
    if (col)
       free(col);
+   col = NULL;
 
-   bmp = create_bitmap(BMPW,BMPH);
+   bmp      = create_bitmap(BMPW,BMPH);
    bmpcache = create_bitmap(BMPW,BMPH);
 
-   if ((!bmp) || (!bmpcache)) {
-      exit(EXIT_FAILURE);
+   if ((!bmp) || (!bmpcache))
+   {
+      /* a libretro core must never terminate the host process;
+       * report failure and let retro_load_game fail gracefully */
+      destroy_bitmap(bmp);
+      destroy_bitmap(bmpcache);
+      bmp = bmpcache = NULL;
+      vscreen = NULL;
+      return 0;
    }
    vscreen = (uint8_t *) &bmp->line[0];
 
    col = (uint8_t *)malloc(BMPW*BMPH);
    if (!col)
-      exit(EXIT_FAILURE);
+   {
+      destroy_bitmap(bmp);
+      destroy_bitmap(bmpcache);
+      bmp = bmpcache = NULL;
+      vscreen = NULL;
+      return 0;
+   }
    memset(col,0,BMPW*BMPH);
 
    grmode();
    init_keyboard();
+   return 1;
 }

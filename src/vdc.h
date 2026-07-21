@@ -21,7 +21,7 @@ extern uint8_t coltab[];
 extern long clip_low;
 extern long clip_high;
 
-void init_display(void);
+int init_display(void);
 void draw_display(void);
 void set_textmode(void);
 void draw_region(void);

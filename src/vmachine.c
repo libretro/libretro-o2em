@@ -387,7 +387,7 @@ static void do_kludges(void)
 
 
 
-void init_system(void)
+int init_system(void)
 {
    int i,j,k;
 
@@ -434,8 +434,10 @@ void init_system(void)
       setvideomode(0);
 
    do_kludges();
-   init_vpp();
+   if (!init_vpp())
+      return 0;
    clear_collision();
+   return 1;
 }
 
 void init_roms(void)

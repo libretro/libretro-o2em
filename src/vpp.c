@@ -466,7 +466,7 @@ void load_colplus(uint8_t *col){
 }
 
 
-void init_vpp(void)
+int init_vpp(void)
 {
 	int i,j,k;
 	
@@ -474,7 +474,11 @@ void init_vpp(void)
 	if (!colplus) colplus = (uint8_t *)malloc(BMPW*BMPH);
 
 	if ((!vppbmp) || (!colplus))
-		exit(EXIT_FAILURE);
+	{
+		/* a libretro core must never terminate the host process */
+		close_vpp();
+		return 0;
+	}
 	memset(colplus,0,BMPW*BMPH);
 
 	LumReg = TraReg = 0xff;
@@ -497,6 +501,7 @@ void init_vpp(void)
 	for (i=0; i<40; i++)
 		for (j=0; j<32; j++)
 			for (k=0; k<4; k++) vpp_mem[i][j][k] = 0;
+	return 1;
 }
 
 void close_vpp(void)

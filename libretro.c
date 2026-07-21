@@ -96,7 +96,7 @@ static bool crop_overscan = false;
  * 42240/35200 Hz. This greatly improves resampling
  * performance and final output sound quality. */
 #define AUDIO_SAMPLES_PER_FRAME ((SOUND_BUFFER_LEN * 2) / 3)
-#define AUDIO_SAMPLERATE ((evblclk == EVBLCLK_NTSC) ? (AUDIO_SAMPLES_PER_FRAME * 60) : (AUDIO_SAMPLES_PER_FRAME * 50))
+#define AUDIO_SAMPLERATE (AUDIO_SAMPLES_PER_FRAME * fps)
 
 uint8_t soundBuffer[SOUND_BUFFER_LEN];
 static int16_t audioOutBuffer[AUDIO_SAMPLES_PER_FRAME * 2];
@@ -863,7 +863,7 @@ void retro_get_system_av_info(struct retro_system_av_info *info)
 {
    memset(info, 0, sizeof(*info));
 
-   info->timing.fps               = (evblclk == EVBLCLK_NTSC) ? 60 : 50;
+   info->timing.fps               = fps;
    info->timing.sample_rate       = AUDIO_SAMPLERATE;
 
    if (crop_overscan)
@@ -1052,7 +1052,7 @@ void retro_unload_game(void)
 
 unsigned retro_get_region(void)
 {
-    return evblclk == EVBLCLK_NTSC ? RETRO_REGION_NTSC : RETRO_REGION_PAL;
+    return (fps == FPS_NTSC) ? RETRO_REGION_NTSC : RETRO_REGION_PAL;
 }
 
 unsigned retro_api_version(void)

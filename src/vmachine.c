@@ -35,7 +35,7 @@ extern unsigned char key[512];
 static uint8_t x_latch,y_latch;
 static uint8_t line_count;
 static int romlatch = 0;
-static int fps      = FPS_NTSC;
+int fps             = FPS_NTSC;
 
 static uint8_t snapedlines[MAXLINES+2*MAXSNAP][256][2];
 

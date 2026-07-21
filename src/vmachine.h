@@ -49,6 +49,7 @@ extern int useforen;
 extern long regionoff;
 extern int sproff;
 extern int tweakedaudio;
+extern int fps;
 
 extern struct resource {
 	int bank;

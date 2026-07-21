@@ -571,6 +571,11 @@ uint8_t ext_read(uint16_t adr){
 				 * and sound shift registers read as 0 (MAME i8244) */
 				return 0;
 			default:
+				/* object registers are not accessible while the
+				 * display is enabled, grid registers while the grid
+				 * is enabled (MAME i8244) */
+				if ((adr < 0x80) && (VDCwrite[0xA0] & 0x20)) return 0;
+				if ((adr >= 0xC0) && (VDCwrite[0xA0] & 0x08)) return 0;
 				return VDCwrite[adr];
 		}
 		} else if (!(p1 & 0x10)) {
@@ -652,6 +657,13 @@ void ext_write(uint8_t dat, uint16_t adr)
       /* registers A0-AF are mirrored at B0-BF (MAME i8244) */
       if ((adr & 0xE0) == 0xA0)
          adr &= ~0x10;
+      /* object registers are not accessible while the display is
+       * enabled, grid registers while the grid is enabled; F0-FF
+       * is unmapped (MAME i8244) */
+      if ((adr < 0x80) && (VDCwrite[0xA0] & 0x20))
+         return;
+      if (((adr >= 0xC0) && (VDCwrite[0xA0] & 0x08)) || (adr >= 0xF0))
+         return;
       if (adr == 0xA0)
       {
          if ((VDCwrite[0xA0] & 0x02) && !(dat & 0x02))

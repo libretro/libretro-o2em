@@ -163,12 +163,25 @@ static bool load_bios(const char *biosname)
       return false;
    }
 
-   bytes_read = filestream_read(bios_file, rom_table[0], 1024);
+   /* Network and FUSE mounts (e.g. rclone) can legitimately return
+    * short reads through the frontend VFS, so accumulate until the
+    * full BIOS image is read or the stream ends */
+   bytes_read = 0;
+   while (bytes_read < 1024)
+   {
+      int64_t n = filestream_read(bios_file,
+            rom_table[0] + bytes_read, 1024 - bytes_read);
+      if (n <= 0)
+         break;
+      bytes_read += n;
+   }
    filestream_close(bios_file);
 
    if (bytes_read != 1024)
    {
-      log_cb(RETRO_LOG_ERROR, "[O2EM]: Error loading BIOS ROM (%s).\n", biosname);
+      log_cb(RETRO_LOG_ERROR,
+            "[O2EM]: Error loading BIOS ROM (%s): read %lld of 1024 bytes.\n",
+            biosname, (long long)bytes_read);
       return false;
    }
 

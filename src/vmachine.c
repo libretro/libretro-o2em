@@ -664,6 +664,27 @@ void ext_write(uint8_t dat, uint16_t adr)
          return;
       if (((adr >= 0xC0) && (VDCwrite[0xA0] & 0x08)) || (adr >= 0xF0))
          return;
+      /* writes to read-only (A1/A4/A5) and unused registers are
+       * dropped (MAME i8244) */
+      if ((adr == 0xA1) || (adr == 0xA4) || (adr == 0xA5) || (adr == 0xA6)
+            || ((adr < 0x10) && ((adr & 0x03) == 0x03))
+            || ((adr >= 0xAB) && (adr <= 0xAF))
+            || ((adr >= 0xC9) && (adr <= 0xCF))
+            || ((adr >= 0xD9) && (adr <= 0xDF))
+            || ((adr >= 0xEA) && (adr <= 0xEF)))
+         return;
+      /* bits not connected on real hardware (MAME i8244): major
+       * system color registers d4-d7 and Y CAM d0, horizontal grid
+       * high byte d1-d7 */
+      if ((adr >= 0x10) && (adr < 0x80))
+      {
+         if ((adr & 0x03) == 0x03)
+            dat &= 0x0F;
+         else if ((adr & 0x03) == 0x00)
+            dat &= 0xFE;
+      }
+      else if ((adr & 0xF0) == 0xD0)
+         dat &= 0x01;
       if (adr == 0xA0)
       {
          if ((VDCwrite[0xA0] & 0x02) && !(dat & 0x02))

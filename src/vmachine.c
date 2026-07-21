@@ -757,7 +757,11 @@ void ext_write(uint8_t dat, uint16_t adr)
 int snapline(int pos, uint8_t reg, int t)
 {
 	int i;
-	if (pos<MAXLINES+MAXSNAP+MAXSNAP)
+	/* highest index touched below is pos+MAXSNAP+(mxsnap-1) for the
+	 * probe loop and pos+MAXSNAP for the store; the old guard only
+	 * checked pos itself and overflowed snapedlines for lines past
+	 * ~549, reachable with large evblclk kludges (Pick Axe Pete) */
+	if (pos+MAXSNAP+mxsnap < MAXLINES+MAXSNAP+MAXSNAP)
    {
 		for (i=0; i<mxsnap; i++)
       {

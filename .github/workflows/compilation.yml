@@ -21,6 +21,25 @@ jobs:
         cc -O1 -g -o tests/savestate_determinism tests/savestate_determinism.c -Ilibretro-common/include -ldl
         tests/savestate_determinism ./o2em_libretro.so
 
+    - name: Run allocation fault-injection test
+      run: |
+        cc -O1 -g -o tests/lifecycle tests/lifecycle.c -Ilibretro-common/include -ldl
+        cc -O1 -fPIC -shared -o tests/mallocfail.so tests/mallocfail.c -ldl
+        # every large allocation of the load path (there are exactly 5)
+        # must produce a graceful retro_load_game failure, never kill
+        # the process
+        for k in 1 2 3 4 5; do
+          set +e
+          out=$(LD_PRELOAD=./tests/mallocfail.so MF_FAIL_NTH=$k MF_SIZE_MIN=20000 tests/lifecycle ./o2em_libretro.so soak 5)
+          rc=$?
+          set -e
+          echo "K=$k rc=$rc: $out"
+          test "$rc" -eq 2
+          echo "$out" | grep -q "FAIL: retro_load_game"
+        done
+        # with no qualifying allocation failed, the run must pass
+        LD_PRELOAD=./tests/mallocfail.so MF_FAIL_NTH=6 MF_SIZE_MIN=20000 tests/lifecycle ./o2em_libretro.so soak 5
+
     - name: Build core with AddressSanitizer
       run: |
         make clean

@@ -143,10 +143,12 @@ static void draw_char(uint8_t ypos,uint8_t xpos,uint8_t chr,uint8_t col)
 	unsigned int pnt = y * BMPW + ((xpos-8) * 2)+20;
 
 	ypos = ypos >> 1;
-	n    = 8 - (ypos % 8) - (chr % 8);
-
-	if (n < 3)
-      n = n + 7;
+	/* i8244 character height: 7 - ((y/2 + ptr) & 7), where 0 means 8
+	 * (MAME i8244). The previous separable approximation drew one row
+	 * too many for sums 0-5 and nine rows instead of one for sum 6. */
+	n    = 7 - ((ypos + chr) & 7);
+	if (n == 0)
+      n = 8;
 	
 	if ((pnt+BMPW*2*n >= (unsigned long)clip_low) && (pnt <= (unsigned long)clip_high))
    {
@@ -211,7 +213,12 @@ static void draw_quad(uint8_t ypos, uint8_t xpos, uint8_t cp0l, uint8_t cp0h, ui
 	chp[2] = cp2l | ((cp2h & 1) << 8);
 	chp[3] = cp3l | ((cp3h & 1) << 8);
 	for(i = 0; i < 4; i++) chp[i] = (chp[i] + (ypos >> 1)) & 0x1ff;
-	lines = 8 - (chp[3]+1) % 8;
+	/* quad height is set by the 4th character and depends on the quad
+	 * Y position exactly like single characters (MAME i8244); the
+	 * previous formula omitted the Y term entirely */
+	lines = 7 - (((ypos >> 1) + chp[3]) & 7);
+	if (lines == 0)
+		lines = 8;
 	/* abort drawing if completely over the top clip */
 	if (pnt+BMPW*2*lines < (unsigned long) clip_low) return;
 	/* extract and convert color information */

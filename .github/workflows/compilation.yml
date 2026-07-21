@@ -21,6 +21,18 @@ jobs:
         cc -O1 -g -o tests/savestate_determinism tests/savestate_determinism.c -Ilibretro-common/include -ldl
         tests/savestate_determinism ./o2em_libretro.so
 
+    - name: Build core with AddressSanitizer
+      run: |
+        make clean
+        make -j$(nproc) CC="gcc -fsanitize=address -g -O1"
+
+    - name: Run lifecycle, reload-leak and A/V contract tests (ASan)
+      run: |
+        cc -O1 -g -fsanitize=address -o tests/lifecycle tests/lifecycle.c -Ilibretro-common/include -ldl
+        ASAN_OPTIONS=detect_leaks=1 tests/lifecycle ./o2em_libretro.so cycles 3
+        ASAN_OPTIONS=detect_leaks=1 tests/lifecycle ./o2em_libretro.so reload 4
+        ASAN_OPTIONS=detect_leaks=1 tests/lifecycle ./o2em_libretro.so soak 300
+
   build-ps2:
     runs-on: ubuntu-latest
     container: ps2dev/ps2dev:latest

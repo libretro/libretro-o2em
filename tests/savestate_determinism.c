@@ -27,53 +27,13 @@
 #include <sys/wait.h>
 #include <dlfcn.h>
 #include "libretro.h"
+#include "testrom.h"
 
 #define FRAMES_BEFORE_SAVE 120
 #define FRAMES_AFTER_SAVE  120
-#define CART_SIZE          2048
+#define CART_SIZE          TESTROM_CART_SIZE
 
 static char workdir[256];
-
-/* hand-assembled 8048 test program, placed in a fake 1KB BIOS image:
- *   000: JMP 010                    ; reset vector
- *   007: MOV R0,#20; MOV @R0,A     ; timer ISR: RAM[20h] = ACC
- *        INC R7; RETR
- *   010: EN TCNTI; STRT T
- *        ANL P1,#B7                 ; enable VDC access
- *        MOV R0,#A9; MOV A,#5A; MOVX @R0,A   ; seed shift reg low byte
- *        MOV R0,#AA; MOV A,#9F; MOVX @R0,A   ; enable+noise+volume
- *   01E: INC A; JMP 01E             ; free-running accumulator
- */
-static void write_test_images(void)
-{
-   static const unsigned char isr[]  = { 0xB8, 0x20, 0xA0, 0x1F, 0x93 };
-   static const unsigned char main_[] = {
-      0x25, 0x55, 0x99, 0xB7,
-      0xB8, 0xA9, 0x23, 0x5A, 0x90,
-      0xB8, 0xAA, 0x23, 0x9F, 0x90,
-      0x17, 0x04, 0x1E
-   };
-   unsigned char bios[1024];
-   unsigned char cart[CART_SIZE];
-   char path[512];
-   FILE *f;
-
-   memset(bios, 0, sizeof(bios));
-   bios[0] = 0x04; bios[1] = 0x10;              /* JMP 010 */
-   memcpy(bios + 0x007, isr, sizeof(isr));
-   memcpy(bios + 0x010, main_, sizeof(main_));
-
-   snprintf(path, sizeof(path), "%s/o2rom.bin", workdir);
-   f = fopen(path, "wb");
-   fwrite(bios, 1, sizeof(bios), f);
-   fclose(f);
-
-   memset(cart, 0, sizeof(cart));
-   snprintf(path, sizeof(path), "%s/cart.bin", workdir);
-   f = fopen(path, "wb");
-   fwrite(cart, 1, sizeof(cart), f);
-   fclose(f);
-}
 
 static bool env_cb(unsigned cmd, void *data)
 {
@@ -226,7 +186,7 @@ int main(int argc, char **argv)
    if (!mkdtemp(tmpl))
       return 2;
    snprintf(workdir, sizeof(workdir), "%s", tmpl);
-   write_test_images();
+   testrom_write_images(workdir);
 
    if (run_child(argv[1], 0) != 0)
       return 2;

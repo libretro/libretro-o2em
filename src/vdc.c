@@ -105,6 +105,13 @@ static INLINE void mputvid(unsigned int ad, unsigned int len, uint8_t d, uint8_t
    if ((ad > (unsigned long)clip_low) && (ad < (unsigned long)clip_high))
    {
       unsigned int i;
+      /* the gate above bounds only the starting address; clip_high can
+       * equal the buffer end, so a run beginning just inside it would
+       * write up to len-1 bytes past vscreen/col. Clamp to the buffer
+       * end; overdraw into the next dirty region (below clip_high but
+       * inside the buffer) is intended and preserved. */
+      if (ad + len > (unsigned int)(BMPW*BMPH))
+         len = (unsigned int)(BMPW*BMPH) - ad;
       if (((len & 3)==0) && (sizeof(unsigned long) == 4))
       {
          unsigned long dddd = (((unsigned long)d) & 0xff) | ((((unsigned long)d) & 0xff) << 8) | ((((unsigned long)d) & 0xff) << 16) | ((((unsigned long)d) & 0xff) << 24);

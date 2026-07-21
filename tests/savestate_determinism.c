@@ -40,7 +40,7 @@ static char workdir[256];
  *        INC R7; RETR
  *   010: EN TCNTI; STRT T
  *        ANL P1,#B7                 ; enable VDC access
- *        MOV R0,#A7; MOV A,#5A; MOVX @R0,A   ; seed sound shift reg
+ *        MOV R0,#A9; MOV A,#5A; MOVX @R0,A   ; seed shift reg low byte
  *        MOV R0,#AA; MOV A,#9F; MOVX @R0,A   ; enable+noise+volume
  *   01E: INC A; JMP 01E             ; free-running accumulator
  */
@@ -49,7 +49,7 @@ static void write_test_images(void)
    static const unsigned char isr[]  = { 0xB8, 0x20, 0xA0, 0x1F, 0x93 };
    static const unsigned char main_[] = {
       0x25, 0x55, 0x99, 0xB7,
-      0xB8, 0xA7, 0x23, 0x5A, 0x90,
+      0xB8, 0xA9, 0x23, 0x5A, 0x90,
       0xB8, 0xAA, 0x23, 0x9F, 0x90,
       0x17, 0x04, 0x1E
    };

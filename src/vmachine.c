@@ -557,6 +557,11 @@ uint8_t ext_read(uint16_t adr){
 					if (y_latch > 241) y_latch=0xFF;
 					return y_latch;
 				}
+			case 0xA7:
+			case 0xA8:
+			case 0xA9:
+				/* sound shift registers are write-only (MAME i8244) */
+				return 0;
 			default:
 				return VDCwrite[adr];
 		}
@@ -655,6 +660,9 @@ void ext_write(uint8_t dat, uint16_t adr)
       }
       else if (adr == 0xAA)
       {
+         /* bit 6 of the sound control register is not connected
+          * on real hardware (MAME i8244) */
+         dat &= 0xBF;
          for (i=master_clk/22; i<MAXLINES; i++) AudioVector[i]=dat;
       }
       else if ((adr >= 0x40) && (adr <= 0x7f) && ((adr & 2) == 0))

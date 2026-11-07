@@ -216,7 +216,7 @@ static void draw_quad(uint8_t ypos, uint8_t xpos, uint8_t cp0l, uint8_t cp0h, ui
 	/* quad height is set by the 4th character and depends on the quad
 	 * Y position exactly like single characters (MAME i8244); the
 	 * previous formula omitted the Y term entirely */
-	lines = 7 - (((ypos >> 1) + chp[3]) & 7);
+	lines = 7 - (chp[3] & 7); /* chp[] already includes ypos >> 1 */
 	if (lines == 0)
 		lines = 8;
 	/* abort drawing if completely over the top clip */

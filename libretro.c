@@ -4,12 +4,9 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
+#include <ctype.h>
 #include <sys/stat.h>
-
-#ifdef _MSC_VER
-#define snprintf _snprintf
-#pragma pack(1)
-#endif
 
 #include <libretro.h>
 #include "libretro_core_options.h"
@@ -23,6 +20,7 @@
 #include "vmachine.h"
 #include "voice.h"
 #include "vpp.h"
+#include "c7010.h"
 #include "vkeyb/vkeyb.h"
 
 #include "wrapalleg.h"
@@ -46,6 +44,47 @@ static retro_audio_sample_t audio_cb;
 static retro_audio_sample_batch_t audio_batch_cb;
 
 static bool libretro_supports_bitmasks = false;
+/* True while o2em_region is "auto" (or the option was unavailable).
+ * Explicit NTSC/PAL selections are never overridden. */
+static bool region_auto = true;
+
+static bool c7010_prefix_ci(const char *s, const char *prefix)
+{
+   while (*prefix)
+   {
+      unsigned char a = (unsigned char)*s++;
+      unsigned char b = (unsigned char)*prefix++;
+      if (a >= 'A' && a <= 'Z')
+         a = (unsigned char)(a - 'A' + 'a');
+      if (b >= 'A' && b <= 'Z')
+         b = (unsigned char)(b - 'A' + 'a');
+      if (a != b)
+         return false;
+   }
+   return true;
+}
+
+/* O2EM-NG resolves European Videopac/Jopac cartridges to PAL in AUTO mode.
+ * The libretro frontend only exposes the ROM path here, so use the same
+ * filename classes as NG (vp_/pal_/jo_) in addition to the C7010 CRC. */
+static bool cartridge_path_is_pal(const char *path)
+{
+   const char *base = path;
+   const char *p;
+
+   if (!path)
+      return false;
+
+   for (p = path; *p; ++p)
+   {
+      if (*p == '/' || *p == '\\')
+         base = p + 1;
+   }
+
+   return c7010_prefix_ci(base, "vp_") ||
+          c7010_prefix_ci(base, "pal_") ||
+          c7010_prefix_ci(base, "jo_");
+}
 
 void retro_set_video_refresh(retro_video_refresh_t cb) { video_cb = cb; }
 void retro_set_audio_sample(retro_audio_sample_t cb) { audio_cb = cb; }
@@ -225,6 +264,61 @@ static bool load_bios(const char *biosname)
          break;
    }
 
+   return true;
+}
+
+static void c7010_log(const char *message)
+{
+   log_cb(RETRO_LOG_INFO, "%s", message);
+}
+
+static bool load_c7010_firmware(const char *system_dir)
+{
+   char path[PATH_MAX_LENGTH];
+   uint8_t data[8192];
+   int64_t total = 0;
+   RFILE *file;
+
+   if (!system_dir)
+      return false;
+
+   path[0] = '\0';
+   fill_pathname_join(path, system_dir, "c7010_z80.bin", sizeof(path));
+
+   file = filestream_open(path,
+         RETRO_VFS_FILE_ACCESS_READ,
+         RETRO_VFS_FILE_ACCESS_HINT_NONE);
+   if (!file)
+   {
+      log_cb(RETRO_LOG_ERROR, "[C7010] firmware not found: %s\n", path);
+      return false;
+   }
+
+   while (total < (int64_t)sizeof(data))
+   {
+      int64_t n = filestream_read(file, data + total,
+            (int64_t)sizeof(data) - total);
+      if (n <= 0)
+         break;
+      total += n;
+   }
+   filestream_close(file);
+
+   if (total != (int64_t)sizeof(data))
+   {
+      log_cb(RETRO_LOG_ERROR,
+            "[C7010] firmware %s: read %lld of %d bytes.\n",
+            path, (long long)total, (int)sizeof(data));
+      return false;
+   }
+
+   if (!C7010_LoadFirmwareData(data, sizeof(data)))
+   {
+      log_cb(RETRO_LOG_ERROR, "[C7010] firmware data rejected.\n");
+      return false;
+   }
+
+   log_cb(RETRO_LOG_INFO, "[C7010] firmware loaded: %s (8192 bytes)\n", path);
    return true;
 }
 
@@ -556,7 +650,6 @@ done:
    /* Virtual keyboard management */
    update_input_virtual_keyboard(joypad_bits[0]);
 
-   /* Take into account RESET being pressed (F5 is O2EM original setting )*/
    if (key[RETROK_F5] || input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_F5))
    {
        retro_reset();
@@ -928,6 +1021,8 @@ void retro_cheat_set(unsigned index, bool enabled, const char *code)
    (void)code;
 }
 
+static void check_variables(bool startup);
+
 bool retro_load_game(const struct retro_game_info *info)
 {
    char bios_file_path[PATH_MAX_LENGTH];
@@ -966,6 +1061,12 @@ bool retro_load_game(const struct retro_game_info *info)
 
    if (!info || !info->data || (info->size < 1))
       return false;
+
+   /* Core options marked "(Restart)" must be re-read on every content
+    * load.  RetroArch does not necessarily call retro_init() again when
+    * the user restarts content, so reading them only in retro_init()
+    * leaves a changed region/BIOS selection stale. */
+   check_variables(true);
 
    rom_data = (const uint8_t *)info->data;
    rom_size = info->size;
@@ -1045,6 +1146,23 @@ bool retro_load_game(const struct retro_game_info *info)
    if (!load_cart(rom_data, rom_size))
       return false;
 
+   C7010_ConfigureForCartridge((uint32_t)app_data.crc);
+   if (C7010_IsActive())
+   {
+      if (!load_c7010_firmware(system_directory_c))
+         return false;
+   }
+
+   /* AUTO region: C7010 and European Videopac/Jopac cartridges are PAL.
+    * Explicit NTSC/PAL selections are respected. */
+   if (region_auto &&
+       (C7010_IsActive() || cartridge_path_is_pal(info->path)))
+   {
+      if (!app_data.euro)
+         log_cb(RETRO_LOG_INFO, "[O2EM]: PAL region resolved for C7010/Videopac cartridge (auto)\n");
+      app_data.euro = 1;
+   }
+
    if (!init_display())
    {
       log_cb(RETRO_LOG_ERROR, "[O2EM]: display allocation failed.\n");
@@ -1056,6 +1174,8 @@ bool retro_load_game(const struct retro_game_info *info)
       log_cb(RETRO_LOG_ERROR, "[O2EM]: machine allocation failed.\n");
       return false;
    }
+
+   C7010_Reset();
 
 #ifdef HAVE_VOICE
    if (app_data.voice)
@@ -1083,6 +1203,7 @@ bool retro_load_game_special(unsigned game_type, const struct retro_game_info *i
 
 void retro_unload_game(void) 
 {
+   C7010_Unload();
 }
 
 unsigned retro_get_region(void)
@@ -1167,6 +1288,8 @@ static void check_variables(bool startup)
                app_data.euro = 1;
          }
       }
+
+      region_auto = auto_region;
    }
 
    /* Swap Gamepads */
@@ -1307,6 +1430,8 @@ void retro_init(void)
    else
       log_cb = log_printf_null;
 
+   C7010_SetLogCallback(c7010_log);
+
    environ_cb(RETRO_ENVIRONMENT_SET_PERFORMANCE_LEVEL, &level);
 
    if (environ_cb(RETRO_ENVIRONMENT_GET_INPUT_BITMASKS, NULL))
@@ -1318,6 +1443,7 @@ void retro_init(void)
 
 void retro_deinit(void)
 {
+   C7010_Unload();
    close_audio();
    close_voice();
    close_display();
@@ -1343,6 +1469,7 @@ void retro_reset(void)
 {
    init_cpu();
    init_roms();
+   C7010_Reset();
    /* cannot fail here: the VP+ buffers already exist from load */
    (void)init_vpp();
    clearscr();
@@ -1375,4 +1502,5 @@ void retro_run(void)
       video_cb(mbmp, EMUWIDTH, EMUHEIGHT, TEX_WIDTH << 1);
 
    upate_audio();
+
 }

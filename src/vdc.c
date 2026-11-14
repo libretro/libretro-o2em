@@ -25,6 +25,8 @@
 #include "cpu.h"
 #include "vpp.h"
 #include "vdc.h"
+#include "c7010.h"
+#include "c7010_pal.h"
 
 #include <libretro.h>
 #include "wrapalleg.h"
@@ -84,9 +86,9 @@ static void create_cmap(void)
 	/* Initialise parts of the colors array */
 	for (i = 0; i < 16; i++) {
 		/* Use the color values from the color table */
-		colors[i+32].r = colors[i].r = (colortable[app_data.vpp?1:0][i] & 0xff0000) >> 16;
-		colors[i+32].g = colors[i].g = (colortable[app_data.vpp?1:0][i] & 0x00ff00) >> 8;
-		colors[i+32].b = colors[i].b = (colortable[app_data.vpp?1:0][i] & 0x0000ff);
+		colors[i+32].r = colors[i].r = (colortable[(app_data.vpp || C7010_IsActive()) ? 1 : 0][i] & 0xff0000) >> 16;
+		colors[i+32].g = colors[i].g = (colortable[(app_data.vpp || C7010_IsActive()) ? 1 : 0][i] & 0x00ff00) >> 8;
+		colors[i+32].b = colors[i].b = (colortable[(app_data.vpp || C7010_IsActive()) ? 1 : 0][i] & 0x0000ff);
 	}
 
 	for (i = 16; i < 32; i++) {
@@ -168,7 +170,7 @@ static void draw_char(uint8_t ypos,uint8_t xpos,uint8_t chr,uint8_t col)
             d1 = cset[c+j];
             for (b=0; b<8; b++)
             {
-               if (d1 & 0x80)
+               if (d1 & (0x80u >> b))
                {
                   if ((xpos-8+b < 160) && (y+j < 240))
                   {
@@ -177,7 +179,7 @@ static void draw_char(uint8_t ypos,uint8_t xpos,uint8_t chr,uint8_t col)
                   }
                }
                pnt+=2;
-               d1 = d1 << 1;
+               /* Keep the source row immutable while selecting columns. */
             }
             pnt += BMPW*2-16;
          }
@@ -203,7 +205,13 @@ static void draw_quad(uint8_t ypos, uint8_t xpos, uint8_t cp0l, uint8_t cp0h, ui
 	/* loop variables */
 	int i, j, lines;
 
-	/* get screen bitmap position of quad */
+	/* C7010 parks coordinate-entry quads at Y=0xf8 after ENTER.
+     * Major-object output ends at scanline 242 (i8244), even though
+     * the libretro framebuffer includes lower border lines. */
+    if (C7010_IsActive() && ((ypos & 0xfe) > 242))
+        return;
+
+    /* get screen bitmap position of quad */
 	pnt = (ypos & 0xfe) * BMPW + ((xpos - 8) * 2) + 20;
 	/* abort drawing if completely below the bottom clip */
 	if (pnt > (unsigned long) clip_high) return;
@@ -216,7 +224,7 @@ static void draw_quad(uint8_t ypos, uint8_t xpos, uint8_t cp0l, uint8_t cp0h, ui
 	/* quad height is set by the 4th character and depends on the quad
 	 * Y position exactly like single characters (MAME i8244); the
 	 * previous formula omitted the Y term entirely */
-	lines = 7 - (((ypos >> 1) + chp[3]) & 7);
+	lines = 7 - (((ypos >> 1) + cp3l) & 7);
 	if (lines == 0)
 		lines = 8;
 	/* abort drawing if completely over the top clip */
@@ -324,11 +332,17 @@ static void draw_grid(void)
    }
 }
 
+/* C7010: preserve the complete character set while the cartridge rewrites
+ * the multiplexed rows with display enable off (same idea as O2EM-NG). */
+static uint8_t c7010Characters[0x80];
+static int c7010CharactersValid = 0;
+
 void draw_display(void)
 {
    int i,j,x,sm,t;
    uint8_t y,b,d1,cl,c;
    unsigned int pnt,pnt2;
+   const uint8_t *chars = c7010CharactersValid ? c7010Characters : VDCwrite;
 
 	for (i=clip_low/BMPW; i<clip_high/BMPW; i++)
       memset(vscreen+i*BMPW, ((ColorVector[i] & 0x38) >> 3) | (ColorVector[i] & 0x80 ? 0 : 8), BMPW);
@@ -338,16 +352,18 @@ void draw_display(void)
 
 	if (useforen && (!(VDCwrite[0xA0] & 0x20)))
       return;
-	
-	for(i=0x10; i<0x40; i+=4)
-      draw_char(VDCwrite[i],VDCwrite[i+1],VDCwrite[i+2],VDCwrite[i+3]);
 
-	/* draw quads, position mapping happens in ext_write (vmachine.c)*/
-	for(i = 0x40; i < 0x80; i+= 0x10)
-	draw_quad(VDCwrite[i], VDCwrite[i+1], VDCwrite[i+2], VDCwrite[i+3],
-	VDCwrite[i+6], VDCwrite[i+7],
-	VDCwrite[i+10], VDCwrite[i+11],
-	VDCwrite[i+14], VDCwrite[i+15]);
+   {
+      for(i=0x10; i<0x40; i+=4)
+         draw_char(chars[i],chars[i+1],chars[i+2],chars[i+3]);
+
+      /* draw quads, position mapping happens in ext_write (vmachine.c)*/
+      for(i = 0x40; i < 0x80; i+= 0x10)
+      draw_quad(chars[i], chars[i+1], chars[i+2], chars[i+3],
+      chars[i+6], chars[i+7],
+      chars[i+10], chars[i+11],
+      chars[i+14], chars[i+15]);
+   }
 	
     c=8;
 	for (i=12; i>=0; i -=4) {
@@ -366,7 +382,7 @@ void draw_display(void)
 						sm = (((j%2==0) && (((t>>1) & 1) != (t & 1))) || ((j%2==1) && (t & 1))) ? 1 : 0;
 						d1 = VDCwrite[pnt2++];
 						for (b=0; b<8; b++) {
-							if (d1 & 0x01) {
+							if (d1 & (1u << b)) {
 								if ((x+b+sm < 159) && (y+j < 247)) {
 									mputvid(sm+pnt,4,cl,c);
 									mputvid(sm+pnt+BMPW,4,cl,c);
@@ -375,7 +391,7 @@ void draw_display(void)
 								}
 							}
 							pnt += 4;
-							d1 = d1 >> 1;
+							/* Select the sprite column without shifting the source row. */
 						}
 						pnt += BMPW*4-32;
 					}
@@ -386,14 +402,14 @@ void draw_display(void)
 						sm = (((j%2==0) && (((t>>1) & 1) != (t & 1))) || ((j%2==1) && (t & 1))) ? 1 : 0;
 						d1 = VDCwrite[pnt2++];
 						for (b=0; b<8; b++) {
-							if (d1 & 0x01) {
+							if (d1 & (1u << b)) {
 								if ((x+b+sm<160) && (y+j<249)) {
 									mputvid(sm+pnt,2,cl,c);
 									mputvid(sm+pnt+BMPW,2,cl,c);
 								}
 							}
 							pnt += 2;
-							d1 = d1 >> 1;
+							/* Select the sprite column without shifting the source row. */
 						}
 						pnt += BMPW*2-16;
 					}
@@ -407,7 +423,25 @@ void draw_display(void)
 void draw_region(void){
     int i;
 
-    if (regionoff == 0xffff)
+    if (!C7010_IsActive())
+    {
+       c7010CharactersValid = 0;
+    }
+    else if (!c7010CharactersValid || last_line == 0 || (VDCwrite[0xA0] & 0x20))
+    {
+       memcpy(c7010Characters, VDCwrite, sizeof(c7010Characters));
+       c7010CharactersValid = 1;
+    }
+
+    /*
+     * C7010/PAL uses the exact i8244 beam timebase for update-on-write.
+     * The legacy 22-cycle scale remains for NTSC and non-C7010 titles.
+     */
+    if (C7010_IsActive() && app_data.euro)
+       i = C7010Pal_BeamLineFromMaster(master_clk);
+    else if (C7010_IsActive())
+       i = (master_clk/22 - 5);
+    else if (regionoff == 0xffff)
 		i = (master_clk/(LINECNT-1)-5);
 	else
 		i = (master_clk/22+regionoff); 
@@ -435,6 +469,8 @@ void draw_region(void){
                       }/*Catch the ball*/
 
     if (i<0) i=0;
+    if (C7010_IsActive() && app_data.euro && i > BMPH)
+       i = BMPH;
  	clip_low = last_line * (long)BMPW;
 	clip_high = i * (long)BMPW;
 	if (clip_high > BMPW*BMPH) clip_high = BMPW*BMPH;

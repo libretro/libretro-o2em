@@ -1,0 +1,38 @@
+[
+  {
+    "name": "vp_11-o2rom.bin-auto",
+    "samples": 844800,
+    "nonzero_samples": 9676,
+    "peak": 30720
+  },
+  {
+    "name": "vp_22-c52.bin-PAL",
+    "samples": 844800,
+    "nonzero_samples": 71440,
+    "peak": 30720
+  },
+  {
+    "name": "race-play",
+    "samples": 3660800,
+    "nonzero_samples": 115663,
+    "peak": 30720
+  },
+  {
+    "name": "helicopter-play",
+    "samples": 3660800,
+    "nonzero_samples": 993126,
+    "peak": 30720
+  },
+  {
+    "name": "pickaxe-play",
+    "samples": 3660800,
+    "nonzero_samples": 748611,
+    "peak": 30720
+  },
+  {
+    "name": "chess-five-moves",
+    "samples": 19712000,
+    "nonzero_samples": 40028,
+    "peak": 30720
+  }
+]

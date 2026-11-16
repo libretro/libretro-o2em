@@ -1,0 +1,20 @@
+[
+  {
+    "Game": "race",
+    "JoystickChangesImage": true,
+    "JoystickChangesMachineState": true,
+    "JoystickChangesAudio": true
+  },
+  {
+    "Game": "helicopter",
+    "JoystickChangesImage": false,
+    "JoystickChangesMachineState": true,
+    "JoystickChangesAudio": true
+  },
+  {
+    "Game": "pickaxe",
+    "JoystickChangesImage": true,
+    "JoystickChangesMachineState": true,
+    "JoystickChangesAudio": true
+  }
+]

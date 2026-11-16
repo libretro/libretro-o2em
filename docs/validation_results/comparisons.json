@@ -1,0 +1,135 @@
+[
+  {
+    "Name": "vp_11-o2rom.bin-auto",
+    "SameMachineState": true,
+    "SameAudio": true,
+    "SameImage": true,
+    "ExpectedGraphicsChange": false
+  },
+  {
+    "Name": "vp_11-o2rom.bin-PAL",
+    "SameMachineState": true,
+    "SameAudio": true,
+    "SameImage": true,
+    "ExpectedGraphicsChange": false
+  },
+  {
+    "Name": "vp_11-o2rom.bin-NTSC",
+    "SameMachineState": true,
+    "SameAudio": true,
+    "SameImage": true,
+    "ExpectedGraphicsChange": false
+  },
+  {
+    "Name": "vp_11-c52.bin-auto",
+    "SameMachineState": true,
+    "SameAudio": true,
+    "SameImage": true,
+    "ExpectedGraphicsChange": false
+  },
+  {
+    "Name": "vp_11-c52.bin-PAL",
+    "SameMachineState": true,
+    "SameAudio": true,
+    "SameImage": true,
+    "ExpectedGraphicsChange": false
+  },
+  {
+    "Name": "vp_11-c52.bin-NTSC",
+    "SameMachineState": true,
+    "SameAudio": true,
+    "SameImage": true,
+    "ExpectedGraphicsChange": false
+  },
+  {
+    "Name": "vp_22-o2rom.bin-auto",
+    "SameMachineState": true,
+    "SameAudio": true,
+    "SameImage": true,
+    "ExpectedGraphicsChange": false
+  },
+  {
+    "Name": "vp_22-o2rom.bin-PAL",
+    "SameMachineState": true,
+    "SameAudio": true,
+    "SameImage": true,
+    "ExpectedGraphicsChange": false
+  },
+  {
+    "Name": "vp_22-o2rom.bin-NTSC",
+    "SameMachineState": true,
+    "SameAudio": true,
+    "SameImage": true,
+    "ExpectedGraphicsChange": false
+  },
+  {
+    "Name": "vp_22-c52.bin-auto",
+    "SameMachineState": true,
+    "SameAudio": true,
+    "SameImage": true,
+    "ExpectedGraphicsChange": false
+  },
+  {
+    "Name": "vp_22-c52.bin-PAL",
+    "SameMachineState": true,
+    "SameAudio": true,
+    "SameImage": true,
+    "ExpectedGraphicsChange": false
+  },
+  {
+    "Name": "vp_22-c52.bin-NTSC",
+    "SameMachineState": true,
+    "SameAudio": true,
+    "SameImage": true,
+    "ExpectedGraphicsChange": false
+  },
+  {
+    "Name": "race-play",
+    "SameMachineState": true,
+    "SameAudio": true,
+    "SameImage": false,
+    "ExpectedGraphicsChange": true
+  },
+  {
+    "Name": "race-old-state",
+    "SameMachineState": true,
+    "SameAudio": true,
+    "SameImage": false,
+    "ExpectedGraphicsChange": true
+  },
+  {
+    "Name": "helicopter-play",
+    "SameMachineState": true,
+    "SameAudio": true,
+    "SameImage": false,
+    "ExpectedGraphicsChange": true
+  },
+  {
+    "Name": "helicopter-old-state",
+    "SameMachineState": true,
+    "SameAudio": true,
+    "SameImage": false,
+    "ExpectedGraphicsChange": true
+  },
+  {
+    "Name": "pickaxe-play",
+    "SameMachineState": true,
+    "SameAudio": true,
+    "SameImage": false,
+    "ExpectedGraphicsChange": true
+  },
+  {
+    "Name": "pickaxe-old-state",
+    "SameMachineState": true,
+    "SameAudio": true,
+    "SameImage": false,
+    "ExpectedGraphicsChange": true
+  },
+  {
+    "Name": "chess-five-moves",
+    "SameMachineState": true,
+    "SameAudio": true,
+    "SameImage": true,
+    "ExpectedGraphicsChange": false
+  }
+]

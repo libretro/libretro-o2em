@@ -48,44 +48,6 @@ static bool libretro_supports_bitmasks = false;
  * Explicit NTSC/PAL selections are never overridden. */
 static bool region_auto = true;
 
-static bool c7010_prefix_ci(const char *s, const char *prefix)
-{
-   while (*prefix)
-   {
-      unsigned char a = (unsigned char)*s++;
-      unsigned char b = (unsigned char)*prefix++;
-      if (a >= 'A' && a <= 'Z')
-         a = (unsigned char)(a - 'A' + 'a');
-      if (b >= 'A' && b <= 'Z')
-         b = (unsigned char)(b - 'A' + 'a');
-      if (a != b)
-         return false;
-   }
-   return true;
-}
-
-/* O2EM-NG resolves European Videopac/Jopac cartridges to PAL in AUTO mode.
- * The libretro frontend only exposes the ROM path here, so use the same
- * filename classes as NG (vp_/pal_/jo_) in addition to the C7010 CRC. */
-static bool cartridge_path_is_pal(const char *path)
-{
-   const char *base = path;
-   const char *p;
-
-   if (!path)
-      return false;
-
-   for (p = path; *p; ++p)
-   {
-      if (*p == '/' || *p == '\\')
-         base = p + 1;
-   }
-
-   return c7010_prefix_ci(base, "vp_") ||
-          c7010_prefix_ci(base, "pal_") ||
-          c7010_prefix_ci(base, "jo_");
-}
-
 void retro_set_video_refresh(retro_video_refresh_t cb) { video_cb = cb; }
 void retro_set_audio_sample(retro_audio_sample_t cb) { audio_cb = cb; }
 void retro_set_audio_sample_batch(retro_audio_sample_batch_t cb) { audio_batch_cb = cb; }
@@ -1153,13 +1115,12 @@ bool retro_load_game(const struct retro_game_info *info)
          return false;
    }
 
-   /* AUTO region: C7010 and European Videopac/Jopac cartridges are PAL.
+   /* AUTO region: preserve upstream BIOS-based selection for ordinary games.
     * Explicit NTSC/PAL selections are respected. */
-   if (region_auto &&
-       (C7010_IsActive() || cartridge_path_is_pal(info->path)))
+   if (region_auto && C7010_IsActive())
    {
       if (!app_data.euro)
-         log_cb(RETRO_LOG_INFO, "[O2EM]: PAL region resolved for C7010/Videopac cartridge (auto)\n");
+         log_cb(RETRO_LOG_INFO, "[O2EM]: PAL region resolved for C7010 cartridge (auto)\n");
       app_data.euro = 1;
    }
 

@@ -264,6 +264,10 @@ static void vpp_update_screen(void)
 	int i,x,y,chr,attr,ext,dw,dh,vpar,lvd, ser_chr,ser_atr, swapcol;
 	int tlum[8], m[8] = {0x01, 0x10, 0x04, 0x40, 0x02, 0x20, 0x08, 0x80};
 
+	/* Disabled/concealed windows output black, not the previous frame.
+	 * Rebuild the complete layer when display attributes change. */
+	memset(vppbmp->line, 0, vppbmp->w * vppbmp->h);
+
 	for (i=0; i<8; i++)
       tlum[i] = (LumReg & m[i]) ? 0 : 8;
 
@@ -367,7 +371,7 @@ static void vpp_update_screen(void)
 }
 
 void vpp_finish_bmp(uint8_t *vmem, int offx, int offy, int w, int h, int totw, int toth){
-	int i, x, y, t, c, nc, clrx, clry;
+	int i, x, y, t, c, nc;
 	int tcol[16], m[8] = {0x01, 0x10, 0x04, 0x40, 0x02, 0x20, 0x08, 0x80};
 	uint8_t *pnt, *pnt2, *pnt3;
 
@@ -398,12 +402,18 @@ void vpp_finish_bmp(uint8_t *vmem, int offx, int offy, int w, int h, int totw, i
 	if (w > vppbmp->w) w = vppbmp->w;
 	if (h > vppbmp->h) h = vppbmp->h;
 	
-	clrx = clry = 0;
-	for (i=0; (!clrx) && (i<totw); i++) if (tcol[vmem[offy*totw+i]&7]) clrx=1;
-	for (i=0; (!clry) && (i<toth); i++) if (tcol[vmem[i*totw+offx]&7]) clry=1;
-	if (clrx) for (y=0; y<offy; y++) for (x=0; x<totw; x++) vmem[y*totw+x]=0;
-	if (clry) for (y=0; y<toth; y++) for (x=0; x<offx; x++) vmem[y*totw+x]=0;
-
+	/* The EF934x output is black outside its character window. Feed that
+	 * output through the same VDC-colour transparency decoder as the
+	 * active window; the mixer also operates in the surrounding border. */
+	for (y=0; y<toth; y++) {
+		for (x=0; x<totw; x++) {
+			if (x>=offx && x<offx+w && y>=offy && y<offy+h)
+				continue;
+			pnt = vmem + y*totw + x;
+			if (*pnt<16 && tcol[*pnt])
+				*pnt = 0;
+		}
+	}
 	for (y=0; y<h; y++){
 		pnt = vmem+(offy+y)*totw + offx;
 		pnt2 = (uint8_t *)&vppbmp->line[y*vppbmp->w];

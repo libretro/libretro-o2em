@@ -38,6 +38,6 @@ six compared menu/started images. Helicopter's title was also reproduced
 before/after. Its HUD is still being drawn at frame 1199; the complete HUD is
 visible at frame 3199. This early frame is not evidence of missing HUD pixels.
 
-This is a local candidate, pending the broader regression phase and user
-approval. No hardware-equivalence claim is made. Save-state layout, CPU,
+The broader Windows regression and personal user testing are complete; see
+`VIDEOPAC_PLUS_VALIDATION.md`. Linux/WASM validation of the new changes is pending. No hardware-equivalence claim is made. Save-state layout, CPU,
 interrupts, sound and C7010 implementation are unchanged.

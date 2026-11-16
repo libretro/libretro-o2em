@@ -1,0 +1,56 @@
+[
+  {
+    "Game": "race",
+    "Frame": 1199,
+    "DifferentPixels": 3151,
+    "ChangedActiveArtworkPixels": 0
+  },
+  {
+    "Game": "race",
+    "Frame": 3199,
+    "DifferentPixels": 3151,
+    "ChangedActiveArtworkPixels": 0
+  },
+  {
+    "Game": "race",
+    "Frame": 5199,
+    "DifferentPixels": 3151,
+    "ChangedActiveArtworkPixels": 0
+  },
+  {
+    "Game": "helicopter",
+    "Frame": 1199,
+    "DifferentPixels": 2123,
+    "ChangedActiveArtworkPixels": 0
+  },
+  {
+    "Game": "helicopter",
+    "Frame": 3199,
+    "DifferentPixels": 2693,
+    "ChangedActiveArtworkPixels": 0
+  },
+  {
+    "Game": "helicopter",
+    "Frame": 5199,
+    "DifferentPixels": 2693,
+    "ChangedActiveArtworkPixels": 0
+  },
+  {
+    "Game": "pickaxe",
+    "Frame": 1199,
+    "DifferentPixels": 456,
+    "ChangedActiveArtworkPixels": 0
+  },
+  {
+    "Game": "pickaxe",
+    "Frame": 3199,
+    "DifferentPixels": 456,
+    "ChangedActiveArtworkPixels": 0
+  },
+  {
+    "Game": "pickaxe",
+    "Frame": 5199,
+    "DifferentPixels": 456,
+    "ChangedActiveArtworkPixels": 0
+  }
+]

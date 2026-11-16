@@ -1,0 +1,62 @@
+[
+  {
+    "Frame": 1199,
+    "Type": "bmp",
+    "MatchesApproved": true
+  },
+  {
+    "Frame": 1199,
+    "Type": "state",
+    "MatchesApproved": true
+  },
+  {
+    "Frame": 3199,
+    "Type": "bmp",
+    "MatchesApproved": true
+  },
+  {
+    "Frame": 3199,
+    "Type": "state",
+    "MatchesApproved": true
+  },
+  {
+    "Frame": 5199,
+    "Type": "bmp",
+    "MatchesApproved": true
+  },
+  {
+    "Frame": 5199,
+    "Type": "state",
+    "MatchesApproved": true
+  },
+  {
+    "Frame": 11999,
+    "Type": "bmp",
+    "MatchesApproved": true
+  },
+  {
+    "Frame": 11999,
+    "Type": "state",
+    "MatchesApproved": true
+  },
+  {
+    "Frame": 19999,
+    "Type": "bmp",
+    "MatchesApproved": true
+  },
+  {
+    "Frame": 19999,
+    "Type": "state",
+    "MatchesApproved": true
+  },
+  {
+    "Frame": 27999,
+    "Type": "bmp",
+    "MatchesApproved": true
+  },
+  {
+    "Frame": 27999,
+    "Type": "state",
+    "MatchesApproved": true
+  }
+]

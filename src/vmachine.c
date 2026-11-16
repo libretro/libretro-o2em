@@ -18,6 +18,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
+#include <stdio.h>
 #include <time.h>
 #include "audio.h"
 #include "cpu.h"
@@ -27,6 +28,8 @@
 #include "vpp.h"
 #include "voice.h"
 #include "vmachine.h"
+#include "c7010.h"
+#include "c7010_pal.h"
 
 #include "wrapalleg.h"
 #include <libretro.h>
@@ -40,6 +43,7 @@ int fps             = FPS_NTSC;
 static uint8_t snapedlines[MAXLINES+2*MAXSNAP][256][2];
 
 int evblclk         = EVBLCLK_NTSC;
+int vbl_clk         = VBLCLK;
 
 struct resource app_data;
 int frame           = 0;
@@ -172,6 +176,14 @@ void handle_evbl(void)
    last_line   =0;
    master_clk -= evblclk;
    frame++;
+
+   /*
+    * C7010/PAL: 313*456/18 = 7929 1/3 machine cycles per frame.  Match the
+    * continuous beam phase with the same 7929/7930 integer schedule used by
+    * O2EM-NG so the T1/VBL/VDC timebase does not accumulate fractional drift.
+    */
+   if (app_data.euro && C7010_IsActive())
+      evblclk = C7010Pal_FrameCycles(frame);
 
    finish_display();
 
@@ -433,6 +445,13 @@ int init_system(void)
    else
       setvideomode(0);
 
+   /* C7010: reference PAL vertical timing (O2EM-NG: VBL 6151, frame 7929). */
+   if (app_data.euro && C7010_IsActive())
+   {
+      evblclk = EVBLCLK_PAL_C7010;
+      vbl_clk = VBLCLK_PAL_C7010;
+   }
+
    do_kludges();
    if (!init_vpp())
       return 0;
@@ -449,7 +468,7 @@ void init_roms(void)
 uint8_t read_t1(void)
 {
    /*17*/
-   if ((h_clk > 16) || (master_clk > VBLCLK))
+   if ((h_clk > 16) || (master_clk > vbl_clk))
       return 1;
    return 0;
 }
@@ -457,6 +476,8 @@ uint8_t read_t1(void)
 
 void write_p1(uint8_t d)
 {
+   C7010_WriteP1(d);
+
    if ((d & 0x80) != (p1 & 0x80))
    {
       int i;
@@ -519,6 +540,12 @@ uint8_t ext_read(uint16_t adr){
 	uint8_t m;
 	int i;
 
+	{
+		uint8_t c7010_value = 0;
+		if (C7010_ExternalRead((uint8_t)adr, &c7010_value))
+			return c7010_value;
+	}
+
 	if (!(p1 & 0x08) && !(p1 & 0x40)) {
 		/* Handle VDC Read */
 		/* registers A0-AF are mirrored at B0-BF (MAME i8244) */
@@ -526,7 +553,7 @@ uint8_t ext_read(uint16_t adr){
 		switch(adr) {
 			case 0xA1:
 				d = VDCwrite[0xA0] & 0x02;
-				if (master_clk > VBLCLK) d = d | 0x08;
+				if (master_clk > vbl_clk) d = d | 0x08;
 				if (h_clk < (LINECNT-7)) d = d | 0x01;
 				if (sound_IRQ) d = d | 0x04;
 				sound_IRQ=0;
@@ -658,16 +685,21 @@ void ext_write(uint8_t dat, uint16_t adr)
 {
    int i;
 
+
+   if (C7010_ExternalWrite((uint8_t)adr, dat) && (p1 & 0x08))
+      return;
+
    if (!(p1 & 0x08))
    {
       /* Handle VDC Write */		
       /* registers A0-AF are mirrored at B0-BF (MAME i8244) */
       if ((adr & 0xE0) == 0xA0)
          adr &= ~0x10;
+
       /* object registers are not accessible while the display is
        * enabled, grid registers while the grid is enabled; F0-FF
        * is unmapped (MAME i8244) */
-      if ((adr < 0x80) && (VDCwrite[0xA0] & 0x20))
+      if ((adr < 0x80) && (VDCwrite[0xA0] & 0x20) && !C7010_IsActive())
          return;
       if (((adr >= 0xC0) && (VDCwrite[0xA0] & 0x08)) || (adr >= 0xF0))
          return;
@@ -700,7 +732,9 @@ void ext_write(uint8_t dat, uint16_t adr)
             x_latch = h_clk * 12;
             if (y_latch > 241) y_latch=0xFF;
          }
-         if ((master_clk <= VBLCLK) && (VDCwrite[0xA0] != dat))
+         /* C7010 keeps drawing rows after VBL; allow the renderer to
+          * follow the cartridge for the whole frame. */
+         if ((C7010_IsActive() || master_clk <= vbl_clk) && (VDCwrite[0xA0] != dat))
             draw_region();
       }
       else if (adr == 0xA3)
@@ -807,6 +841,9 @@ static size_t savestate_legacy_size(void)
       sizeof(tirq_pend);
 }
 
+/* Fixed part of the extended "O2S2"/"O2S3" block, including magic. */
+#define SAVESTATE_EXT_SIZE (4 + 4 + 8 * 4 + 4 + 4 + 5 + 3 * 4 + 2 * MAXLINES)
+
 size_t savestate_size(void)
 {
    return savestate_legacy_size() +
@@ -821,13 +858,58 @@ size_t savestate_size(void)
       3 * 4 +                /* sound_IRQ, snd_shift_count, snd_period_acc */
       MAXLINES +             /* ColorVector */
       MAXLINES +             /* AudioVector */
-      vpp_state_size();
+      vpp_state_size()
+      + C7010_StateSize()
+      ;
 }
 
 #define ST_S_U8(v)  { data[offset++] = (uint8_t)(v); }
 #define ST_S_I32(v) { int32_t tmp_ = (int32_t)(v); memcpy(data+offset, &tmp_, 4); offset += 4; }
 #define ST_L_U8(v)  { (v) = data[offset++]; }
 #define ST_L_I32(v) { int32_t tmp_; memcpy(&tmp_, data+offset, 4); (v) = tmp_; offset += 4; }
+
+/*
+ * Locate the optional C7010 block without touching emulation state.
+ * Returns false only for a truncated/corrupt container. The block itself is
+ * validated separately with C7010_StateValidate().
+ */
+static bool savestate_find_c7010(const uint8_t *data, size_t size,
+                                 size_t *c7010_offset, bool *present)
+{
+   size_t pos = savestate_legacy_size();
+
+   *c7010_offset = 0;
+   *present = false;
+
+   if (size < pos)
+      return false;
+   if (size - pos < 4)
+      return true;
+
+   if (data[pos] != 'O' || data[pos + 1] != '2' || data[pos + 2] != 'S')
+      return true;
+   if (data[pos + 3] == '2')
+      return true; /* old extended block: no C7010 */
+   if (data[pos + 3] != '3')
+      return false;
+
+   pos += SAVESTATE_EXT_SIZE;
+   if (pos > size || size - pos < vpp_state_size())
+      return false;
+   pos += vpp_state_size();
+
+   if (size - pos < 4)
+      return true;
+   if (data[pos] == 'C' && data[pos + 1] == '7' &&
+       data[pos + 2] == 'S' && data[pos + 3] == '1')
+   {
+      if (size - pos < C7010_StateSize())
+         return false;
+      *c7010_offset = pos;
+      *present = true;
+   }
+   return true;
+}
 
 bool savestate_to_mem(uint8_t *data, size_t size)
 {
@@ -899,6 +981,9 @@ bool savestate_to_mem(uint8_t *data, size_t size)
    memcpy(data+offset, ColorVector, MAXLINES); offset += MAXLINES;
    memcpy(data+offset, AudioVector, MAXLINES); offset += MAXLINES;
    offset += vpp_state_save(data+offset);
+   if (!C7010_StateSave(data+offset, C7010_StateSize()))
+      return false;
+   offset += C7010_StateSize();
 
    return true;
 }
@@ -908,8 +993,18 @@ bool loadstate_from_mem(const uint8_t *data, size_t size)
    int offset        = 0;
    int bios          = app_data.bios;
    unsigned long crc = app_data.crc;
+   size_t c7010_offset = 0;
+   bool has_c7010 = false;
 
    if (size < savestate_legacy_size())
+      return false;
+
+   if (!savestate_find_c7010(data, size, &c7010_offset, &has_c7010))
+      return false;
+   if (C7010_IsActive() && !has_c7010)
+      return false;
+   if (has_c7010 &&
+       !C7010_StateValidate(data + c7010_offset, C7010_StateSize()))
       return false;
 
    memcpy(&app_data.crc, data+offset, sizeof(app_data.crc));
@@ -1012,6 +1107,12 @@ bool loadstate_from_mem(const uint8_t *data, size_t size)
       rom = rom_table[~p1 & 0x03];
    else if (app_data.bank == 4)
       rom = rom_table[(p1 & 1) ? 0 : romlatch];
+
+   if (has_c7010)
+   {
+      if (!C7010_StateLoad(data + c7010_offset, C7010_StateSize()))
+         return false;
+   }
 
    return true;
 }

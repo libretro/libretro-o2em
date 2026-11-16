@@ -13,6 +13,9 @@
 #define VBLCLK 5493
 #define EVBLCLK_NTSC 5964
 #define EVBLCLK_PAL 7259
+/* C7010: reference PAL vertical timing (O2EM-NG: 456x313, VBL 6151, frame 7929) */
+#define VBLCLK_PAL_C7010 6151
+#define EVBLCLK_PAL_C7010 7929
 
 #define FPS_NTSC 60
 #define FPS_PAL 50
@@ -21,6 +24,7 @@ extern uint8_t dbstick1, dbstick2;
 extern int last_line;
 
 extern int evblclk;
+extern int vbl_clk;
 
 extern int master_clk;		/* Master clock */
 extern int int_clk;		/* counter for length of /INT pulses for JNI */
@@ -98,4 +102,3 @@ bool savestate_to_mem(uint8_t *data, size_t size);
 bool loadstate_from_mem(const uint8_t *data, size_t size);
 
 #endif  /* VMACHINE_H */
-

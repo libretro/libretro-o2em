@@ -22,6 +22,9 @@
 #include "vdc.h"
 #include "vpp.h"
 #include "cpu.h"
+#include "c7010.h"
+#include "c7010_pal.h"
+
 
 #define push(d) {intRAM[sp++] = (d); if (sp > 23) sp = 8;}
 #define pull() (sp--, (sp < 8)?(sp=23):0, intRAM[sp])
@@ -61,6 +64,30 @@ uint8_t irq_ex;
 
 int master_count;
 
+/*
+ * C7010/PAL: the 8048 event counter is clocked by the i8244 T1 signal, which
+ * follows the real PAL beam (hblank/vblank), not the legacy h_clk/21
+ * approximation used by the original O2EM core.  The legacy model places the
+ * counter edges at the wrong beam phase; timer interrupts then land inside
+ * the cartridge's deep key-processing call chain and corrupt the 8-level
+ * 8048 stack.  O2EM-NG uses the MAME 0.289 i8244 PAL timing here; derive the
+ * beam phase from clk_counter so save states remain phase-continuous.
+ */
+static int c7010_t1_beam_level(void)
+{
+   C7010PalPhase phase;
+   C7010Pal_Compute(clk_counter, &phase);
+   return phase.t1;
+}
+
+static int c7010_beam_active(void)
+{
+   return C7010_IsActive() && app_data.euro;
+}
+
+static int g_t1_beam_last = -1;
+
+
 void init_cpu(void){
 	pc=0;
 	sp=8;
@@ -79,6 +106,7 @@ void init_cpu(void){
 	count_on=0;
 	reg_pnt=0;
 	tirq_en=xirq_en=irq_ex=xirq_pend=tirq_pend=0;
+	g_t1_beam_last = -1;
 }
 
 
@@ -95,11 +123,26 @@ void ext_IRQ(void){
 		A11ff=A11;
 		A11=0;
 	}
-	if (pendirq && (!xirq_en)) xirq_pend=1;
+	else if (C7010_IsActive() && app_data.euro) {
+		/* C7010/PAL: /INT is a persistent level on real i8244 hardware.
+		 * Keep the request until the 8048 can service it instead of
+		 * dropping a VBL that arrives during DIS I or another ISR. */
+		xirq_pend = 1;
+	}
+	else if (pendirq && (!xirq_en)) {
+		xirq_pend = 1;
+	}
 }
 
 
 void tim_IRQ(void){
+	/* C7010: keep an enabled timer/counter overflow that occurs while an
+	 * interrupt is already in service. It is serviced after RETR.
+	 * (Same semantics as O2EM-NG patch 0030X; upstream silently dropped it.) */
+	if (C7010_IsActive() && tirq_en && irq_ex) {
+		tirq_pend = 1;
+		return;
+	}
 	if (tirq_en && !irq_ex) {
 		irq_ex=2;
 		tirq_pend=0;
@@ -121,6 +164,7 @@ void make_psw_debug(void){
 
 extern int RLOOP;
 
+
 void cpu_exec(void)
 {
 	uint16_t adr;
@@ -132,6 +176,22 @@ void cpu_exec(void)
       uint8_t op;
 
       clk=0;	
+
+      if (c7010_beam_active())
+      {
+         int level = c7010_t1_beam_level();
+         if (g_t1_beam_last >= 0 && g_t1_beam_last && !level && count_on)
+         {
+            itimer++;
+            if (itimer == 0)
+            {
+               t_flag=1;
+               tim_IRQ();
+               draw_region();
+            }
+         }
+         g_t1_beam_last = level;
+      }
 
       lastpc=pc;
       op=ROM(pc++);
@@ -1555,6 +1615,7 @@ void cpu_exec(void)
             break;
       }
 
+      C7010_Run8048Cycles((unsigned int)clk, (unsigned int)evblclk);
 
       master_clk+=clk;
       h_clk+=clk;
@@ -1578,7 +1639,7 @@ void cpu_exec(void)
          if (enahirq && (VDCwrite[0xA0] & 0x01))
             ext_IRQ();
 
-         if (count_on && mstate == 0)
+         if (count_on && mstate == 0 && !c7010_beam_active())
          {
             itimer++;
             if (itimer == 0)
@@ -1605,7 +1666,7 @@ void cpu_exec(void)
          }
       }
 
-      if ((mstate==0) && (master_clk > VBLCLK))
+      if ((mstate==0) && (master_clk > vbl_clk))
       {
          handle_vbl();
       }	

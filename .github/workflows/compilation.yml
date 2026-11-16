@@ -16,6 +16,13 @@ jobs:
       run: |
         make -j$(nproc)
 
+    - name: Build and run C7010 generated-data tests
+      run: |
+        cc -std=c99 -O2 -Isrc tests/c7010_pal_test.c src/c7010_pal.c -o tests/c7010_pal_test
+        tests/c7010_pal_test
+        cc -std=c99 -O2 -Isrc -Ilibretro-common/include tests/c7010_state.c src/c7010.c -o tests/c7010_state_test
+        tests/c7010_state_test
+
     - name: Build and run savestate determinism test
       run: |
         cc -O1 -g -o tests/savestate_determinism tests/savestate_determinism.c -Ilibretro-common/include -ldl

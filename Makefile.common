@@ -11,6 +11,8 @@ ifneq (,$(findstring msvc2003,$(platform)))
 endif
 
 SOURCES_C := \
+	$(CORE_DIR)/src/c7010.c \
+	$(CORE_DIR)/src/c7010_pal.c \
 	$(CORE_DIR)/src/audio.c \
 	$(CORE_DIR)/src/cpu.c \
 	$(CORE_DIR)/src/cset.c \
